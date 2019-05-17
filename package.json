@@ -1,0 +1,37 @@
+{
+    "name": "restify-app",
+    "version": "0.0.0",
+    "description": "A thin wrapper around restify functionality integrating with promises and npm binaries.",
+    "main": "lib/main.js",
+    "scripts": {
+        "test": "mocha -b --no-diff test/spec.js",
+        "coverage": "nyc -r html mocha -b --no-diff test/spec.js"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://gitlab.com/GCSBOSS/restify-app.git"
+    },
+    "keywords": [
+        "restify",
+        "promises",
+        "wrapper",
+        "async",
+        "await",
+        "error",
+        "simple"
+    ],
+    "author": "Guilherme C. Souza",
+    "license": "MIT",
+    "bugs": {
+        "url": "https://gitlab.com/GCSBOSS/restify-app/issues"
+    },
+    "homepage": "https://gitlab.com/GCSBOSS/restify-app#README",
+    "dependencies": {
+        "restify": "^8.3.2",
+        "toml": "^3.0.0"
+    },
+    "devDependencies": {
+        "muhb": "0.0.2",
+        "wtfnode": "^0.8.0"
+    }
+}
