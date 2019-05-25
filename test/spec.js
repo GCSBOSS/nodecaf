@@ -218,6 +218,36 @@ describe('AppServer', () => {
 
 });
 
+describe('Restify Features', () => {
+    const fs = require('fs');
+    const AppServer = require('../lib/app-server');
+
+    it('Should expose file content sent as multipart-form', async () => {
+        const FormData = require('form-data');
+        let app = new AppServer();
+        app.route(function({ post }){
+            post('/bar', ({ res, req }) => {
+                res.setHeader('X-Test', req.files.foobar.name);
+                res.send(200);
+            });
+        });
+        await app.start();
+
+        let form = new FormData();
+        form.append('foo', 'bar');
+        form.append('foobar', fs.createReadStream('./test/file.txt'));
+        await new Promise(resolve =>
+            form.submit('http://localhost/bar/', (err, res) => {
+                assert(res.headers['x-test'] == 'file.txt');
+                resolve();
+            })
+        );
+
+        await app.stop();
+    });
+
+});
+
 describe('run()', () => {
     const { run, AppServer } = require('../lib/main');
     const { get } = require('muhb');
