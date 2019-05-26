@@ -38,7 +38,7 @@ describe('Promise Adapter', () => {
             assert.equal(err.message, 'foo');
             done();
         });
-        af(mockReq, {}, function(){});
+        af(mockReq, { send(){} }, function(){});
     });
 
     it('Should handle errors for async functions', done => {
@@ -50,7 +50,7 @@ describe('Promise Adapter', () => {
             assert.equal(err, 'foo');
             done();
         });
-        af(mockReq, {}, function(){});
+        af(mockReq, { send(){} }, function(){});
     });
 
     it('Should expose restify error properly', done => {
@@ -270,6 +270,53 @@ describe('Assertions', () => {
             assert.doesNotThrow( () => able(true, 'foo') );
         });
 
+    });
+
+});
+
+describe('Error Handling', () => {
+    const handleError = require('../lib/errors');
+
+    it('Should handle RestifyErrors as strings', () => {
+        let context = {
+            send(err){
+                assert.equal(err.constructor.displayName, 'ConflictError');
+                assert.equal(err.message, 'foobar');
+            }
+        }
+        handleError.bind(context)('Conflict', 'foobar');
+    });
+
+    it('Should handle non-Errors', () => {
+        let context = {
+            send(err){
+                assert.equal(err.constructor.displayName, 'InternalServerError');
+            }
+        }
+        handleError.bind(context)('foo', 'bar');
+    });
+
+    it('Should handle Restify App Assertion errors', () => {
+        let context = {
+            send(err){
+                assert.equal(err.constructor.displayName, 'MethodNotAllowedError');
+                assert.equal(err.message, 'foo');
+            }
+        }
+        let e = new Error();
+        e.constructor = { name: 'AssertAbleError' };
+        e.message = 'foo';
+        handleError.bind(context)(e);
+    });
+
+    it('Should handle unknown exceptions', () => {
+        let context = {
+            send(err){
+                assert(err instanceof Error);
+                assert.equal(err.message, 'foobar');
+            }
+        }
+        handleError.bind(context)(new Error('foobar'));
     });
 
 });
