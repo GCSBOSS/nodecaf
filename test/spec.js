@@ -249,4 +249,29 @@ describe('run()', () => {
 
 });
 
+describe('Assertions', () => {
+    const { valid, authorized, authn, exist, able } = require('../lib/assertions');
+
+    describe('Simple assertions ( condition, message, ...args )', () => {
+
+        it('Should throw when condition evaluates to false', () => {
+            assert.throws( () => valid(false, 'foo') );
+            assert.throws( () => authorized(false, 'foo') );
+            assert.throws( () => authn(false, 'foo') );
+            assert.throws( () => exist(false, 'foo') );
+            assert.throws( () => able(false, 'foo') );
+        });
+
+        it('Should do nothing when condition evaluates to true', () => {
+            assert.doesNotThrow( () => valid(true, 'foo') );
+            assert.doesNotThrow( () => authorized(true, 'foo') );
+            assert.doesNotThrow( () => authn(true, 'foo') );
+            assert.doesNotThrow( () => exist(true, 'foo') );
+            assert.doesNotThrow( () => able(true, 'foo') );
+        });
+
+    });
+
+});
+
 //after(() => wtf.dump());
