@@ -31,6 +31,7 @@
         "toml": "^3.0.0"
     },
     "devDependencies": {
+        "form-data": "^2.3.3",
         "muhb": "0.0.2",
         "wtfnode": "^0.8.0"
     }
