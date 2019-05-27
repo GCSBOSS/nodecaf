@@ -4,5 +4,10 @@ Restify App Changelog
 [NF]: New Functionality
 [BF]: Bug Fix
 
+2019-05-27 [v0.2.0]
+- [NF] Added an Assertions module to handle common REST exception scenarios. 
+- [BC] Improved error handling to always produce a valid REST output.
+- Added test case for miultipart and file support.
+
 2019-05-17 [v0.0.1]
 - First officially published version.
