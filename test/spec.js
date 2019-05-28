@@ -361,4 +361,23 @@ describe('Error Handling', () => {
 
 });
 
+describe('Regiression', () => {
+    const AppServer = require('../lib/app-server');
+    const { post } = require('muhb');
+
+    it('Should handle errors even when error event has no listeners', async () => {
+        let app = new AppServer();
+        app.route(function({ post }){
+            post('/bar', () => {
+                throw new Error('errfoobar');
+            });
+        });
+        await app.start();
+        let { status } = await post('http://localhost:80/bar');
+        assert.equal(status, 500);
+        await app.stop();
+    });
+
+});
+
 //after(() => wtf.dump());
