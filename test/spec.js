@@ -4,6 +4,16 @@ const assert = require('assert');
 describe('Conf Loader', () => {
     const loadConf = require('../lib/conf-loader');
 
+    it('Should NOT fail if no conf file is specified', () => {
+        let obj = loadConf('toml');
+        assert.deepEqual(obj, {});
+    });
+
+    it('Should NOT fail if conf file is not found', () => {
+        let obj = loadConf('toml', './bla');
+        assert.deepEqual(obj, {});
+    });
+
     it('Should properly load a TOML file and generate an object', () => {
         let obj = loadConf('toml', './test/confs/conf.toml');
         assert.equal(obj.key, 'value');
