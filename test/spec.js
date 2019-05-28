@@ -4,66 +4,95 @@ const assert = require('assert');
 describe('Conf Loader', () => {
     const loadConf = require('../lib/conf-loader');
 
+    it('Should NOT fail if no conf file is specified', () => {
+        let obj = loadConf('toml');
+        assert.deepEqual(obj, {});
+    });
+
+    it('Should NOT fail if conf file is not found', () => {
+        let obj = loadConf('toml', './bla');
+        assert.deepEqual(obj, {});
+    });
+
     it('Should properly load a TOML file and generate an object', () => {
         let obj = loadConf('toml', './test/confs/conf.toml');
         assert.equal(obj.key, 'value');
     });
 });
 
-describe('Promise Adapter', () => {
+describe('Promise Error Adapter', () => {
+    const adapt = require('../lib/a-sync-error-adapter');
+
+    it('Should handle errors for regular functions', done => {
+        let func = () => { throw new Error('foobar') };
+
+        let af = adapt(func, function(err, test){
+            assert.equal(err.message, 'foobar');
+            assert.equal(test, 'bar');
+            done();
+        });
+
+        af('bar');
+    });
+
+    it('Should handle errors for async functions', done => {
+        let func = async () => await new Promise((resolve, reject) => reject('foobar'));
+
+        let af = adapt(func, function(err, test){
+            assert.equal(err, 'foobar');
+            assert.equal(test, 'bar');
+            done();
+        });
+
+        af('bar');
+    });
+
+});
+
+describe('Route Adapter', () => {
     const { EventEmitter } = require('events');
-    const adapt = require('../lib/promise-adapter');
-    const s = { exposed: {}, settings: {} };
-    const mockReq = { server: s, query: {}, locals: {}, params: {}, body: '' };
+    const addRoute = require('../lib/route-adapter');
 
     it('Should fail when anything other than a function is passed', () => {
         let ee = new EventEmitter();
-        assert.throws( () => adapt(ee, '') );
+        assert.throws( () => addRoute.bind(ee)('get', '/foo', null) );
+    });
+
+    it('Should add adapted handler to chosen route', () => {
+        let ee = new EventEmitter();
+        ee.server = {
+            foo(path){ assert.equal(path, 'foo') }
+        };
+        addRoute.bind(ee)('foo', 'foo', function bar(){ });
     });
 
     it('Should pass all the required args to adapted function', () => {
         let ee = new EventEmitter();
-        let af = adapt(ee, function(args){
+        let fn;
+        ee.server = {
+            foo(path, handler){ fn = handler }
+        };
+        addRoute.bind(ee)('foo', 'foo', function bar(args){
             assert.equal(typeof args, 'object');
         });
-        af(mockReq, {}, function(){});
-    });
-
-    it('Should handle errors for regular functions', done => {
-        let ee = new EventEmitter();
-        let af = adapt(ee, function(){
-            throw Error('foo');
-        });
-        ee.on('error', (req, res, err) => {
-            assert.equal(err.message, 'foo');
-            done();
-        });
-        af(mockReq, { send(){} }, function(){});
-    });
-
-    it('Should handle errors for async functions', done => {
-        let ee = new EventEmitter();
-        let af = adapt(ee, async function(){
-            await new Promise((resolve, reject) => reject('foo'));
-        });
-        ee.on('error', (req, res, err) => {
-            assert.equal(err, 'foo');
-            done();
-        });
-        af(mockReq, { send(){} }, function(){});
+        fn('foo', 'bar', 'foobar');
     });
 
     it('Should expose restify error properly', done => {
         let ee = new EventEmitter();
-        let af = adapt(ee, async function(){
-            await new Promise((resolve, reject) => reject('foo'));
+        let fn;
+        ee.server = {
+            foo(path, handler){ fn = handler }
+        };
+        ee.on('error', (input, err, send) => send('InternalServer', 'foobar') );
+        addRoute.bind(ee)('foo', 'foo', function bar(){
+            throw new Error('bar');
         });
-        ee.on('error', (req, res, err, send) => send('InternalServer', 'foobar'));
         res = { send(err){
             assert.equal(err.message, 'foobar');
             done();
         } };
-        af(mockReq, res, function(){});
+        fn({}, res, 'foobar');
     });
 
 });
@@ -308,26 +337,28 @@ describe('Error Handling', () => {
     const handleError = require('../lib/errors');
 
     it('Should handle RestifyErrors as strings', () => {
-        let context = {
+        let req = { errClass: 'Conflict', errMessage: 'foobar' };
+        let res = {
             send(err){
                 assert.equal(err.constructor.displayName, 'ConflictError');
                 assert.equal(err.message, 'foobar');
             }
         }
-        handleError.bind(context)('Conflict', 'foobar');
+        handleError(req, res);
     });
 
     it('Should handle non-Errors', () => {
-        let context = {
+        let req = { errClass: 'foo', errMessage: 'bar' };
+        let res = {
             send(err){
                 assert.equal(err.constructor.displayName, 'InternalServerError');
             }
         }
-        handleError.bind(context)('foo', 'bar');
+        handleError(req, res);
     });
 
     it('Should handle Restify App Assertion errors', () => {
-        let context = {
+        let res = {
             send(err){
                 assert.equal(err.constructor.displayName, 'MethodNotAllowedError');
                 assert.equal(err.message, 'foo');
@@ -336,17 +367,55 @@ describe('Error Handling', () => {
         let e = new Error();
         e.constructor = { name: 'AssertAbleError' };
         e.message = 'foo';
-        handleError.bind(context)(e);
+        handleError({}, res, e);
     });
 
     it('Should handle unknown exceptions', () => {
-        let context = {
+        let res = {
             send(err){
                 assert(err instanceof Error);
                 assert.equal(err.message, 'foobar');
             }
         }
-        handleError.bind(context)(new Error('foobar'));
+        handleError({}, res, new Error('foobar'));
+    });
+
+});
+
+describe('Regiression', () => {
+    const AppServer = require('../lib/app-server');
+    const { post } = require('muhb');
+
+    it('Should handle errors even when error event has no listeners', async () => {
+        let app = new AppServer();
+        app.route(function({ post }){
+            post('/bar', () => {
+                throw new Error('errfoobar');
+            });
+        });
+        await app.start();
+        let { status } = await post('http://localhost:80/bar');
+        assert.equal(status, 500);
+        await app.stop();
+    });
+
+    it('Should NOT attach new error handlers upon request', async () => {
+
+        let app = new AppServer();
+        app.route(function({ post }){
+            post('/bar', () => {
+                throw new Error('errfoobar');
+            });
+        });
+        await app.start();
+
+        let r1 = JSON.parse((await post('http://localhost:80/bar')).body).message;
+        let r2 = JSON.parse((await post('http://localhost:80/bar')).body).message;
+        let r3 = JSON.parse((await post('http://localhost:80/bar')).body).message;
+        assert(r1 == r2 && r2 == r3 && r3 == 'errfoobar');
+
+        await app.stop();
+
     });
 
 });
