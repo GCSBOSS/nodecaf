@@ -16,7 +16,7 @@ describe('Conf Loader', () => {
 
     it('Should properly load a TOML file and generate an object', () => {
         let obj = loadConf('toml', './test/confs/conf.toml');
-        assert.equal(obj.key, 'value');
+        assert.strictEqual(obj.key, 'value');
     });
 });
 
@@ -27,8 +27,8 @@ describe('Promise Error Adapter', () => {
         let func = () => { throw new Error('foobar') };
 
         let af = adapt(func, function(err, test){
-            assert.equal(err.message, 'foobar');
-            assert.equal(test, 'bar');
+            assert.strictEqual(err.message, 'foobar');
+            assert.strictEqual(test, 'bar');
             done();
         });
 
@@ -39,8 +39,8 @@ describe('Promise Error Adapter', () => {
         let func = async () => await new Promise((resolve, reject) => reject('foobar'));
 
         let af = adapt(func, function(err, test){
-            assert.equal(err, 'foobar');
-            assert.equal(test, 'bar');
+            assert.strictEqual(err, 'foobar');
+            assert.strictEqual(test, 'bar');
             done();
         });
 
@@ -61,7 +61,7 @@ describe('Route Adapter', () => {
     it('Should add adapted handler to chosen route', () => {
         let ee = new EventEmitter();
         ee.server = {
-            foo(path){ assert.equal(path, 'foo') }
+            foo(path){ assert.strictEqual(path, 'foo') }
         };
         addRoute.bind(ee)('foo', 'foo', function bar(){ });
     });
@@ -73,7 +73,7 @@ describe('Route Adapter', () => {
             foo(path, handler){ fn = handler }
         };
         addRoute.bind(ee)('foo', 'foo', function bar(args){
-            assert.equal(typeof args, 'object');
+            assert.strictEqual(typeof args, 'object');
         });
         fn('foo', 'bar', 'foobar');
     });
@@ -89,7 +89,7 @@ describe('Route Adapter', () => {
             throw new Error('bar');
         });
         res = { send(err){
-            assert.equal(err.message, 'foobar');
+            assert.strictEqual(err.message, 'foobar');
             done();
         } };
         fn({}, res, 'foobar');
@@ -107,12 +107,12 @@ describe('AppServer', () => {
             const { EventEmitter } = require('events');
             let app = new AppServer({ key: 'value' });
             assert(app instanceof EventEmitter);
-            assert.equal(app.settings.key, 'value');
+            assert.strictEqual(app.settings.key, 'value');
         });
 
         it('Should create the Restify server', () => {
             let app = new AppServer();
-            assert.equal(typeof app.server.use, 'function');
+            assert.strictEqual(typeof app.server.use, 'function');
         });
 
     });
@@ -123,7 +123,7 @@ describe('AppServer', () => {
             let app = new AppServer();
             await app.start();
             let { status } = await get('http://127.0.0.1:80/');
-            assert.equal(status, 404);
+            assert.strictEqual(status, 404);
             await app.stop();
         });
 
@@ -131,7 +131,7 @@ describe('AppServer', () => {
             let app = new AppServer({ port: 8080 });
             await app.start();
             let { status } = await get('http://127.0.0.1:8080/');
-            assert.equal(status, 404);
+            assert.strictEqual(status, 404);
             await app.stop();
         });
 
@@ -150,7 +150,7 @@ describe('AppServer', () => {
         it('Should execute the callback passing the method funcs', done => {
             let app = new AppServer();
             app.route(function(funcs){
-                assert.equal(typeof funcs, 'object');
+                assert.strictEqual(typeof funcs, 'object');
                 done();
             });
         });
@@ -159,16 +159,16 @@ describe('AppServer', () => {
             let app = new AppServer();
             app.route(function({ post, del, get, patch, put, head }){
                 post('/foo', ({res}) => res.send(500) );
-                assert.equal(app.server.router._registry._routes.postfoo.name, 'postfoo');
-                assert.equal(typeof del, 'function');
-                assert.equal(typeof get, 'function');
-                assert.equal(typeof put, 'function');
-                assert.equal(typeof patch, 'function');
-                assert.equal(typeof head, 'function');
+                assert.strictEqual(app.server.router._registry._routes.postfoo.name, 'postfoo');
+                assert.strictEqual(typeof del, 'function');
+                assert.strictEqual(typeof get, 'function');
+                assert.strictEqual(typeof put, 'function');
+                assert.strictEqual(typeof patch, 'function');
+                assert.strictEqual(typeof head, 'function');
             });
             await app.start();
             let { status } = await post('http://127.0.0.1:80/foo');
-            assert.equal(status, 500);
+            assert.strictEqual(status, 500);
             await app.stop();
         });
 
@@ -182,7 +182,7 @@ describe('AppServer', () => {
             });
             await app.start();
             let { body } = await get('http://127.0.0.1:80/bar');
-            assert.equal(body, 'bar');
+            assert.strictEqual(body, 'bar');
             await app.stop();
         });
 
@@ -198,7 +198,7 @@ describe('AppServer', () => {
             });
             await app.start();
             let { body } = await post('http://127.0.0.1:80/bar');
-            assert.equal(body, 'foobar');
+            assert.strictEqual(body, 'foobar');
             await app.stop();
         });
 
@@ -236,10 +236,10 @@ describe('AppServer', () => {
             let app = new AppServer();
             await app.start();
             let { status } = await get('http://127.0.0.1:80/');
-            assert.equal(status, 404);
+            assert.strictEqual(status, 404);
             await app.restart();
             let { status: s } = await get('http://127.0.0.1:80/');
-            assert.equal(s, 404);
+            assert.strictEqual(s, 404);
             await app.stop();
         });
 
@@ -302,7 +302,7 @@ describe('run()', () => {
             return app;
         } });
         let { body } = await get('http://127.0.0.1:80/bar');
-        assert.equal(body, 'foo');
+        assert.strictEqual(body, 'foo');
         await app.stop();
     });
 
@@ -340,8 +340,8 @@ describe('Error Handling', () => {
         let req = { errClass: 'Conflict', errMessage: 'foobar' };
         let res = {
             send(err){
-                assert.equal(err.constructor.displayName, 'ConflictError');
-                assert.equal(err.message, 'foobar');
+                assert.strictEqual(err.constructor.displayName, 'ConflictError');
+                assert.strictEqual(err.message, 'foobar');
             }
         }
         handleError(req, res);
@@ -351,7 +351,7 @@ describe('Error Handling', () => {
         let req = { errClass: 'foo', errMessage: 'bar' };
         let res = {
             send(err){
-                assert.equal(err.constructor.displayName, 'InternalServerError');
+                assert.strictEqual(err.constructor.displayName, 'InternalServerError');
             }
         }
         handleError(req, res);
@@ -360,8 +360,8 @@ describe('Error Handling', () => {
     it('Should handle Restify App Assertion errors', () => {
         let res = {
             send(err){
-                assert.equal(err.constructor.displayName, 'MethodNotAllowedError');
-                assert.equal(err.message, 'foo');
+                assert.strictEqual(err.constructor.displayName, 'MethodNotAllowedError');
+                assert.strictEqual(err.message, 'foo');
             }
         }
         let e = new Error();
@@ -374,7 +374,7 @@ describe('Error Handling', () => {
         let res = {
             send(err){
                 assert(err instanceof Error);
-                assert.equal(err.message, 'foobar');
+                assert.strictEqual(err.message, 'foobar');
             }
         }
         handleError({}, res, new Error('foobar'));
@@ -395,7 +395,7 @@ describe('Regiression', () => {
         });
         await app.start();
         let { status } = await post('http://localhost:80/bar');
-        assert.equal(status, 500);
+        assert.strictEqual(status, 500);
         await app.stop();
     });
 
