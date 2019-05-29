@@ -1,7 +1,8 @@
 
 # Restify App
 
-Restify App is a thin wrapper around [Restify](http://restify.com) functionality. Aims to provide easy to write routing and server logic along with a useful
+Restify App is a thin wrapper around [Restify](http://restify.com) functionality.
+Aims to provide easy to write routing and server logic along with a useful
 seamless promise adapter for async functions on the routing system.
 
 ## Get Started
@@ -10,6 +11,8 @@ seamless promise adapter for async functions on the routing system.
 
 ```js
 // lib/main.js
+const { AppServer } = require('restify-app');
+
 module.exports = function init(conf){
 
     let app = new AppServer(conf);
@@ -26,16 +29,10 @@ module.exports = function init(conf){
 
     // Handle all application exception you may wish to throw.
     app.on('error', function(req, res, err, send){
-        let name = err.constructor.name;
-        if(name == 'AssertionError')
-            send('BadRequest', err.message);
-        else if(name == 'DBError')
-            if(err.code == 11000)
-                send('Conflict');
-            else
-                send('InternalServer', 'cannot connect to database');
-        else
-            send('InternalServer', err.message);
+
+        if(err.constructor.name == 'FooBarError')
+            send('BadRequest', 'My foo is baring');
+
     });
 
     // Perform server initialization logic.
