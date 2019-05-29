@@ -4,8 +4,14 @@ Restify App Changelog
 [NF]: New Functionality
 [BF]: Bug Fix
 
+2019-05-29 [v0.3.0]
+- Fix deprecated equality assertions on test suite
+- [BF] Fix conf loader to not output warning when no conf path is provided
+- [BF] Fix exception when route errors would trigger an error event without listeners
+- [BF][BC] Fix default error handler that would attach itself again on every request
+
 2019-05-27 [v0.2.0]
-- [NF] Added an Assertions module to handle common REST exception scenarios. 
+- [NF] Added an Assertions module to handle common REST exception scenarios.
 - [BC] Improved error handling to always produce a valid REST output.
 - Added test case for miultipart and file support.
 
