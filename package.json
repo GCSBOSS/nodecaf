@@ -11,6 +11,9 @@
         "type": "git",
         "url": "git+https://gitlab.com/GCSBOSS/restify-app.git"
     },
+    "bin": {
+        "restify-app": "./bin/restify-app.js"
+    },
     "keywords": [
         "restify",
         "promises",
@@ -27,6 +30,7 @@
     },
     "homepage": "https://gitlab.com/GCSBOSS/restify-app#README",
     "dependencies": {
+        "cli": "^1.0.1",
         "restify": "^8.3.2",
         "toml": "^3.0.0"
     },
