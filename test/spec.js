@@ -15,7 +15,7 @@ describe('Conf Loader', () => {
     });
 
     it('Should properly load a TOML file and generate an object', () => {
-        let obj = loadConf('toml', './test/confs/conf.toml');
+        let obj = loadConf('toml', './test/res/conf.toml');
         assert.strictEqual(obj.key, 'value');
     });
 });
@@ -264,7 +264,7 @@ describe('Restify Features', () => {
 
         let form = new FormData();
         form.append('foo', 'bar');
-        form.append('foobar', fs.createReadStream('./test/file.txt'));
+        form.append('foobar', fs.createReadStream('./test/res/file.txt'));
         await new Promise(resolve =>
             form.submit('http://localhost/bar/', (err, res) => {
                 assert(res.headers['x-test'] == 'file.txt');

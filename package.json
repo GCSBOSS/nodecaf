@@ -4,12 +4,15 @@
     "description": "A thin wrapper around restify functionality integrating with promises and npm binaries.",
     "main": "lib/main.js",
     "scripts": {
-        "test": "mocha -b --no-diff test/spec.js",
-        "coverage": "nyc -r html mocha -b --no-diff test/spec.js"
+        "test": "mocha -b --no-diff test/*.js",
+        "coverage": "nyc -r html mocha -b --no-diff test/*.js"
     },
     "repository": {
         "type": "git",
         "url": "git+https://gitlab.com/GCSBOSS/restify-app.git"
+    },
+    "bin": {
+        "restify-app": "./bin/restify-app.js"
     },
     "keywords": [
         "restify",
@@ -27,6 +30,7 @@
     },
     "homepage": "https://gitlab.com/GCSBOSS/restify-app#README",
     "dependencies": {
+        "cli": "^1.0.1",
         "restify": "^8.3.2",
         "toml": "^3.0.0"
     },
