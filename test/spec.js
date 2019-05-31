@@ -329,55 +329,137 @@ describe('Assertions', () => {
             assert.doesNotThrow( () => able(true, 'foo') );
         });
 
+        it('Should execute handler when sent', done => {
+            const func = e => {
+                assert.strictEqual(e.constructor.displayName, 'UnauthorizedError');
+                done();
+            };
+            assert.doesNotThrow( () => authorized(false, 'foo', func) );
+        });
+
     });
 
 });
 
 describe('Error Handling', () => {
-    const handleError = require('../lib/errors');
+    const AppServer = require('../lib/app-server');
+    const { post } = require('muhb');
+    const errors = require('restify-errors');
+    const fs = require('fs');
 
-    it('Should handle RestifyErrors as strings', () => {
-        let req = { errClass: 'Conflict', errMessage: 'foobar' };
-        let res = {
-            send(err){
-                assert.strictEqual(err.constructor.displayName, 'ConflictError');
-                assert.strictEqual(err.message, 'foobar');
-            }
-        }
-        handleError(req, res);
+    it('Should handle Error thrown sync on the route', async () => {
+        let app = new AppServer();
+        app.route(function({ post }){
+            post('/known', () => {
+                throw new errors.NotFoundError('resterr');
+            });
+            post('/unknown', () => {
+                throw new Error('othererr');
+            });
+        });
+        await app.start();
+        let { status } = await post('http://localhost:80/known');
+        assert.strictEqual(status, 404);
+        let { status: s2 } = await post('http://localhost:80/unknown');
+        assert.strictEqual(s2, 500);
+        await app.stop();
     });
 
-    it('Should handle non-Errors', () => {
-        let req = { errClass: 'foo', errMessage: 'bar' };
-        let res = {
-            send(err){
-                assert.strictEqual(err.constructor.displayName, 'InternalServerError');
-            }
-        }
-        handleError(req, res);
+    it('Should handle Error injected sync on the route', async () => {
+        let app = new AppServer();
+        app.route(function({ post }){
+            post('/known', ({ error }) => {
+                error(new errors.NotFoundError('errfoobar'));
+            });
+            post('/unknown', ({ error }) => {
+                error(new Error('errfoobar'));
+            });
+            post('/string', ({ error }) => {
+                error('NotFound');
+            });
+        });
+        await app.start();
+        let { status } = await post('http://localhost:80/known');
+        assert.strictEqual(status, 404);
+        let { status: s2 } = await post('http://localhost:80/unknown');
+        assert.strictEqual(s2, 500);
+        let { status: s3 } = await post('http://localhost:80/string');
+        assert.strictEqual(s3, 404);
+        await app.stop();
     });
 
-    it('Should handle Restify App Assertion errors', () => {
-        let res = {
-            send(err){
-                assert.strictEqual(err.constructor.displayName, 'MethodNotAllowedError');
-                assert.strictEqual(err.message, 'foo');
-            }
-        }
-        let e = new Error();
-        e.constructor = { name: 'AssertAbleError' };
-        e.message = 'foo';
-        handleError({}, res, e);
+    it('Should handle Error injected ASYNC on the route', async () => {
+        let app = new AppServer();
+        app.route(function({ post }){
+            post('/known', ({ error }) => {
+                fs.readdir('.', function(){
+                    error(new errors.NotFoundError('errfoobar'));
+                });
+            });
+            post('/unknown', ({ error }) => {
+                fs.readdir('.', function(){
+                    error(new Error('errfoobar'));
+                });
+            });
+            post('/string', ({ error }) => {
+                fs.readdir('.', function(){
+                    error('NotFound');
+                });
+            });
+            post('/unknown/object', () => {
+                throw 'resterr';
+            });
+        });
+        await app.start();
+        let { status } = await post('http://localhost:80/known');
+        assert.strictEqual(status, 404);
+        let { status: s2 } = await post('http://localhost:80/unknown');
+        assert.strictEqual(s2, 500);
+        let { status: s3 } = await post('http://localhost:80/string');
+        assert.strictEqual(s3, 404);
+        let { status: s4 } = await post('http://localhost:80/unknown/object');
+        assert.strictEqual(s4, 500);
+        await app.stop();
     });
 
-    it('Should handle unknown exceptions', () => {
-        let res = {
-            send(err){
-                assert(err instanceof Error);
-                assert.strictEqual(err.message, 'foobar');
-            }
-        }
-        handleError({}, res, new Error('foobar'));
+    it('Should execute intermediary error handler', async () => {
+        let app = new AppServer();
+        let count = 0;
+        app.on('error', function(input, err){
+            assert.strictEqual(err.message, 'resterr');
+            count++;
+        });
+        app.route(function({ post }){
+            post('/known', () => {
+                throw new Error('resterr');
+            });
+            post('/unknown', ({ error }) => {
+                error('NotFound', 'resterr');
+            });
+        });
+        await app.start();
+        let { status } = await post('http://localhost:80/known');
+        assert.strictEqual(status, 500);
+        let { status: s2 } = await post('http://localhost:80/unknown');
+        assert.strictEqual(s2, 404);
+        assert.strictEqual(count, 2);
+        await app.stop();
+    });
+
+    it('Should allow tapping into the thrown error', async () => {
+        let app = new AppServer();
+        app.on('error', function(input, err, error){
+            error('Unauthorized', 'resterr');
+        });
+        app.route(function({ post }){
+            post('/unknown', () => {
+                throw new Error('resterr');
+            });
+        });
+        await app.start();
+        let { status } = await post('http://localhost:80/unknown');
+        assert.strictEqual(status, 401);
+        await app.stop();
     });
 
 });
