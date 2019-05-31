@@ -329,6 +329,14 @@ describe('Assertions', () => {
             assert.doesNotThrow( () => able(true, 'foo') );
         });
 
+        it('Should execute handler when sent', done => {
+            const func = e => {
+                assert.strictEqual(e.constructor.displayName, 'UnauthorizedError');
+                done();
+            };
+            assert.doesNotThrow( () => authorized(false, 'foo', func) );
+        });
+
     });
 
 });
