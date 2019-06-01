@@ -1,6 +1,8 @@
 
 # Restify App
 
+> Docs for version v0.2.0.
+
 Restify App is a thin wrapper around [Restify](http://restify.com) functionality.
 Aims to provide easy to write routing and server logic along with a useful
 seamless promise adapter for async functions on the routing system.
