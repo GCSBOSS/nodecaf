@@ -1,6 +1,6 @@
 {
     "name": "restify-app",
-    "version": "0.4.0",
+    "version": "0.4.1",
     "description": "A thin wrapper around restify functionality integrating with promises and npm binaries.",
     "main": "lib/main.js",
     "scripts": {
@@ -21,7 +21,14 @@
         "async",
         "await",
         "error",
-        "simple"
+        "simple",
+        "framework",
+        "scaffolding",
+        "generate",
+        "api",
+        "rest",
+        "nodejs",
+        "server"
     ],
     "author": "Guilherme C. Souza",
     "license": "MIT",

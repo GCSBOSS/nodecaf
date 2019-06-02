@@ -4,6 +4,10 @@ Restify App Changelog
 [NF]: New Functionality
 [BF]: Bug Fix
 
+2019-06-02 [v0.4.1]
+- [NF] Add setting to log all incoming requests
+- [NF] Add logging capabilities through bunyan package
+
 2019-06-01 [v0.4.0]
 - [NF] Improve terminal signal and uncaught exception handling
 - [NF] Add capability for assertion module to be used on event callbacks
