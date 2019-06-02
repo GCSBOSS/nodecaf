@@ -510,6 +510,20 @@ describe('Logging', () => {
         await app.stop();
     });
 
+    it('Should log all requests when specified', async () => {
+        let file = path.resolve(dir, 'logstream.txt');
+        let stream = fs.createWriteStream(file);
+        let app = new AppServer({ log: { requests: true, stream: stream } });
+        app.route(function({ post }){
+            post('/foo', ({ res }) => res.send(200) );
+        });
+        await app.start();
+        await post('http://localhost:80/foo');
+        let data = await fs.promises.readFile(file, 'utf-8');
+        assert(data.indexOf('POST') > 0);
+        await app.stop();
+    });
+
 });
 
 describe('Regression', () => {
