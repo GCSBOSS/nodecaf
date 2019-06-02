@@ -464,7 +464,69 @@ describe('Error Handling', () => {
 
 });
 
-describe('Regiression', () => {
+describe('Logging', () => {
+    const AppServer = require('../lib/app-server');
+    const { post } = require('muhb');
+    const fs = require('fs');
+    const os = require('os');
+    const path = require('path');
+    let dir;
+
+    beforeEach(async function(){
+        dir = path.resolve(os.tmpdir(), String(Math.random()));
+        await fs.promises.mkdir(dir);
+    });
+
+    it('Should log to specified file', async () => {
+        let file = path.resolve(dir, 'logfile.txt');
+        let app = new AppServer({ log: { file: file } });
+        app.route(function({ post }){
+            post('/foo', ({ log, res }) => {
+                log.info(file);
+                res.send(200);
+            });
+        });
+        await app.start();
+        await post('http://localhost:80/foo');
+        let data = await fs.promises.readFile(file, 'utf-8');
+        assert(data.indexOf('logfile') > 0);
+        await app.stop();
+    });
+
+    it('Should log to specified stream', async () => {
+        let file = path.resolve(dir, 'logstream.txt');
+        let stream = fs.createWriteStream(file);
+        let app = new AppServer({ log: { stream: stream } });
+        app.route(function({ post }){
+            post('/foo', ({ log, res }) => {
+                log.info(file);
+                res.send(200);
+            });
+        });
+        await app.start();
+        await post('http://localhost:80/foo');
+        let data = await fs.promises.readFile(file, 'utf-8');
+        assert(data.indexOf('logstream') > 0);
+        await app.stop();
+    });
+
+    it('Should log all requests when specified', async () => {
+        let file = path.resolve(dir, 'logstream.txt');
+        let stream = fs.createWriteStream(file);
+        let app = new AppServer({ log: { requests: true, stream: stream } });
+        app.route(function({ post }){
+            post('/foo', ({ res }) => res.send(200) );
+        });
+        await app.start();
+        await post('http://localhost:80/foo');
+        let data = await fs.promises.readFile(file, 'utf-8');
+        assert(data.indexOf('POST') > 0);
+        await app.stop();
+    });
+
+});
+
+describe('Regression', () => {
     const AppServer = require('../lib/app-server');
     const { post } = require('muhb');
 
