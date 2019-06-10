@@ -37,8 +37,11 @@
     },
     "homepage": "https://gitlab.com/GCSBOSS/restify-app#README",
     "dependencies": {
+        "bunyan": "^1.8.12",
         "cli": "^1.0.1",
-        "restify": "^8.3.2",
+        "compression": "^1.7.4",
+        "express": "^4.17.1",
+        "express-fileupload": "^1.1.4",
         "toml": "^3.0.0"
     },
     "devDependencies": {

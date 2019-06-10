@@ -60,7 +60,7 @@ describe('Route Adapter', () => {
 
     it('Should add adapted handler to chosen route', () => {
         let ee = new EventEmitter();
-        ee.server = {
+        ee.express = {
             foo(path){ assert.strictEqual(path, 'foo') }
         };
         addRoute.bind(ee)('foo', 'foo', function bar(){ });
@@ -69,30 +69,13 @@ describe('Route Adapter', () => {
     it('Should pass all the required args to adapted function', () => {
         let ee = new EventEmitter();
         let fn;
-        ee.server = {
+        ee.express = {
             foo(path, handler){ fn = handler }
         };
         addRoute.bind(ee)('foo', 'foo', function bar(args){
             assert.strictEqual(typeof args, 'object');
         });
         fn('foo', 'bar', 'foobar');
-    });
-
-    it('Should expose restify error properly', done => {
-        let ee = new EventEmitter();
-        let fn;
-        ee.server = {
-            foo(path, handler){ fn = handler }
-        };
-        ee.on('error', (input, err, send) => send('InternalServer', 'foobar') );
-        addRoute.bind(ee)('foo', 'foo', function bar(){
-            throw new Error('bar');
-        });
-        res = { send(err){
-            assert.strictEqual(err.message, 'foobar');
-            done();
-        } };
-        fn({}, res, 'foobar');
     });
 
 });
@@ -110,9 +93,9 @@ describe('AppServer', () => {
             assert.strictEqual(app.settings.key, 'value');
         });
 
-        it('Should create the Restify server', () => {
+        it('Should create the Express server', () => {
             let app = new AppServer();
-            assert.strictEqual(typeof app.server.use, 'function');
+            assert.strictEqual(typeof app.express.use, 'function');
         });
 
     });
@@ -145,6 +128,7 @@ describe('AppServer', () => {
         });
 
     });
+
     describe('#route', () => {
 
         it('Should execute the callback passing the method funcs', done => {
@@ -155,11 +139,13 @@ describe('AppServer', () => {
             });
         });
 
-        it('Should allow registering routes to Restify', async () => {
+        it('Should allow registering routes to Express', async () => {
             let app = new AppServer();
             app.route(function({ post, del, get, patch, put, head }){
-                post('/foo', ({res}) => res.send(500) );
-                assert.strictEqual(app.server.router._registry._routes.postfoo.name, 'postfoo');
+                post('/foo', ({res}) => res.status(500).end() );
+                let routes = app.express._router.stack.filter(
+                    l => l.route && l.route.path == '/foo' );
+                assert.strictEqual(routes.length, 1);
                 assert.strictEqual(typeof del, 'function');
                 assert.strictEqual(typeof get, 'function');
                 assert.strictEqual(typeof put, 'function');
@@ -178,7 +164,7 @@ describe('AppServer', () => {
             app.route(function({ get }){
                 get('/bar',
                     ({ flash, next }) => { flash.foo = 'bar'; next(); },
-                    ({ flash, res }) => res.sendRaw(flash.foo) );
+                    ({ flash, res }) => res.end(flash.foo) );
             });
             await app.start();
             let { body } = await get('http://127.0.0.1:80/bar');
@@ -194,7 +180,7 @@ describe('AppServer', () => {
             let app = new AppServer();
             app.expose({ foo: 'foobar' });
             app.route(function({ post }){
-                post('/bar', ({ foo, res }) => res.sendRaw(foo));
+                post('/bar', ({ foo, res }) => res.end(foo));
             });
             await app.start();
             let { body } = await post('http://127.0.0.1:80/bar');
@@ -256,8 +242,9 @@ describe('Restify Features', () => {
         let app = new AppServer();
         app.route(function({ post }){
             post('/bar', ({ res, req }) => {
-                res.setHeader('X-Test', req.files.foobar.name);
-                res.send(200);
+                assert(req.files.foobar.size > 0);
+                res.set('X-Test', req.files.foobar.name);
+                res.end();
             });
         });
         await app.start();
@@ -272,6 +259,75 @@ describe('Restify Features', () => {
             })
         );
 
+        await app.stop();
+    });
+
+    const { post } = require('muhb');
+
+    it('Should parse JSON request body payloads', async () => {
+        let app = new AppServer();
+        app.route(function({ post }){
+            post('/foobar', ({ body, res }) => {
+                assert.strictEqual(body.foo, 'bar');
+                res.end();
+            });
+        });
+        await app.start();
+        let { status } = await post(
+            'http://localhost:80/foobar',
+            { 'Content-Type': 'application/json' },
+            JSON.stringify({foo: 'bar'})
+        );
+        assert.strictEqual(status, 200);
+        await app.stop();
+    });
+
+    it('Should parse Raw request body payloads', async () => {
+        let app = new AppServer();
+        app.route(function({ post }){
+            post('/foobar', ({ body, res }) => {
+                assert.strictEqual(typeof body, 'string');
+                res.end();
+            });
+        });
+        await app.start();
+        let { status } = await post(
+            'http://localhost:80/foobar',
+            JSON.stringify({foo: 'bar'})
+        );
+        assert.strictEqual(status, 200);
+        await app.stop();
+    });
+
+    it('Should parse URLEncoded request body payloads', async () => {
+        let app = new AppServer();
+        app.route(function({ post }){
+            post('/foobar', ({ body, res }) => {
+                assert.strictEqual(body.foo, 'bar');
+                res.end();
+            });
+        });
+        await app.start();
+        let { status } = await post(
+            'http://localhost:80/foobar',
+            { 'Content-Type': 'application/x-www-form-urlencoded' },
+            'foo=bar'
+        );
+        assert.strictEqual(status, 200);
+        await app.stop();
+    });
+
+    it('Should parse URL query string', async () => {
+        let app = new AppServer();
+        app.route(function({ post }){
+            post('/foobar', ({ query, res }) => {
+                assert.strictEqual(query.foo, 'bar');
+                res.end();
+            });
+        });
+        await app.start();
+        let { status } = await post('http://localhost:80/foobar?foo=bar');
+        assert.strictEqual(status, 200);
         await app.stop();
     });
 
@@ -297,7 +353,7 @@ describe('run()', () => {
             assert(typeof settings == 'object');
             app = new AppServer();
             app.route(function({ get }){
-                get('/bar', ({ res }) => res.sendRaw('foo'));
+                get('/bar', ({ res }) => res.end('foo'));
             });
             return app;
         } });
@@ -331,7 +387,7 @@ describe('Assertions', () => {
 
         it('Should execute handler when sent', done => {
             const func = e => {
-                assert.strictEqual(e.constructor.displayName, 'UnauthorizedError');
+                assert.strictEqual(e.type, 'Unauthorized');
                 done();
             };
             assert.doesNotThrow( () => authorized(false, 'foo', func) );
@@ -344,24 +400,18 @@ describe('Assertions', () => {
 describe('Error Handling', () => {
     const AppServer = require('../lib/app-server');
     const { post } = require('muhb');
-    const errors = require('restify-errors');
     const fs = require('fs');
 
     it('Should handle Error thrown sync on the route', async () => {
         let app = new AppServer();
         app.route(function({ post }){
-            post('/known', () => {
-                throw new errors.NotFoundError('resterr');
-            });
             post('/unknown', () => {
                 throw new Error('othererr');
             });
         });
         await app.start();
-        let { status } = await post('http://localhost:80/known');
-        assert.strictEqual(status, 404);
-        let { status: s2 } = await post('http://localhost:80/unknown');
-        assert.strictEqual(s2, 500);
+        let { status: status } = await post('http://localhost:80/unknown');
+        assert.strictEqual(status, 500);
         await app.stop();
     });
 
@@ -369,13 +419,10 @@ describe('Error Handling', () => {
         let app = new AppServer();
         app.route(function({ post }){
             post('/known', ({ error }) => {
-                error(new errors.NotFoundError('errfoobar'));
+                error('NotFound', 'errfoobar');
             });
             post('/unknown', ({ error }) => {
                 error(new Error('errfoobar'));
-            });
-            post('/string', ({ error }) => {
-                error('NotFound');
             });
         });
         await app.start();
@@ -383,8 +430,6 @@ describe('Error Handling', () => {
         assert.strictEqual(status, 404);
         let { status: s2 } = await post('http://localhost:80/unknown');
         assert.strictEqual(s2, 500);
-        let { status: s3 } = await post('http://localhost:80/string');
-        assert.strictEqual(s3, 404);
         await app.stop();
     });
 
@@ -393,17 +438,13 @@ describe('Error Handling', () => {
         app.route(function({ post }){
             post('/known', ({ error }) => {
                 fs.readdir('.', function(){
-                    error(new errors.NotFoundError('errfoobar'));
+                    error('NotFound', 'errfoobar');
+                    error('NotFound');
                 });
             });
             post('/unknown', ({ error }) => {
                 fs.readdir('.', function(){
                     error(new Error('errfoobar'));
-                });
-            });
-            post('/string', ({ error }) => {
-                fs.readdir('.', function(){
-                    error('NotFound');
                 });
             });
             post('/unknown/object', () => {
@@ -415,10 +456,8 @@ describe('Error Handling', () => {
         assert.strictEqual(status, 404);
         let { status: s2 } = await post('http://localhost:80/unknown');
         assert.strictEqual(s2, 500);
-        let { status: s3 } = await post('http://localhost:80/string');
-        assert.strictEqual(s3, 404);
-        let { status: s4 } = await post('http://localhost:80/unknown/object');
-        assert.strictEqual(s4, 500);
+        let { status: s3 } = await post('http://localhost:80/unknown/object');
+        assert.strictEqual(s3, 500);
         await app.stop();
     });
 
@@ -483,7 +522,7 @@ describe('Logging', () => {
         app.route(function({ post }){
             post('/foo', ({ log, res }) => {
                 log.info(file);
-                res.send(200);
+                res.end();
             });
         });
         await app.start();
@@ -500,7 +539,7 @@ describe('Logging', () => {
         app.route(function({ post }){
             post('/foo', ({ log, res }) => {
                 log.info(file);
-                res.send(200);
+                res.end();
             });
         });
         await app.start();
@@ -515,7 +554,7 @@ describe('Logging', () => {
         let stream = fs.createWriteStream(file);
         let app = new AppServer({ log: { requests: true, stream: stream } });
         app.route(function({ post }){
-            post('/foo', ({ res }) => res.send(200) );
+            post('/foo', ({ res }) => res.end() );
         });
         await app.start();
         await post('http://localhost:80/foo');

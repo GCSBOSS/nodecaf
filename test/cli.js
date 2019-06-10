@@ -69,6 +69,12 @@ describe('CLI: restify-app', () => {
             init({ confPath: './conf.toml' });
             assertPathExists('./conf.toml');
         });
+
+        it('Should generate create conf file dir if it doesn\'t exist', () => {
+            fs.copyFileSync(resDir + 'nmless-package.json', './package.json');
+            init({ confPath: './my/conf.toml' });
+            assertPathExists('./my/conf.toml');
+        });
     });
 
 });

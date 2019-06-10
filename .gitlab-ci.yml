@@ -16,13 +16,11 @@ lint-js:
 # Performs unit testing.
 unit-test:
   coverage: '/Statements\s*:\s*(\d+(?:\.\d+)?\%)/'
-  image: node
+  image: registry.gitlab.com/gcsboss/docker-mocha-nyc:latest
   stage: test
   tags:
     - docker
   script:
-    - npm i -g mocha
-    - npm i -g nyc
     - npm i .
     - nyc --reporter=text-summary npm t
 
@@ -41,7 +39,7 @@ code_quality:
         --env SOURCE_CODE="$PWD"
         --volume "$PWD":/code
         --volume /var/run/docker.sock:/var/run/docker.sock
-        "registry.gitlab.com/gitlab-org/security-products/codequality:$SP_VERSION" /code
+        "registry.gitlab.com/gitlab-org/security-products/codequality" /code
   artifacts:
     paths: [gl-code-quality-report.json]
 
