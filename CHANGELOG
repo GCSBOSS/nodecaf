@@ -1,4 +1,4 @@
-Restify App Changelog
+Nodecaf Changelog
 
 [BC]: Breaking Change
 [NF]: New Functionality
@@ -12,7 +12,7 @@ Restify App Changelog
 - [NF] Improve terminal signal and uncaught exception handling
 - [NF] Add capability for assertion module to be used on event callbacks
 - [BC] Rewritten error handling code for better interface consistency
-- [NF] Added cli command to generate the basic file structure for restify-app projects
+- [NF] Added cli command to generate the basic file structure for nodecaf projects
 - Rearranged files necessary for test cases to a common directory
 
 2019-05-29 [v0.3.0]

@@ -6,7 +6,7 @@ const fs = require('fs');
 const os = require('os');
 const assertPathExists = p => fs.existsSync(p);
 
-describe('CLI: restify-app', () => {
+describe('CLI: nodecaf', () => {
     var resDir, projDir;
 
     before(function(){
@@ -19,7 +19,7 @@ describe('CLI: restify-app', () => {
         process.chdir(projDir);
     });
 
-    describe('restify-app init', () => {
+    describe('nodecaf init', () => {
         const init = require('../lib/cli/init');
         let tdir;
 
