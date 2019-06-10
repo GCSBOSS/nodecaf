@@ -1,4 +1,3 @@
-
 # Nodecaf
 
 > Docs for version v0.5.0.
@@ -32,22 +31,22 @@ module.exports = function init(conf){
         get('/foo/:f/bar/:b', Foo.read, Bar.read);
         post('/foo/:f/bar', Foo.read, Bar.write);
         // ...
-	});
+    });
 
     // You can intercept all error that escape the route handlers.
     app.on('error', function(req, res, err, send){
         // Any error that is not handled here will just become a harmless 500.
-	});
+    });
 
     // Perform your server initialization logic.
     app.beforeStart = async function(){
 
-	};
+    };
 
     // Perform your server finalization logic.
     app.afterStop = async function(){
 
-	};
+    };
 
     // Don't forget to return your app.
     return app;
