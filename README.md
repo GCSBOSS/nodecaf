@@ -3,7 +3,7 @@
 
 > Docs for version v0.5.0.
 
-Nodecaf is an HTTP API framework running [Express](https://expressjs.com/) behind the scenes and providing some generally necessary funcionality to speed up your development.
+Nodecaf is an HTTP API framework running [Express](https://expressjs.com/) behind the scenes and providing some generally necessary functionality to speed up your development.
 Aims to provide easy to write routing and server logic along with a useful
 seamless promise adapter for async functions on the routing system.
 
