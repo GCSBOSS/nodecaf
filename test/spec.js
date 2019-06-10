@@ -233,7 +233,7 @@ describe('AppServer', () => {
 
 });
 
-describe('Restify Features', () => {
+describe('REST/Restify Features', () => {
     const fs = require('fs');
     const AppServer = require('../lib/app-server');
 
