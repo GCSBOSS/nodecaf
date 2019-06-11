@@ -4,6 +4,15 @@ Nodecaf Changelog
 [NF]: New Functionality
 [BF]: Bug Fix
 
+2019-06-11 [v0.5.1]
+- Updated ci to paralelize the lengthy code quality job
+- Added log warning when an error happens after the response haders have been sent
+- [BF] Fixed undefined app name field being shown when running from command line
+- Moved logger code to own file
+- [NF] Logger now serializes 'req' key as a node request object
+- [BF] Fixed undefined error on subsequent close calls
+- Fixed some space/tabs on README.md
+
 2019-06-10 [v0.5.0]
 - [BC] Renamed the whole project.
 - Updated gitlab ci to use a pre-built mocha/nyc docker image for testing 
