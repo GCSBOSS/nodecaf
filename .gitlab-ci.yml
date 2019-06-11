@@ -1,6 +1,5 @@
 stages:
   - test
-  - check
   - deploy
 
 # Lint js files.
@@ -26,7 +25,7 @@ unit-test:
 
 # Analyse code quality.
 code_quality:
-  stage: check
+  stage: test
   image: docker:stable
   variables:
     DOCKER_DRIVER: overlay2
