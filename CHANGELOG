@@ -4,6 +4,12 @@ Nodecaf Changelog
 [NF]: New Functionality
 [BF]: Bug Fix
 
+2019-06-12 [v0.5.2]
+- Fixed user error handler not being executed when headers were already sent
+- Added missing default message for REST errors thrown as strings
+- Added missing options for conf file generation with cli init
+- Fixed undefined server name being shown when terminating from command line
+
 2019-06-11 [v0.5.1]
 - Updated ci to paralelize the lengthy code quality job
 - Added log warning when an error happens after the response haders have been sent
@@ -15,7 +21,7 @@ Nodecaf Changelog
 
 2019-06-10 [v0.5.0]
 - [BC] Renamed the whole project.
-- Updated gitlab ci to use a pre-built mocha/nyc docker image for testing 
+- Updated gitlab ci to use a pre-built mocha/nyc docker image for testing
 - [BC] Moved from Restify to Express for the internal route server
 - Changed conf file generation to create parent directories if needed
 - Fixed server to correctly await start and close events
