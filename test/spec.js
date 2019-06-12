@@ -214,6 +214,13 @@ describe('AppServer', () => {
             assert(done);
         });
 
+        it('Should not fail when calling close sucessively', async () => {
+            let app = new AppServer();
+            await app.start();
+            await app.stop();
+            assert.doesNotReject( app.stop() );
+        });
+
     });
 
     describe('#restart', () => {
@@ -599,6 +606,39 @@ describe('Regression', () => {
 
         await app.stop();
 
+    });
+
+    it('Should show default message for REST errors thrown as strings', async () => {
+        let app = new AppServer();
+        app.route(function({ post }){
+            post('/bar', ({ error }) => {
+                error('NotFound');
+            });
+        });
+        await app.start();
+
+        let m = JSON.parse((await post('http://localhost:80/bar')).body).message;
+        assert.strictEqual(m, 'NotFound');
+
+        await app.stop();
+    });
+
+    it('Should execute user error handler even if headers were already sent', async () => {
+        let app = new AppServer();
+        app.route(function({ post }){
+            post('/bar', ({ res }) => {
+                res.end();
+                throw new Error();
+            });
+        });
+        let gotHere = false;
+        app.on('error', function(){
+            gotHere = true;
+        });
+        await app.start();
+        await post('http://localhost:80/bar');
+        await app.stop();
+        assert(gotHere);
     });
 
 });
