@@ -1,6 +1,6 @@
 {
     "name": "nodecaf",
-    "version": "0.5.2",
+    "version": "0.5.3",
     "description": "Nodecaf is an HTTP API framework running Express behind the scenes and providing some generally necessary functionality to speed up your development.",
     "main": "lib/main.js",
     "scripts": {

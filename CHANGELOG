@@ -4,11 +4,17 @@ Nodecaf Changelog
 [NF]: New Functionality
 [BF]: Bug Fix
 
+2019-06-13 [v0.5.3]
+- [BF] Fixed code generation error standard
+- Changed code generation to use spaces instead of tabs
+- Added missing default message for REST errors thrown from assertions
+- Added regression test cases for a few bugs fixed on previous releases
+
 2019-06-12 [v0.5.2]
-- Fixed user error handler not being executed when headers were already sent
+- [BF] Fixed user error handler not being executed when headers were already sent
 - Added missing default message for REST errors thrown as strings
 - Added missing options for conf file generation with cli init
-- Fixed undefined server name being shown when terminating from command line
+- [BF] Fixed undefined server name being shown when terminating from command line
 
 2019-06-11 [v0.5.1]
 - Updated ci to paralelize the lengthy code quality job
