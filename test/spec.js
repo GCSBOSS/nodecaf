@@ -133,7 +133,7 @@ describe('AppServer', () => {
 
         it('Should execute the callback passing the method funcs', done => {
             let app = new AppServer();
-            app.route(function(funcs){
+            app.api(function(funcs){
                 assert.strictEqual(typeof funcs, 'object');
                 done();
             });
@@ -141,7 +141,7 @@ describe('AppServer', () => {
 
         it('Should allow registering routes to Express', async () => {
             let app = new AppServer();
-            app.route(function({ post, del, get, patch, put, head }){
+            app.api(function({ post, del, get, patch, put, head }){
                 post('/foo', ({res}) => res.status(500).end() );
                 let routes = app.express._router.stack.filter(
                     l => l.route && l.route.path == '/foo' );
@@ -161,7 +161,7 @@ describe('AppServer', () => {
         it('Should preserve local vars across functions of a route', async function(){
             this.timeout(4000);
             let app = new AppServer();
-            app.route(function({ get }){
+            app.api(function({ get }){
                 get('/bar',
                     ({ flash, next }) => { flash.foo = 'bar'; next(); },
                     ({ flash, res }) => res.end(flash.foo) );
@@ -179,7 +179,7 @@ describe('AppServer', () => {
         it('Should store data to be accessible to all handlers', async () => {
             let app = new AppServer();
             app.expose({ foo: 'foobar' });
-            app.route(function({ post }){
+            app.api(function({ post }){
                 post('/bar', ({ foo, res }) => res.end(foo));
             });
             await app.start();
@@ -247,7 +247,7 @@ describe('REST/Restify Features', () => {
     it('Should expose file content sent as multipart-form', async () => {
         const FormData = require('form-data');
         let app = new AppServer();
-        app.route(function({ post }){
+        app.api(function({ post }){
             post('/bar', ({ res, req }) => {
                 assert(req.files.foobar.size > 0);
                 res.set('X-Test', req.files.foobar.name);
@@ -273,7 +273,7 @@ describe('REST/Restify Features', () => {
 
     it('Should parse JSON request body payloads', async () => {
         let app = new AppServer();
-        app.route(function({ post }){
+        app.api(function({ post }){
             post('/foobar', ({ body, res }) => {
                 assert.strictEqual(body.foo, 'bar');
                 res.end();
@@ -291,7 +291,7 @@ describe('REST/Restify Features', () => {
 
     it('Should parse Raw request body payloads', async () => {
         let app = new AppServer();
-        app.route(function({ post }){
+        app.api(function({ post }){
             post('/foobar', ({ body, res }) => {
                 assert.strictEqual(typeof body, 'string');
                 res.end();
@@ -308,7 +308,7 @@ describe('REST/Restify Features', () => {
 
     it('Should parse URLEncoded request body payloads', async () => {
         let app = new AppServer();
-        app.route(function({ post }){
+        app.api(function({ post }){
             post('/foobar', ({ body, res }) => {
                 assert.strictEqual(body.foo, 'bar');
                 res.end();
@@ -326,7 +326,7 @@ describe('REST/Restify Features', () => {
 
     it('Should parse URL query string', async () => {
         let app = new AppServer();
-        app.route(function({ post }){
+        app.api(function({ post }){
             post('/foobar', ({ query, res }) => {
                 assert.strictEqual(query.foo, 'bar');
                 res.end();
@@ -359,7 +359,7 @@ describe('run()', () => {
         await run({ init(settings){
             assert(typeof settings == 'object');
             app = new AppServer();
-            app.route(function({ get }){
+            app.api(function({ get }){
                 get('/bar', ({ res }) => res.end('foo'));
             });
             return app;
@@ -411,7 +411,7 @@ describe('Error Handling', () => {
 
     it('Should handle Error thrown sync on the route', async () => {
         let app = new AppServer();
-        app.route(function({ post }){
+        app.api(function({ post }){
             post('/unknown', () => {
                 throw new Error('othererr');
             });
@@ -424,7 +424,7 @@ describe('Error Handling', () => {
 
     it('Should handle Error injected sync on the route', async () => {
         let app = new AppServer();
-        app.route(function({ post }){
+        app.api(function({ post }){
             post('/known', ({ error }) => {
                 error('NotFound', 'errfoobar');
             });
@@ -442,7 +442,7 @@ describe('Error Handling', () => {
 
     it('Should handle Error injected ASYNC on the route', async () => {
         let app = new AppServer();
-        app.route(function({ post }){
+        app.api(function({ post }){
             post('/known', ({ error }) => {
                 fs.readdir('.', function(){
                     error('NotFound', 'errfoobar');
@@ -475,7 +475,7 @@ describe('Error Handling', () => {
             assert.strictEqual(err.message, 'resterr');
             count++;
         });
-        app.route(function({ post }){
+        app.api(function({ post }){
             post('/known', () => {
                 throw new Error('resterr');
             });
@@ -497,7 +497,7 @@ describe('Error Handling', () => {
         app.on('error', function(input, err, error){
             error('Unauthorized', 'resterr');
         });
-        app.route(function({ post }){
+        app.api(function({ post }){
             post('/unknown', () => {
                 throw new Error('resterr');
             });
@@ -526,7 +526,7 @@ describe('Logging', () => {
     it('Should log to specified file', async () => {
         let file = path.resolve(dir, 'logfile.txt');
         let app = new AppServer({ log: { file: file } });
-        app.route(function({ post }){
+        app.api(function({ post }){
             post('/foo', ({ log, res }) => {
                 log.info(file);
                 res.end();
@@ -543,7 +543,7 @@ describe('Logging', () => {
         let file = path.resolve(dir, 'logstream.txt');
         let stream = fs.createWriteStream(file);
         let app = new AppServer({ log: { stream: stream } });
-        app.route(function({ post }){
+        app.api(function({ post }){
             post('/foo', ({ log, res }) => {
                 log.info(file);
                 res.end();
@@ -560,7 +560,7 @@ describe('Logging', () => {
         let file = path.resolve(dir, 'logstream.txt');
         let stream = fs.createWriteStream(file);
         let app = new AppServer({ log: { requests: true, stream: stream } });
-        app.route(function({ post }){
+        app.api(function({ post }){
             post('/foo', ({ res }) => res.end() );
         });
         await app.start();
@@ -578,7 +578,7 @@ describe('Regression', () => {
 
     it('Should handle errors even when error event has no listeners', async () => {
         let app = new AppServer();
-        app.route(function({ post }){
+        app.api(function({ post }){
             post('/bar', () => {
                 throw new Error('errfoobar');
             });
@@ -592,7 +592,7 @@ describe('Regression', () => {
     it('Should NOT attach new error handlers upon request', async () => {
 
         let app = new AppServer();
-        app.route(function({ post }){
+        app.api(function({ post }){
             post('/bar', () => {
                 throw new Error('errfoobar');
             });
@@ -610,7 +610,7 @@ describe('Regression', () => {
 
     it('Should show default message for REST errors thrown as strings', async () => {
         let app = new AppServer();
-        app.route(function({ post }){
+        app.api(function({ post }){
             post('/bar', ({ error }) => {
                 error('NotFound');
             });
@@ -625,7 +625,7 @@ describe('Regression', () => {
 
     it('Should execute user error handler even if headers were already sent', async () => {
         let app = new AppServer();
-        app.route(function({ post }){
+        app.api(function({ post }){
             post('/bar', ({ res }) => {
                 res.end();
                 throw new Error();
