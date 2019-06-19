@@ -37,12 +37,12 @@ describe('CLI: nodecaf', () => {
         });
 
         it('Should fail when no package.json is found', () => {
-            assert.throws( () => init(), /package.json not found/g);
+            assert.throws( () => init({}), /package.json not found/g);
         });
 
         it('Should generate basic structure files', () => {
             fs.copyFileSync(resDir + 'test-package.json', './package.json');
-            init();
+            init({});
             assertPathExists('./bin/my-proj.js');
             assertPathExists('./lib/main.js');
             let pkgInfo = require(tdir + 'package.json');
@@ -52,7 +52,9 @@ describe('CLI: nodecaf', () => {
         it('Should target specified directory', () => {
             fs.mkdirSync('./foo');
             fs.copyFileSync(resDir + 'nmless-package.json', './foo/package.json');
-            init({ path: './foo' });
+            const cli = require('cli');
+            cli.setArgv(['thing', '-p', './foo']);
+            init();
             let pkgInfo = require(tdir + 'foo/package.json');
             assert.equal(pkgInfo.bin['my-app'], 'bin/my-app.js');
         });
