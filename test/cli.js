@@ -80,6 +80,50 @@ describe('CLI: nodecaf', () => {
         });
     });
 
+    describe('nodecaf openapi', () => {
+        const openapi = require('../lib/cli/openapi');
+        const SwaggerParser = require('swagger-parser');
+        let tdir;
+
+        beforeEach(function(){
+            let suffix = Math.random() * 1e3;
+            tdir = os.tmpdir + '/' + String(new Date()).replace(/\D/g, '') + suffix + '/';
+            fs.mkdirSync(tdir);
+            process.chdir(tdir);
+        });
+
+        it('Should fail when no package.json is found', () => {
+            assert.throws( () => openapi({}), /package.json not found/g);
+        });
+
+        it('Should fail when no API file is found', () => {
+            fs.copyFileSync(resDir + 'test-package.json', './package.json');
+            const cli = require('cli');
+            cli.setArgv(['thing']);
+            assert.throws( () =>
+                openapi(), /api.js not found/g );
+        });
+
+        it('Should output a well formed JSON API doc to default file', done => {
+            fs.copyFileSync(resDir + 'test-package.json', './package.json');
+            fs.copyFileSync(resDir + 'api.js', './api.js');
+
+            openapi({ apiPath: './api.js' });
+
+            SwaggerParser.validate('./output.json', done);
+        });
+
+        it('Should output a well formed YAML API doc to given file', done => {
+            fs.copyFileSync(resDir + 'test-package.json', './package.json');
+            fs.copyFileSync(resDir + 'api.js', './api.js');
+
+            openapi({ apiPath: './api.js', outFile: './outfile.yml' });
+
+            SwaggerParser.validate('./outfile.yml', done);
+        });
+
+    });
+
 });
 
 

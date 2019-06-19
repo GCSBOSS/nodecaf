@@ -111,9 +111,9 @@ describe('AppServer', () => {
         });
 
         it('Should start the http server on port sent', async () => {
-            let app = new AppServer({ port: 8080 });
+            let app = new AppServer({ port: 8765 });
             await app.start();
-            let { status } = await get('http://127.0.0.1:8080/');
+            let { status } = await get('http://127.0.0.1:8765/');
             assert.strictEqual(status, 404);
             await app.stop();
         });
@@ -380,7 +380,7 @@ describe('Assertions', () => {
             assert.throws( () => valid(false, 'foo') );
             assert.throws( () => authorized(false, 'foo') );
             assert.throws( () => authn(false, 'foo') );
-            assert.throws( () => exist(false, 'foo') );
+            assert.throws( () => exist(false) );
             assert.throws( () => able(false, 'foo') );
         });
 
@@ -426,7 +426,7 @@ describe('Error Handling', () => {
         let app = new AppServer();
         app.api(function({ post }){
             post('/known', ({ error }) => {
-                error('NotFound', 'errfoobar');
+                error('NotFound');
             });
             post('/unknown', ({ error }) => {
                 error(new Error('errfoobar'));
@@ -569,6 +569,67 @@ describe('Logging', () => {
         assert(data.indexOf('POST') > 0);
         await app.stop();
     });
+
+});
+
+describe('API Docs', () => {
+    const APIDoc = require('../lib/open-api');
+    const AppServer = require('../lib/app-server');
+    const { post } = require('muhb');
+
+    it('Should not interfere with working API code', async () => {
+        let app = new AppServer();
+        app.api(function({ info, post }){
+            info({
+                termsOfService: 'http://foo/bar/baz'
+            });
+            post('/foo/:bar', ({ res }) => {
+                res.end('OK');
+            }).desc('foobahbaz bahbaz bahfoo foo\nfoobah bazbah foo foo bar');
+        });
+
+        await app.start();
+        let { body } = await post('http://localhost:80/foo/baz');
+        assert.strictEqual(body, 'OK');
+        await app.stop();
+    });
+
+    it('Should have app name and verison by default', function(){
+        let doc = new APIDoc();
+        let spec = doc.spec();
+        assert.strictEqual(typeof spec.info.title, 'string');
+        assert.strictEqual(spec.info.version, '0.0.0');
+    });
+
+    it('Should replace given fields of the info object', function(){
+        let doc = new APIDoc();
+        doc.api( ({ info }) => info({ version: 'barbaz', foo: 'bar' }) );
+        let spec = doc.spec();
+        assert.strictEqual(spec.info.version, 'barbaz');
+        assert.strictEqual(spec.info.foo, 'bar');
+    });
+
+    it('Should add operation summary and description', function(){
+        let doc = new APIDoc();
+        doc.api( ({ post }) => {
+            post('/foo', function(){}).desc('foo\nbar\nbaz');
+            post('/baz', function(){}).desc('foo');
+        });
+        let spec = doc.spec();
+        assert.strictEqual(spec.paths['/foo'].post.summary, 'foo');
+        assert.strictEqual(spec.paths['/baz'].post.summary, 'foo');
+        assert.strictEqual(spec.paths['/foo'].post.description, 'bar\nbaz');
+    });
+
+    it('Should auto-populate spec with path parameters', function(){
+        let doc = new APIDoc();
+        doc.api( ({ post }) => {
+            post('/foo/:bar', function(){});
+        });
+        let spec = doc.spec();
+        assert.strictEqual(spec.paths['/foo/:bar'].parameters[0].name, 'bar');       
+    });
+
 
 });
 
