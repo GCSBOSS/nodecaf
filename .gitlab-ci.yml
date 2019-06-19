@@ -17,11 +17,13 @@ unit-test:
   coverage: '/Statements\s*:\s*(\d+(?:\.\d+)?\%)/'
   image: registry.gitlab.com/gcsboss/docker-mocha-nyc:latest
   stage: test
+  artifacts:
+    paths: [coverage]
   tags:
     - docker
   script:
     - npm i .
-    - nyc --reporter=text-summary npm t
+    - nyc --reporter=html --reporter=text-summary npm t
 
 # Analyse code quality.
 code_quality:
