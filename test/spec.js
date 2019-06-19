@@ -627,10 +627,39 @@ describe('API Docs', () => {
             post('/foo/:bar', function(){});
         });
         let spec = doc.spec();
-        assert.strictEqual(spec.paths['/foo/:bar'].parameters[0].name, 'bar');       
+        assert.strictEqual(spec.paths['/foo/:bar'].parameters[0].name, 'bar');
     });
+});
 
+describe('HTTPS', () => {
+    const AppServer = require('../lib/app-server');
+    const https = require('https');
 
+    it('Should start HTTPS server when specified', async function(){
+        let app = new AppServer({
+            ssl: {
+                key: './test/res/key.pem',
+                cert: './test/res/cert.pem'
+            }
+        });
+        app.api(function({ get }){
+            get('/foo', ({ res }) => res.end('bar') );
+        });
+        await app.start();
+
+        process.env['NODE_TLS_REJECT_UNAUTHORIZED'] = 0;
+        let res = await new Promise( resolve =>
+            https.get('https://localhost/foo', resolve) );
+
+        await new Promise( resolve =>
+            res.on('data', chunk => {
+                assert.strictEqual(chunk.toString(), 'bar');
+                resolve();
+            }) );
+
+        await app.stop();
+        process.env['NODE_TLS_REJECT_UNAUTHORIZED'] = 1;
+    });
 });
 
 describe('Regression', () => {
