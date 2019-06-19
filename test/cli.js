@@ -45,6 +45,7 @@ describe('CLI: nodecaf', () => {
             init({});
             assertPathExists('./bin/my-proj.js');
             assertPathExists('./lib/main.js');
+            assertPathExists('./lib/api.js');
             let pkgInfo = require(tdir + 'package.json');
             assert.equal(pkgInfo.bin['my-proj'], 'bin/my-proj.js');
         });
