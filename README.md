@@ -25,7 +25,7 @@ module.exports = function init(conf){
     let shared = {};
     app.expose(shared);
 
-    app.route(({ post, get, del, head, patch, put }) => {
+    app.api(({ post, get, del, head, patch, put }) => {
 
         // Use express routes and a list of functions (async or regular no matter).
         get('/foo/:f/bar/:b', Foo.read, Bar.read);
