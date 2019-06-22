@@ -15,14 +15,14 @@ lint-js:
 # Performs unit testing.
 unit-test:
   coverage: '/Statements\s*:\s*(\d+(?:\.\d+)?\%)/'
-  image: registry.gitlab.com/gcsboss/docker-mocha-nyc:latest
+  image: registry.gitlab.com/gcsboss/docker-mocha-nyc:0.1.0-alpine
   stage: test
   artifacts:
     paths: [coverage]
   tags:
     - docker
   script:
-    - npm i .
+    - npm i --no-optional .
     - nyc --reporter=html --reporter=text-summary npm t
 
 # Analyse code quality.
