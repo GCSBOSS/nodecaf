@@ -121,7 +121,7 @@ describe('AppServer', () => {
 
     });
 
-    describe('#route', () => {
+    describe('#api', () => {
 
         it('Should execute the callback passing the method funcs', done => {
             let app = new AppServer();
@@ -327,6 +327,16 @@ describe('REST/Restify Features', () => {
         await app.start();
         let { status } = await post('http://localhost:80/foobar?foo=bar');
         assert.strictEqual(status, 200);
+        await app.stop();
+    });
+
+    it('Should output a JSON 404 when no route is found for a given path', async () => {
+        let app = new AppServer();
+        app.api(function(){  });
+        await app.start();
+        let { status, body } = await post('http://localhost/foobar');
+        assert.strictEqual(status, 404);
+        assert.doesNotThrow( () => JSON.parse(body) );
         await app.stop();
     });
 
