@@ -513,7 +513,7 @@ describe('Error Handling', () => {
 });
 
 describe('Logging', () => {
-    const AppServer = require('../lib/app-server');
+    const { run, AppServer } = require('../lib/main');
     const { post } = require('muhb');
     const fs = require('fs');
     const os = require('os');
@@ -584,6 +584,18 @@ describe('Logging', () => {
         let data = await fs.promises.readFile(file, 'utf-8');
         assert(data.indexOf('Oh yeah') > 0);
         await app.stop();
+    });
+
+    it.skip('Should log errors that crach the server process', async () => {
+        let file = path.resolve(dir, 'logstream.txt');
+        let stream = fs.createWriteStream(file);
+        let app
+        await run({ init(){
+            app = new AppServer({ log: { stream: stream, level: 'fatal' } });
+            throw new Error('fatality');
+        } });
+        let data = await fs.promises.readFile(file, 'utf-8');
+        assert(data.indexOf('fatality') > 0);
     });
 
 });
