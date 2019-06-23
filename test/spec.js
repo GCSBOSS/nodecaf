@@ -25,33 +25,27 @@ describe('Promise Error Adapter', () => {
 
     it('Should handle errors for regular functions', done => {
         let func = () => { throw new Error('foobar') };
-
-        let af = adapt(func, function(err, test){
+        let af = adapt(func);
+        af(function(err){
             assert.strictEqual(err.message, 'foobar');
-            assert.strictEqual(test, 'bar');
             done();
-        });
-
-        af('bar');
+        }, 'bar');
     });
 
     it('Should handle errors for async functions', done => {
         let func = async () => await new Promise((resolve, reject) => reject('foobar'));
-
-        let af = adapt(func, function(err, test){
+        let af = adapt(func);
+        af(function(err){
             assert.strictEqual(err, 'foobar');
-            assert.strictEqual(test, 'bar');
             done();
-        });
-
-        af('bar');
+        }, 'bar');
     });
 
 });
 
 describe('Route Adapter', () => {
     const { EventEmitter } = require('events');
-    const addRoute = require('../lib/route-adapter');
+    const { addRoute } = require('../lib/route-adapter');
 
     it('Should fail when anything other than a function is passed', () => {
         let ee = new EventEmitter();
@@ -87,9 +81,7 @@ describe('AppServer', () => {
     describe('constructor', () => {
 
         it('Should store any settings sent', () => {
-            const { EventEmitter } = require('events');
             let app = new AppServer({ key: 'value' });
-            assert(app instanceof EventEmitter);
             assert.strictEqual(app.settings.key, 'value');
         });
 
@@ -129,7 +121,7 @@ describe('AppServer', () => {
 
     });
 
-    describe('#route', () => {
+    describe('#api', () => {
 
         it('Should execute the callback passing the method funcs', done => {
             let app = new AppServer();
@@ -338,6 +330,16 @@ describe('REST/Restify Features', () => {
         await app.stop();
     });
 
+    it('Should output a JSON 404 when no route is found for a given path', async () => {
+        let app = new AppServer();
+        app.api(function(){  });
+        await app.start();
+        let { status, body } = await post('http://localhost/foobar');
+        assert.strictEqual(status, 404);
+        assert.doesNotThrow( () => JSON.parse(body) );
+        await app.stop();
+    });
+
 });
 
 describe('run()', () => {
@@ -471,10 +473,10 @@ describe('Error Handling', () => {
     it('Should execute intermediary error handler', async () => {
         let app = new AppServer();
         let count = 0;
-        app.on('error', function(input, err){
+        app.onRouteError = function(input, err){
             assert.strictEqual(err.message, 'resterr');
             count++;
-        });
+        };
         app.api(function({ post }){
             post('/known', () => {
                 throw new Error('resterr');
@@ -494,16 +496,16 @@ describe('Error Handling', () => {
 
     it('Should allow tapping into the thrown error', async () => {
         let app = new AppServer();
-        app.on('error', function(input, err, error){
+        app.onRouteError = function(input, err, error){
             error('Unauthorized', 'resterr');
-        });
+        };
         app.api(function({ post }){
             post('/unknown', () => {
                 throw new Error('resterr');
             });
         });
         await app.start();
-        let { status } = await post('http://localhost:80/unknown');
+        let { status } = await post('http://localhost/unknown');
         assert.strictEqual(status, 401);
         await app.stop();
     });
@@ -556,10 +558,10 @@ describe('Logging', () => {
         await app.stop();
     });
 
-    it('Should log all requests when specified', async () => {
+    it('Should log all requests when level is debug or lower', async () => {
         let file = path.resolve(dir, 'logstream.txt');
         let stream = fs.createWriteStream(file);
-        let app = new AppServer({ log: { requests: true, stream: stream } });
+        let app = new AppServer({ log: { stream: stream, level: 'debug' } });
         app.api(function({ post }){
             post('/foo', ({ res }) => res.end() );
         });
@@ -567,6 +569,20 @@ describe('Logging', () => {
         await post('http://localhost:80/foo');
         let data = await fs.promises.readFile(file, 'utf-8');
         assert(data.indexOf('POST') > 0);
+        await app.stop();
+    });
+
+    it('Should log uncaught route errors when level is error or lower', async () => {
+        let file = path.resolve(dir, 'logstream.txt');
+        let stream = fs.createWriteStream(file);
+        let app = new AppServer({ log: { stream: stream, level: 'error' } });
+        app.api(function({ post }){
+            post('/foo', () => { throw new Error('Oh yeah') } );
+        });
+        await app.start();
+        await post('http://localhost/foo');
+        let data = await fs.promises.readFile(file, 'utf-8');
+        assert(data.indexOf('Oh yeah') > 0);
         await app.stop();
     });
 
@@ -722,9 +738,9 @@ describe('Regression', () => {
             });
         });
         let gotHere = false;
-        app.on('error', function(){
+        app.onRouteError = function(){
             gotHere = true;
-        });
+        };
         await app.start();
         await post('http://localhost:80/bar');
         await app.stop();

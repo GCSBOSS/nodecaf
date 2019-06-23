@@ -5,7 +5,7 @@
     "main": "lib/main.js",
     "scripts": {
         "test": "mocha -b --no-diff test/*.js",
-        "coverage": "nyc -r html mocha -b --no-diff test/*.js"
+        "coverage": "nyc -r html -r text-summary mocha -b --no-diff test/*.js"
     },
     "repository": {
         "type": "git",
@@ -17,7 +17,6 @@
     "keywords": [
         "express",
         "promises",
-        "wrapper",
         "async",
         "await",
         "error",
