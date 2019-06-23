@@ -25,33 +25,27 @@ describe('Promise Error Adapter', () => {
 
     it('Should handle errors for regular functions', done => {
         let func = () => { throw new Error('foobar') };
-
-        let af = adapt(func, function(err, test){
+        let af = adapt(func);
+        af(function(err){
             assert.strictEqual(err.message, 'foobar');
-            assert.strictEqual(test, 'bar');
             done();
-        });
-
-        af('bar');
+        }, 'bar');
     });
 
     it('Should handle errors for async functions', done => {
         let func = async () => await new Promise((resolve, reject) => reject('foobar'));
-
-        let af = adapt(func, function(err, test){
+        let af = adapt(func);
+        af(function(err){
             assert.strictEqual(err, 'foobar');
-            assert.strictEqual(test, 'bar');
             done();
-        });
-
-        af('bar');
+        }, 'bar');
     });
 
 });
 
 describe('Route Adapter', () => {
     const { EventEmitter } = require('events');
-    const addRoute = require('../lib/route-adapter');
+    const { addRoute } = require('../lib/route-adapter');
 
     it('Should fail when anything other than a function is passed', () => {
         let ee = new EventEmitter();
@@ -87,9 +81,7 @@ describe('AppServer', () => {
     describe('constructor', () => {
 
         it('Should store any settings sent', () => {
-            const { EventEmitter } = require('events');
             let app = new AppServer({ key: 'value' });
-            assert(app instanceof EventEmitter);
             assert.strictEqual(app.settings.key, 'value');
         });
 
@@ -471,10 +463,10 @@ describe('Error Handling', () => {
     it('Should execute intermediary error handler', async () => {
         let app = new AppServer();
         let count = 0;
-        app.on('error', function(input, err){
+        app.onRouteError = function(input, err){
             assert.strictEqual(err.message, 'resterr');
             count++;
-        });
+        };
         app.api(function({ post }){
             post('/known', () => {
                 throw new Error('resterr');
@@ -494,16 +486,16 @@ describe('Error Handling', () => {
 
     it('Should allow tapping into the thrown error', async () => {
         let app = new AppServer();
-        app.on('error', function(input, err, error){
+        app.onRouteError = function(input, err, error){
             error('Unauthorized', 'resterr');
-        });
+        };
         app.api(function({ post }){
             post('/unknown', () => {
                 throw new Error('resterr');
             });
         });
         await app.start();
-        let { status } = await post('http://localhost:80/unknown');
+        let { status } = await post('http://localhost/unknown');
         assert.strictEqual(status, 401);
         await app.stop();
     });
@@ -722,9 +714,9 @@ describe('Regression', () => {
             });
         });
         let gotHere = false;
-        app.on('error', function(){
+        app.onRouteError = function(){
             gotHere = true;
-        });
+        };
         await app.start();
         await post('http://localhost:80/bar');
         await app.stop();
