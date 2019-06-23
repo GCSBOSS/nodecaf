@@ -572,6 +572,20 @@ describe('Logging', () => {
         await app.stop();
     });
 
+    it('Should log uncaught route errors when level is error or lower', async () => {
+        let file = path.resolve(dir, 'logstream.txt');
+        let stream = fs.createWriteStream(file);
+        let app = new AppServer({ log: { stream: stream, level: 'error' } });
+        app.api(function({ post }){
+            post('/foo', () => { throw new Error('Oh yeah') } );
+        });
+        await app.start();
+        await post('http://localhost/foo');
+        let data = await fs.promises.readFile(file, 'utf-8');
+        assert(data.indexOf('Oh yeah') > 0);
+        await app.stop();
+    });
+
 });
 
 describe('API Docs', () => {
