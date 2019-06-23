@@ -23,7 +23,7 @@ unit-test:
     - docker
   script:
     - npm i --no-optional .
-    - nyc --reporter=html --reporter=text-summary npm t
+    - npm run-script coverage
 
 # Analyse code quality.
 code_quality:
