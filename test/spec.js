@@ -558,10 +558,10 @@ describe('Logging', () => {
         await app.stop();
     });
 
-    it('Should log all requests when specified', async () => {
+    it('Should log all requests when level is debug or lower', async () => {
         let file = path.resolve(dir, 'logstream.txt');
         let stream = fs.createWriteStream(file);
-        let app = new AppServer({ log: { requests: true, stream: stream } });
+        let app = new AppServer({ log: { stream: stream, level: 'debug' } });
         app.api(function({ post }){
             post('/foo', ({ res }) => res.end() );
         });
