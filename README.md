@@ -258,12 +258,14 @@ post('/my/thing', function({ error, res }){
 To use other HTTP status codes you can send a string in the first parameter of
 `error`. The supported error names are the following:
 
-- `NotFound`: 404
-- `Unauthorized`:  401
-- `ServerFault`: 500
-- `InvalidActionForState`: 405
-- `InvalidCredentials`: 400
-- `InvalidContent`: 400
+| Error name | Status Code |
+|------------|-------------|
+| `NotFound` | **404** |
+| `Unauthorized` |  **401** |
+| `ServerFault` | **500** |
+| `InvalidActionForState` | **405** |
+| `InvalidCredentials` | **400** |
+| `InvalidContent` | **400** |
 
 ```js
 post('/my/thing', function({ error }){
@@ -317,10 +319,12 @@ away and generate a [RESTful `NotFound` error](#error-handling).
 
 Along with `exist`, the following assertions with similar behavior are provided:
 
-- `valid`: `InvalidContent`
-- `authorized`: `Unauthorized`
-- `authn`: `InvalidCredentials`
-- `able`: `InvalidActionForState`
+| Method | Error to be output |
+|--------|--------------------|
+| `valid` | `InvalidContent` |
+| `authorized` | `Unauthorized` |
+| `authn` | `InvalidCredentials` |
+| `able` | `InvalidActionForState` |
 
 To use it with callback style functions, pass the `error` handler arg as the
 third parameter.
