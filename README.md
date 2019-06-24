@@ -1,6 +1,6 @@
 # [Nodecaf](https://gitlab.com/GCSBOSS/nodecaf)
 
-> Docs for version v0.5.x.
+> Docs for version v0.6.x.
 
 Nodecaf is an Express framework for developing REST APIs in a quick and
 convenient manner.

@@ -5,6 +5,30 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.6.0] - 2019-06-24
+
+### Added
+- parameters for project name and directory to cli init command
+- version setting to app class
+- functions to describe/document your api
+- cli command to generate Open API compatible documentation (`nodecat openapi`)
+- HTTPS support through setting
+- error log entry for uncaught route errors
+- log entry for uncaught errors that crash the server process
+- complete functionality documentation to readme
+
+### Fixed
+- the cli commands to not share the same parameters
+- deprecation warning because of old Express `del` command
+- route not found error output as HTML
+- log level setting (now it works)
+- handling of rejected promises to output a clean message
+
+### Changed
+- `route`method was renamed to `api`
+- cli init to henerate routing in a seperate api.js file
+- error handling interface and use express built-in functionality
+
 ## [v0.5.3] - 2019-06-13
 
 ### Added
@@ -95,3 +119,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [v0.5.1]: https://gitlab.com/GCSBOSS/nodecaf/-/tags/v0.5.1
 [v0.5.2]: https://gitlab.com/GCSBOSS/nodecaf/-/tags/v0.5.2
 [v0.5.3]: https://gitlab.com/GCSBOSS/nodecaf/-/tags/v0.5.3
+[v0.6.0]: https://gitlab.com/GCSBOSS/nodecaf/-/tags/v0.6.0

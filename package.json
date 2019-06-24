@@ -1,7 +1,7 @@
 {
     "name": "nodecaf",
-    "version": "0.5.3",
-    "description": "Nodecaf is an HTTP API framework running Express behind the scenes and providing some generally necessary functionality to speed up your development.",
+    "version": "0.6.0",
+    "description": "Nodecaf is an Express framework for developing REST APIs in a quick and convenient manner.",
     "main": "lib/main.js",
     "scripts": {
         "test": "mocha -b --no-diff test/*.js",
