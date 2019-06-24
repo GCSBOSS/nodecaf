@@ -43,7 +43,7 @@ const api = require('./api');
 module.exports = function init(conf){
     let app = new AppServer(conf);
 
-    // Expose things to all routes putting them on the 'shared' object.
+    // Expose things to all routes putting them in the 'shared' object.
     let shared = {};
     app.expose(shared);
 
@@ -104,8 +104,8 @@ dirty about it, fork us and
 so we can collaborate effectively.
 
 ## Manual
-Beyond all the cool features of Express has to offer, check out how to use all
-the awesome goodies Nodecaf can give you.
+On top of all the cool features Express offers, check out how to use all
+the awesome goodies Nodecaf introduces.
 
 ### Handler Args
 
@@ -121,14 +121,14 @@ function({ req, res, next, query, params, body, flash, conf, log, error }){
 
 Quick reference:
 
-- `req`, `res`, `next`: Basically the good old parameters used regularly in Express.
+- `req`, `res`, `next`: The good old parameters used regularly in Express.
 - `query`, `parameters`, `body`: Shortcuts to the homonymous properties of `req`.
   They contain respectively the query string, the URL parameters, and the request
   body data.
 - `flash`: Is a shortcut to Express `req.locals`. Keys inserted in this a object
-  are preserved for the lifetime of a request and can be accessed on all handlers
+  are preserved for the lifetime of a request and can be accessed in all handlers
   of a route chain.
-- `conf`: This object contain the entire
+- `conf`: This object contains the entire
   [application configuration data](#settings-file).
 - `log`: A bunyan logger instance. Use it to [log custom events](#logging) of
   your application.
@@ -140,20 +140,20 @@ Quick reference:
 ### Settings File
 
 Nodecaf allow you to read a configuration file in the TOML format (we plan to
-add more in the future) and use it's data on all routes and server configuration.
+add more in the future) and use it's data in all routes and server configuration.
 
 Use this feature to manage:
 - external services data such as database credentials
 - Nodecaf settings such as SSL and logging
 - Your own server application settings for your users
 
-> [generate a project with configuration file already plugged in](#init-project)
+> Check out how to [generate a project with configuration file already plugged in](#init-project)
 
 To setup a config file for an existing project, open the binary for your server
-on `bin/proj-name.js`. Then add a `confPath` key to the run parameter object
+in `bin/proj-name.js`. Then add a `confPath` key to the run parameter object
 whose value must be a string path pointing to your conf file.
 
-The data in the config file can be accessed on `lib/main.js` through the first
+The data in the config file can be accessed in `lib/main.js` through the first
 parameter of the exported `init` function:
 
 ```js
@@ -162,7 +162,7 @@ module.exports = function init(conf){
 }
 ```
 
-You can also use the config data through [it's handler arg](#handler-args) on
+You can also use the config data through [it's handler arg](#handler-args) in
 all route handlers as follows:
 
 ```js
@@ -182,7 +182,7 @@ conf.log = { stream: process.stdout }; // Use this for a write stream
 let app = new AppServer(conf);
 ```
 
-You can also setup a file log on  your settings file to be automatically
+You can also setup a log file in your settings file to be automatically
 transferred to the `conf` argument of `init`.
 
 ```toml
@@ -190,7 +190,7 @@ transferred to the `conf` argument of `init`.
 file = "path/to/conf/file.log"
 ```
 
-On your route handlers, use the `log` handler arg as a
+In your route handlers, use the `log` handler arg as a
 [bunyan](https://github.com/trentm/node-bunyan) instance:
 
 ```js
@@ -212,11 +212,10 @@ table below:
 
 ### Async Handlers
 
-Nodecaf brings a useful feature of accepting async functions as route handlers
-with zero configuration. The real deal is that all rejections/error within your
-async handler will be gracefully handled by the same routine the deals with
-regular functions. Allowing you to avoid callback hell without creating bogus
-adapters for your promises.
+Nodecaf brings the useful feature of accepting async functions as route handlers
+with zero configuration. All rejections/error within your async handler will be
+gracefully handled by the same routine the deals with regular functions. You will
+be able to avoid callback hell without creating bogus adapters for your promises.
 
 ```js
 get('/my/thing',
@@ -233,8 +232,8 @@ get('/my/thing',
 
 ### Error Handling
 
-In Nodecaf, all uncaught synchronous errors happening inside route handler code
-is automatically converted into a harmless RESTful 500.
+In Nodecaf, any uncaught synchronous error happening inside route handler will be
+automatically converted into a harmless RESTful 500.
 
 ```js
 post('/my/thing', function(){
@@ -277,8 +276,8 @@ post('/my/thing', function({ error }){
 });
 ```
 
-You can always deal with uncaught exceptions on all routes through a default
-global error handler. In your `lib/main.js` add a `onRuoteError` function
+You can always deal with uncaught exceptions in all routes through a default
+global error handler. In your `lib/main.js` add an `onRuoteError` function
 property to the `app`.
 
 ```js
@@ -299,7 +298,7 @@ app.onRuoteError = function(input, err, send){
 ### REST Assertions
 
 Nodecaf provides you with an assertion module containing functions to generate
-the most common REST outputs based on some condition. Checn an example to
+the most common REST outputs based on some condition. Check an example to
 trigger a 404 in case a database record doesn't exist.
 
 ```js
@@ -425,10 +424,10 @@ Check below the commands we provide.
 
 #### Init Project
 
-`nodecaf init` Generates a skelleton Nodecaf project file structure on the current
+`nodecaf init` Generates a skelleton Nodecaf project file structure in the current
 directory.
 
-> You must already have a well-formed package.json on the target directory.
+> You must already have a well-formed package.json in the target directory.
 
 **Options**
 
