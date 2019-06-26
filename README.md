@@ -6,7 +6,7 @@ Nodecaf is an Express framework for developing REST APIs in a quick and
 convenient manner.
 Using Nodecaf you'll get:
 - Useful [handler arguments](#handlers-args).
-- Built-in TOML [settings file support](#settings-file).
+- Built-in [settings file support](#settings-file).
 - [Out-of-the-box logging](#logging) through Bunyan.
 - Seamless support for [async functions as route handlers](#async-handlers).
 - [Uncaught exceptions](#error-handling) in routes always produce proper REST
@@ -139,13 +139,15 @@ Quick reference:
 
 ### Settings File
 
-Nodecaf allow you to read a configuration file in the TOML format (we plan to
-add more in the future) and use it's data in all routes and server configuration.
+Nodecaf allow you to read a configuration file and use it's data in all routes
+and server configuration.
 
 Use this feature to manage:
 - external services data such as database credentials
 - Nodecaf settings such as SSL and logging
 - Your own server application settings for your users
+
+Suported config formats: **TOML**, **YAML**
 
 > Check out how to [generate a project with configuration file already plugged in](#init-project)
 
@@ -438,6 +440,7 @@ directory.
 - `-p --path [directory]`: Project root directory (defaults to working dir)
 - `-c --confPath [file]`: Generate a config file and plug it in the structure
 - `-n --name [string]`: A name/title for the generated app structure
+- `--confType (yaml | toml)`: The type for the generated config file
 
 #### Open API Support
 
@@ -451,3 +454,4 @@ document of a given Nodecaf API.
 - `--apiPath file`: A path to your project's API file (defaults to `lib/api.js`)
 - `-t --type (json | yaml)`: The type of document to be generated (defaults to JSON)
 - `-c --confPath [file]`: The config file to be considered
+- `--confType (yaml | toml)`: The type of the given config file

@@ -18,6 +18,11 @@ describe('Conf Loader', () => {
         let obj = loadConf('toml', './test/res/conf.toml');
         assert.strictEqual(obj.key, 'value');
     });
+
+    it('Should properly load an YAML file and generate an object', () => {
+        let obj = loadConf('yaml', './test/res/conf.yaml');
+        assert.strictEqual(obj.key, 'value');
+    });
 });
 
 describe('Promise Error Adapter', () => {
