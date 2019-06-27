@@ -335,12 +335,25 @@ describe('REST/Restify Features', () => {
         await app.stop();
     });
 
-    it('Should output a JSON 404 when no route is found for a given path', async () => {
+    it('Should output a 404 when no route is found for a given path', async () => {
         let app = new AppServer();
         app.api(function(){  });
         await app.start();
         let { status, body } = await post('http://localhost/foobar');
         assert.strictEqual(status, 404);
+        assert.strictEqual(body, '');
+        await app.stop();
+    });
+
+    it('Should output a JSON when the error message is an object', async () => {
+        let app = new AppServer();
+        app.api(function({ post }){
+            post('/foobar', ({ error }) => {
+                error('NotFound', { foo: 'bar' });
+            });
+        });
+        await app.start();
+        let { body } = await post('http://localhost:80/foobar');
         assert.doesNotThrow( () => JSON.parse(body) );
         await app.stop();
     });
@@ -722,9 +735,9 @@ describe('Regression', () => {
         });
         await app.start();
 
-        let r1 = JSON.parse((await post('http://localhost:80/bar')).body).message;
-        let r2 = JSON.parse((await post('http://localhost:80/bar')).body).message;
-        let r3 = JSON.parse((await post('http://localhost:80/bar')).body).message;
+        let r1 = (await post('http://localhost:80/bar')).body;
+        let r2 = (await post('http://localhost:80/bar')).body;
+        let r3 = (await post('http://localhost:80/bar')).body;
         assert(r1 == r2 && r2 == r3 && r3 == 'errfoobar');
 
         await app.stop();
@@ -740,7 +753,7 @@ describe('Regression', () => {
         });
         await app.start();
 
-        let m = JSON.parse((await post('http://localhost:80/bar')).body).message;
+        let m = (await post('http://localhost:80/bar')).body;
         assert.strictEqual(m, 'NotFound');
 
         await app.stop();
