@@ -48,37 +48,6 @@ describe('Promise Error Adapter', () => {
 
 });
 
-describe('Route Adapter', () => {
-    const { EventEmitter } = require('events');
-    const { addRoute } = require('../lib/route-adapter');
-
-    it('Should fail when anything other than a function is passed', () => {
-        let ee = new EventEmitter();
-        assert.throws( () => addRoute.bind(ee)('get', '/foo', null) );
-    });
-
-    it('Should add adapted handler to chosen route', () => {
-        let ee = new EventEmitter();
-        ee.express = {
-            foo(path){ assert.strictEqual(path, 'foo') }
-        };
-        addRoute.bind(ee)('foo', 'foo', function bar(){ });
-    });
-
-    it('Should pass all the required args to adapted function', () => {
-        let ee = new EventEmitter();
-        let fn;
-        ee.express = {
-            foo(path, handler){ fn = handler }
-        };
-        addRoute.bind(ee)('foo', 'foo', function bar(args){
-            assert.strictEqual(typeof args, 'object');
-        });
-        fn('foo', 'bar', 'foobar');
-    });
-
-});
-
 describe('AppServer', () => {
     const AppServer = require('../lib/app-server');
     const { get, post } = require('muhb');
@@ -240,8 +209,41 @@ describe('AppServer', () => {
 describe('REST/Restify Features', () => {
     const fs = require('fs');
     const AppServer = require('../lib/app-server');
+    const { post, get } = require('muhb');
 
-    it('Should expose file content sent as multipart-form', async () => {
+    const { EventEmitter } = require('events');
+    const { addRoute } = require('../lib/route-adapter');
+
+    it('Should fail when anything other than a function is passed', () => {
+        let ee = new EventEmitter();
+        assert.throws( () => addRoute.bind(ee)('get', '/foo', null) );
+    });
+
+    it('Should add adapted handler to chosen route', () => {
+        let ee = new EventEmitter();
+        ee.express = {
+            foo(path){ assert.strictEqual(path, 'foo') }
+        };
+        addRoute.bind(ee)('foo', 'foo', function bar(){ });
+    });
+
+    it('Should pass all the required args to adapted function', async () => {
+        let app = new AppServer();
+        app.api(function({ get }){
+            get('/foo', (obj) => {
+                assert(obj.res && obj.req && obj.next && obj.body === ''
+                    && obj.params && obj.query && obj.flash && obj.error
+                    && obj.conf && obj.log);
+                obj.res.end();
+            });
+        });
+        await app.start();
+        let { status } = await get('http://localhost:80/foo');
+        assert.strictEqual(status, 200);
+        await app.stop();
+    });
+
+    it('Should expose file content sent as multipart/form-data', async () => {
         const FormData = require('form-data');
         let app = new AppServer();
         app.api(function({ post }){
@@ -265,8 +267,6 @@ describe('REST/Restify Features', () => {
 
         await app.stop();
     });
-
-    const { post } = require('muhb');
 
     it('Should parse JSON request body payloads', async () => {
         let app = new AppServer();
@@ -604,12 +604,11 @@ describe('Logging', () => {
         await app.stop();
     });
 
-    it.skip('Should log errors that crach the server process', async () => {
+    it.skip('Should log errors that crash the server process', async () => {
         let file = path.resolve(dir, 'logstream.txt');
         let stream = fs.createWriteStream(file);
-        let app
         await run({ init(){
-            app = new AppServer({ log: { stream: stream, level: 'fatal' } });
+            new AppServer({ log: { stream: stream, level: 'fatal' } });
             throw new Error('fatality');
         } });
         let data = await fs.promises.readFile(file, 'utf-8');
