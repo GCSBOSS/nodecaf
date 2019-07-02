@@ -346,13 +346,14 @@ describe('REST/Restify Features', () => {
         let app = new AppServer();
         app.api(function({ post }){
             post('/foobar', ({ body, res }) => {
-                assert.strictEqual(typeof body, 'string');
+                assert.strictEqual(body, '{"foo":"bar"}');
                 res.end();
             });
         });
         await app.start();
         let { status } = await post(
             'http://localhost:80/foobar',
+            { '--no-auto': true },
             JSON.stringify({foo: 'bar'})
         );
         assert.strictEqual(status, 200);
