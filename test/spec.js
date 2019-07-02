@@ -204,6 +204,62 @@ describe('AppServer', () => {
 
     });
 
+    describe('#accept', () => {
+
+        it('Should reject unwanted content-types API-wide', async () => {
+            let app = new AppServer();
+            app.api(function({ post }){
+                this.accept([ 'urlencoded', 'text/html' ]);
+                assert(this.accepts.includes('application/x-www-form-urlencoded'));
+                assert.strictEqual(this.accepts.length, 2);
+                post('/foo', ({ res }) => res.end());
+            });
+            await app.start();
+            let { body, status } = await post(
+                'http://localhost/foo',
+                { 'Content-Type': 'application/json' },
+                '{"foo":"bar"}'
+            );
+            assert.strictEqual(status, 400);
+            assert(/Unsupported/.test(body));
+            await app.stop();
+        });
+
+        it('Should reject requests without content-type', async () => {
+            let app = new AppServer();
+            app.api(function({ post }){
+                this.accept('text/html');
+                post('/foo', ({ res }) => res.end());
+            });
+            await app.start();
+            let { body, status } = await post(
+                'http://localhost/foo',
+                { '--no-auto': true },
+                '{"foo":"bar"}'
+            );
+            assert.strictEqual(status, 400);
+            assert(/Missing/.test(body));
+            await app.stop();
+        });
+
+        it('Should accept wanted content-types API-wide', async () => {
+            let app = new AppServer();
+            app.api(function({ post }){
+                this.accept([ 'urlencoded', 'text/html' ]);
+                post('/foo', ({ res }) => res.end());
+            });
+            await app.start();
+            let { status } = await post(
+                'http://localhost/foo',
+                { 'Content-Type': 'text/html' },
+                '{"foo":"bar"}'
+            );
+            assert.strictEqual(status, 200);
+            await app.stop();
+        });
+
+    });
+
 });
 
 describe('REST/Restify Features', () => {
