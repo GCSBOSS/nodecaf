@@ -18,6 +18,11 @@ describe('Conf Loader', () => {
         let obj = loadConf('toml', './test/res/conf.toml');
         assert.strictEqual(obj.key, 'value');
     });
+
+    it('Should properly load an YAML file and generate an object', () => {
+        let obj = loadConf('yaml', './test/res/conf.yaml');
+        assert.strictEqual(obj.key, 'value');
+    });
 });
 
 describe('Promise Error Adapter', () => {
@@ -39,37 +44,6 @@ describe('Promise Error Adapter', () => {
             assert.strictEqual(err, 'foobar');
             done();
         }, 'bar');
-    });
-
-});
-
-describe('Route Adapter', () => {
-    const { EventEmitter } = require('events');
-    const { addRoute } = require('../lib/route-adapter');
-
-    it('Should fail when anything other than a function is passed', () => {
-        let ee = new EventEmitter();
-        assert.throws( () => addRoute.bind(ee)('get', '/foo', null) );
-    });
-
-    it('Should add adapted handler to chosen route', () => {
-        let ee = new EventEmitter();
-        ee.express = {
-            foo(path){ assert.strictEqual(path, 'foo') }
-        };
-        addRoute.bind(ee)('foo', 'foo', function bar(){ });
-    });
-
-    it('Should pass all the required args to adapted function', () => {
-        let ee = new EventEmitter();
-        let fn;
-        ee.express = {
-            foo(path, handler){ fn = handler }
-        };
-        addRoute.bind(ee)('foo', 'foo', function bar(args){
-            assert.strictEqual(typeof args, 'object');
-        });
-        fn('foo', 'bar', 'foobar');
     });
 
 });
@@ -230,13 +204,102 @@ describe('AppServer', () => {
 
     });
 
+    describe('#accept', () => {
+
+        it('Should reject unwanted content-types API-wide', async () => {
+            let app = new AppServer();
+            app.api(function({ post }){
+                this.accept([ 'urlencoded', 'text/html' ]);
+                assert(this.accepts.includes('application/x-www-form-urlencoded'));
+                assert.strictEqual(this.accepts.length, 2);
+                post('/foo', ({ res }) => res.end());
+            });
+            await app.start();
+            let { body, status } = await post(
+                'http://localhost/foo',
+                { 'Content-Type': 'application/json' },
+                '{"foo":"bar"}'
+            );
+            assert.strictEqual(status, 400);
+            assert(/Unsupported/.test(body));
+            await app.stop();
+        });
+
+        it('Should reject requests without content-type', async () => {
+            let app = new AppServer();
+            app.api(function({ post }){
+                this.accept('text/html');
+                post('/foo', ({ res }) => res.end());
+            });
+            await app.start();
+            let { body, status } = await post(
+                'http://localhost/foo',
+                { '--no-auto': true },
+                '{"foo":"bar"}'
+            );
+            assert.strictEqual(status, 400);
+            assert(/Missing/.test(body));
+            await app.stop();
+        });
+
+        it('Should accept wanted content-types API-wide', async () => {
+            let app = new AppServer();
+            app.api(function({ post }){
+                this.accept([ 'urlencoded', 'text/html' ]);
+                post('/foo', ({ res }) => res.end());
+            });
+            await app.start();
+            let { status } = await post(
+                'http://localhost/foo',
+                { 'Content-Type': 'text/html' },
+                '{"foo":"bar"}'
+            );
+            assert.strictEqual(status, 200);
+            await app.stop();
+        });
+
+    });
+
 });
 
 describe('REST/Restify Features', () => {
     const fs = require('fs');
     const AppServer = require('../lib/app-server');
+    const { post, get } = require('muhb');
 
-    it('Should expose file content sent as multipart-form', async () => {
+    const { EventEmitter } = require('events');
+    const { addRoute } = require('../lib/route-adapter');
+
+    it('Should fail when anything other than a function is passed', () => {
+        let ee = new EventEmitter();
+        assert.throws( () => addRoute.bind(ee)('get', '/foo', 4) );
+    });
+
+    it('Should add adapted handler to chosen route', () => {
+        let ee = new EventEmitter();
+        ee.express = {
+            foo(path){ assert.strictEqual(path, 'foo') }
+        };
+        addRoute.bind(ee)('foo', 'foo', function bar(){ });
+    });
+
+    it('Should pass all the required args to adapted function', async () => {
+        let app = new AppServer();
+        app.api(function({ get }){
+            get('/foo', (obj) => {
+                assert(obj.res && obj.req && obj.next && obj.body === ''
+                    && obj.params && obj.query && obj.flash && obj.error
+                    && obj.conf && obj.log);
+                obj.res.end();
+            });
+        });
+        await app.start();
+        let { status } = await get('http://localhost:80/foo');
+        assert.strictEqual(status, 200);
+        await app.stop();
+    });
+
+    it('Should expose file content sent as multipart/form-data', async () => {
         const FormData = require('form-data');
         let app = new AppServer();
         app.api(function({ post }){
@@ -261,8 +324,6 @@ describe('REST/Restify Features', () => {
         await app.stop();
     });
 
-    const { post } = require('muhb');
-
     it('Should parse JSON request body payloads', async () => {
         let app = new AppServer();
         app.api(function({ post }){
@@ -285,13 +346,14 @@ describe('REST/Restify Features', () => {
         let app = new AppServer();
         app.api(function({ post }){
             post('/foobar', ({ body, res }) => {
-                assert.strictEqual(typeof body, 'string');
+                assert.strictEqual(body, '{"foo":"bar"}');
                 res.end();
             });
         });
         await app.start();
         let { status } = await post(
             'http://localhost:80/foobar',
+            { '--no-auto': true },
             JSON.stringify({foo: 'bar'})
         );
         assert.strictEqual(status, 200);
@@ -330,14 +392,66 @@ describe('REST/Restify Features', () => {
         await app.stop();
     });
 
-    it('Should output a JSON 404 when no route is found for a given path', async () => {
+    it('Should output a 404 when no route is found for a given path', async () => {
         let app = new AppServer();
         app.api(function(){  });
         await app.start();
         let { status, body } = await post('http://localhost/foobar');
         assert.strictEqual(status, 404);
+        assert.strictEqual(body, '');
+        await app.stop();
+    });
+
+    it('Should output a JSON when the error message is an object', async () => {
+        let app = new AppServer();
+        app.api(function({ post }){
+            post('/foobar', ({ error }) => {
+                error('NotFound', { foo: 'bar' });
+            });
+        });
+        await app.start();
+        let { body } = await post('http://localhost:80/foobar');
         assert.doesNotThrow( () => JSON.parse(body) );
         await app.stop();
+    });
+
+    describe('Accept setter', () => {
+
+        it('Should reject unwanted content-types for the given route', async () => {
+            let app = new AppServer();
+            app.api(function({ post, accept }){
+                let acc = accept([ 'urlencoded', 'text/html' ]);
+                assert(acc.accept.includes('application/x-www-form-urlencoded'));
+                post('/foo', acc, ({ res }) => res.end());
+            });
+            await app.start();
+            let { body, status } = await post(
+                'http://localhost/foo',
+                { 'Content-Type': 'application/json' },
+                '{"foo":"bar"}'
+            );
+            assert.strictEqual(status, 400);
+            assert(/Unsupported/.test(body));
+            await app.stop();
+        });
+
+        it('Should accept wanted content-types for the given route', async () => {
+            let app = new AppServer();
+            app.api(function({ post, accept }){
+                let acc = accept('text/html');
+                assert(acc.accept.includes('text/html'));
+                post('/foo', acc, ({ res }) => res.end());
+            });
+            await app.start();
+            let { status } = await post(
+                'http://localhost/foo',
+                { 'Content-Type': 'text/html' },
+                '{"foo":"bar"}'
+            );
+            assert.strictEqual(status, 200);
+            await app.stop();
+        });
+
     });
 
 });
@@ -586,12 +700,11 @@ describe('Logging', () => {
         await app.stop();
     });
 
-    it.skip('Should log errors that crach the server process', async () => {
+    it.skip('Should log errors that crash the server process', async () => {
         let file = path.resolve(dir, 'logstream.txt');
         let stream = fs.createWriteStream(file);
-        let app
         await run({ init(){
-            app = new AppServer({ log: { stream: stream, level: 'fatal' } });
+            new AppServer({ log: { stream: stream, level: 'fatal' } });
             throw new Error('fatality');
         } });
         let data = await fs.promises.readFile(file, 'utf-8');
@@ -717,9 +830,9 @@ describe('Regression', () => {
         });
         await app.start();
 
-        let r1 = JSON.parse((await post('http://localhost:80/bar')).body).message;
-        let r2 = JSON.parse((await post('http://localhost:80/bar')).body).message;
-        let r3 = JSON.parse((await post('http://localhost:80/bar')).body).message;
+        let r1 = (await post('http://localhost:80/bar')).body;
+        let r2 = (await post('http://localhost:80/bar')).body;
+        let r3 = (await post('http://localhost:80/bar')).body;
         assert(r1 == r2 && r2 == r3 && r3 == 'errfoobar');
 
         await app.stop();
@@ -735,7 +848,7 @@ describe('Regression', () => {
         });
         await app.start();
 
-        let m = JSON.parse((await post('http://localhost:80/bar')).body).message;
+        let m = (await post('http://localhost:80/bar')).body;
         assert.strictEqual(m, 'NotFound');
 
         await app.stop();

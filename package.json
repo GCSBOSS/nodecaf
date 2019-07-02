@@ -40,14 +40,16 @@
         "cli": "^1.0.1",
         "compression": "^1.7.4",
         "express": "^4.17.1",
-        "express-fileupload": "^1.1.4",
+        "express-fileupload": "^1.1.5",
+        "http-errors": "^1.7.3",
+        "mime": "^2.4.4",
         "toml": "^3.0.0",
         "yaml": "^1.6.0"
     },
     "devDependencies": {
-        "form-data": "^2.3.3",
-        "muhb": "0.0.2",
-        "swagger-parser": "^7.0.0",
+        "form-data": "^2.4.0",
+        "muhb": "^0.1.1",
+        "swagger-parser": "^7.0.1",
         "wtfnode": "^0.8.0"
     }
 }
