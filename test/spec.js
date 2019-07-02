@@ -272,7 +272,7 @@ describe('REST/Restify Features', () => {
 
     it('Should fail when anything other than a function is passed', () => {
         let ee = new EventEmitter();
-        assert.throws( () => addRoute.bind(ee)('get', '/foo', null) );
+        assert.throws( () => addRoute.bind(ee)('get', '/foo', 4) );
     });
 
     it('Should add adapted handler to chosen route', () => {
@@ -413,6 +413,45 @@ describe('REST/Restify Features', () => {
         let { body } = await post('http://localhost:80/foobar');
         assert.doesNotThrow( () => JSON.parse(body) );
         await app.stop();
+    });
+
+    describe('Accept setter', () => {
+
+        it('Should reject unwanted content-types for the given route', async () => {
+            let app = new AppServer();
+            app.api(function({ post, accept }){
+                let acc = accept([ 'urlencoded', 'text/html' ]);
+                assert(acc.accept.includes('application/x-www-form-urlencoded'));
+                post('/foo', acc, ({ res }) => res.end());
+            });
+            await app.start();
+            let { body, status } = await post(
+                'http://localhost/foo',
+                { 'Content-Type': 'application/json' },
+                '{"foo":"bar"}'
+            );
+            assert.strictEqual(status, 400);
+            assert(/Unsupported/.test(body));
+            await app.stop();
+        });
+
+        it('Should accept wanted content-types for the given route', async () => {
+            let app = new AppServer();
+            app.api(function({ post, accept }){
+                let acc = accept('text/html');
+                assert(acc.accept.includes('text/html'));
+                post('/foo', acc, ({ res }) => res.end());
+            });
+            await app.start();
+            let { status } = await post(
+                'http://localhost/foo',
+                { 'Content-Type': 'text/html' },
+                '{"foo":"bar"}'
+            );
+            assert.strictEqual(status, 200);
+            await app.stop();
+        });
+
     });
 
 });
