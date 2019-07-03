@@ -1,6 +1,9 @@
 //const wtf = require('wtfnode');
 const assert = require('assert');
 
+// Address for the tests' local servers to listen.
+const LOCAL_HOST = 'http://localhost:80/'
+
 describe('Conf Loader', () => {
     const loadConf = require('../lib/conf-loader');
 
@@ -71,7 +74,7 @@ describe('AppServer', () => {
         it('Should start the http server on port 80', async () => {
             let app = new AppServer();
             await app.start();
-            let { status } = await get('http://127.0.0.1:80/');
+            let { status } = await get(LOCAL_HOST);
             assert.strictEqual(status, 404);
             await app.stop();
         });
@@ -119,7 +122,7 @@ describe('AppServer', () => {
                 assert.strictEqual(typeof head, 'function');
             });
             await app.start();
-            let { status } = await post('http://127.0.0.1:80/foo');
+            let { status } = await post(LOCAL_HOST + 'foo');
             assert.strictEqual(status, 500);
             await app.stop();
         });
@@ -133,7 +136,7 @@ describe('AppServer', () => {
                     ({ flash, res }) => res.end(flash.foo) );
             });
             await app.start();
-            let { body } = await get('http://127.0.0.1:80/bar');
+            let { body } = await get(LOCAL_HOST + 'bar');
             assert.strictEqual(body, 'bar');
             await app.stop();
         });
@@ -149,7 +152,7 @@ describe('AppServer', () => {
                 post('/bar', ({ foo, res }) => res.end(foo));
             });
             await app.start();
-            let { body } = await post('http://127.0.0.1:80/bar');
+            let { body } = await post(LOCAL_HOST + 'bar');
             assert.strictEqual(body, 'foobar');
             await app.stop();
         });
@@ -163,7 +166,7 @@ describe('AppServer', () => {
             await app.start();
             await app.stop();
             try{
-                await get('http://127.0.0.1:80/');
+                await get(LOCAL_HOST);
             }
             catch(e){
                 var rejected = e;
@@ -194,10 +197,10 @@ describe('AppServer', () => {
         it('Should take down the sever and bring it back up', async () => {
             let app = new AppServer();
             await app.start();
-            let { status } = await get('http://127.0.0.1:80/');
+            let { status } = await get(LOCAL_HOST);
             assert.strictEqual(status, 404);
             await app.restart();
-            let { status: s } = await get('http://127.0.0.1:80/');
+            let { status: s } = await get(LOCAL_HOST);
             assert.strictEqual(s, 404);
             await app.stop();
         });
@@ -216,7 +219,7 @@ describe('AppServer', () => {
             });
             await app.start();
             let { body, status } = await post(
-                'http://localhost/foo',
+                LOCAL_HOST + 'foo',
                 { 'Content-Type': 'application/json' },
                 '{"foo":"bar"}'
             );
@@ -233,7 +236,7 @@ describe('AppServer', () => {
             });
             await app.start();
             let { body, status } = await post(
-                'http://localhost/foo',
+                LOCAL_HOST + 'foo',
                 { '--no-auto': true },
                 '{"foo":"bar"}'
             );
@@ -250,7 +253,7 @@ describe('AppServer', () => {
             });
             await app.start();
             let { status } = await post(
-                'http://localhost/foo',
+                LOCAL_HOST + 'foo',
                 { 'Content-Type': 'text/html' },
                 '{"foo":"bar"}'
             );
@@ -294,7 +297,7 @@ describe('REST/Restify Features', () => {
             });
         });
         await app.start();
-        let { status } = await get('http://localhost:80/foo');
+        let { status } = await get(LOCAL_HOST + 'foo');
         assert.strictEqual(status, 200);
         await app.stop();
     });
@@ -315,7 +318,7 @@ describe('REST/Restify Features', () => {
         form.append('foo', 'bar');
         form.append('foobar', fs.createReadStream('./test/res/file.txt'));
         await new Promise(resolve =>
-            form.submit('http://localhost/bar/', (err, res) => {
+            form.submit(LOCAL_HOST + 'bar/', (err, res) => {
                 assert(res.headers['x-test'] == 'file.txt');
                 resolve();
             })
@@ -334,7 +337,7 @@ describe('REST/Restify Features', () => {
         });
         await app.start();
         let { status } = await post(
-            'http://localhost:80/foobar',
+            LOCAL_HOST + 'foobar',
             { 'Content-Type': 'application/json' },
             JSON.stringify({foo: 'bar'})
         );
@@ -352,7 +355,7 @@ describe('REST/Restify Features', () => {
         });
         await app.start();
         let { status } = await post(
-            'http://localhost:80/foobar',
+            LOCAL_HOST + 'foobar',
             { '--no-auto': true },
             JSON.stringify({foo: 'bar'})
         );
@@ -370,7 +373,7 @@ describe('REST/Restify Features', () => {
         });
         await app.start();
         let { status } = await post(
-            'http://localhost:80/foobar',
+            LOCAL_HOST + 'foobar',
             { 'Content-Type': 'application/x-www-form-urlencoded' },
             'foo=bar'
         );
@@ -387,7 +390,7 @@ describe('REST/Restify Features', () => {
             });
         });
         await app.start();
-        let { status } = await post('http://localhost:80/foobar?foo=bar');
+        let { status } = await post(LOCAL_HOST + 'foobar?foo=bar');
         assert.strictEqual(status, 200);
         await app.stop();
     });
@@ -396,7 +399,7 @@ describe('REST/Restify Features', () => {
         let app = new AppServer();
         app.api(function(){  });
         await app.start();
-        let { status, body } = await post('http://localhost/foobar');
+        let { status, body } = await post(LOCAL_HOST + 'foobar');
         assert.strictEqual(status, 404);
         assert.strictEqual(body, '');
         await app.stop();
@@ -410,7 +413,7 @@ describe('REST/Restify Features', () => {
             });
         });
         await app.start();
-        let { body } = await post('http://localhost:80/foobar');
+        let { body } = await post(LOCAL_HOST + 'foobar');
         assert.doesNotThrow( () => JSON.parse(body) );
         await app.stop();
     });
@@ -426,7 +429,7 @@ describe('REST/Restify Features', () => {
             });
             await app.start();
             let { body, status } = await post(
-                'http://localhost/foo',
+                LOCAL_HOST + 'foo',
                 { 'Content-Type': 'application/json' },
                 '{"foo":"bar"}'
             );
@@ -444,7 +447,7 @@ describe('REST/Restify Features', () => {
             });
             await app.start();
             let { status } = await post(
-                'http://localhost/foo',
+                LOCAL_HOST + 'foo',
                 { 'Content-Type': 'text/html' },
                 '{"foo":"bar"}'
             );
@@ -480,7 +483,7 @@ describe('run()', () => {
             });
             return app;
         } });
-        let { body } = await get('http://127.0.0.1:80/bar');
+        let { body } = await get(LOCAL_HOST + 'bar');
         assert.strictEqual(body, 'foo');
         await app.stop();
     });
@@ -533,7 +536,7 @@ describe('Error Handling', () => {
             });
         });
         await app.start();
-        let { status: status } = await post('http://localhost:80/unknown');
+        let { status: status } = await post(LOCAL_HOST + 'unknown');
         assert.strictEqual(status, 500);
         await app.stop();
     });
@@ -549,9 +552,9 @@ describe('Error Handling', () => {
             });
         });
         await app.start();
-        let { status } = await post('http://localhost:80/known');
+        let { status } = await post(LOCAL_HOST + 'known');
         assert.strictEqual(status, 404);
-        let { status: s2 } = await post('http://localhost:80/unknown');
+        let { status: s2 } = await post(LOCAL_HOST + 'unknown');
         assert.strictEqual(s2, 500);
         await app.stop();
     });
@@ -575,11 +578,11 @@ describe('Error Handling', () => {
             });
         });
         await app.start();
-        let { status } = await post('http://localhost:80/known');
+        let { status } = await post(LOCAL_HOST + 'known');
         assert.strictEqual(status, 404);
-        let { status: s2 } = await post('http://localhost:80/unknown');
+        let { status: s2 } = await post(LOCAL_HOST + 'unknown');
         assert.strictEqual(s2, 500);
-        let { status: s3 } = await post('http://localhost:80/unknown/object');
+        let { status: s3 } = await post(LOCAL_HOST + 'unknown/object');
         assert.strictEqual(s3, 500);
         await app.stop();
     });
@@ -600,9 +603,9 @@ describe('Error Handling', () => {
             });
         });
         await app.start();
-        let { status } = await post('http://localhost:80/known');
+        let { status } = await post(LOCAL_HOST + 'known');
         assert.strictEqual(status, 500);
-        let { status: s2 } = await post('http://localhost:80/unknown');
+        let { status: s2 } = await post(LOCAL_HOST + 'unknown');
         assert.strictEqual(s2, 404);
         assert.strictEqual(count, 2);
         await app.stop();
@@ -619,7 +622,7 @@ describe('Error Handling', () => {
             });
         });
         await app.start();
-        let { status } = await post('http://localhost/unknown');
+        let { status } = await post(LOCAL_HOST + 'unknown');
         assert.strictEqual(status, 401);
         await app.stop();
     });
@@ -649,7 +652,7 @@ describe('Logging', () => {
             });
         });
         await app.start();
-        await post('http://localhost:80/foo');
+        await post(LOCAL_HOST + 'foo');
         let data = await fs.promises.readFile(file, 'utf-8');
         assert(data.indexOf('logfile') > 0);
         await app.stop();
@@ -666,7 +669,7 @@ describe('Logging', () => {
             });
         });
         await app.start();
-        await post('http://localhost:80/foo');
+        await post(LOCAL_HOST + 'foo');
         let data = await fs.promises.readFile(file, 'utf-8');
         assert(data.indexOf('logstream') > 0);
         await app.stop();
@@ -680,7 +683,7 @@ describe('Logging', () => {
             post('/foo', ({ res }) => res.end() );
         });
         await app.start();
-        await post('http://localhost:80/foo');
+        await post(LOCAL_HOST + 'foo');
         let data = await fs.promises.readFile(file, 'utf-8');
         assert(data.indexOf('POST') > 0);
         await app.stop();
@@ -694,7 +697,7 @@ describe('Logging', () => {
             post('/foo', () => { throw new Error('Oh yeah') } );
         });
         await app.start();
-        await post('http://localhost/foo');
+        await post(LOCAL_HOST + 'foo');
         let data = await fs.promises.readFile(file, 'utf-8');
         assert(data.indexOf('Oh yeah') > 0);
         await app.stop();
@@ -730,7 +733,7 @@ describe('API Docs', () => {
         });
 
         await app.start();
-        let { body } = await post('http://localhost:80/foo/baz');
+        let { body } = await post(LOCAL_HOST + 'foo/baz');
         assert.strictEqual(body, 'OK');
         await app.stop();
     });
@@ -815,7 +818,7 @@ describe('Regression', () => {
             });
         });
         await app.start();
-        let { status } = await post('http://localhost:80/bar');
+        let { status } = await post(LOCAL_HOST + 'bar');
         assert.strictEqual(status, 500);
         await app.stop();
     });
@@ -830,9 +833,9 @@ describe('Regression', () => {
         });
         await app.start();
 
-        let r1 = (await post('http://localhost:80/bar')).body;
-        let r2 = (await post('http://localhost:80/bar')).body;
-        let r3 = (await post('http://localhost:80/bar')).body;
+        let r1 = (await post(LOCAL_HOST + 'bar')).body;
+        let r2 = (await post(LOCAL_HOST + 'bar')).body;
+        let r3 = (await post(LOCAL_HOST + 'bar')).body;
         assert(r1 == r2 && r2 == r3 && r3 == 'errfoobar');
 
         await app.stop();
@@ -848,7 +851,7 @@ describe('Regression', () => {
         });
         await app.start();
 
-        let m = (await post('http://localhost:80/bar')).body;
+        let m = (await post(LOCAL_HOST + 'bar')).body;
         assert.strictEqual(m, 'NotFound');
 
         await app.stop();
@@ -867,7 +870,7 @@ describe('Regression', () => {
             gotHere = true;
         };
         await app.start();
-        await post('http://localhost:80/bar');
+        await post(LOCAL_HOST + 'bar');
         await app.stop();
         assert(gotHere);
     });
