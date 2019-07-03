@@ -738,7 +738,7 @@ describe('API Docs', () => {
         await app.stop();
     });
 
-    it('Should have app name and verison by default', function(){
+    it('Should have app name and version by default', function(){
         let doc = new APIDoc();
         let spec = doc.spec();
         assert.strictEqual(typeof spec.info.title, 'string');
@@ -773,6 +773,18 @@ describe('API Docs', () => {
         let spec = doc.spec();
         assert.strictEqual(spec.paths['/foo/:bar'].parameters[0].name, 'bar');
     });
+
+    it('Should auto-populate operation with permissive requests body', function(){
+        let doc = new APIDoc();
+        doc.api( ({ post }) => {
+            post('/foo', function(){});
+            post('/baz', function(){});
+        });
+        let spec = doc.spec();
+        assert.strictEqual(typeof spec.paths['/foo'].post.requestBody, 'object');
+        assert('*/*' in spec.paths['/foo'].post.requestBody.content);
+    });
+
 });
 
 describe('HTTPS', () => {
