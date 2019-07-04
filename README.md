@@ -17,6 +17,7 @@ Using Nodecaf you'll get:
 - [HTTPS capability](#https).
 - Functions to [describe your API](#api-description) making your code the main
   source of truth.
+- Functions to [filter request bodies](#filter-requests-by-mime-type) by mime-type.
 - CLI command to [generate a basic Nodecaf project structure](#init-project).
 - CLI command to [generate an OpenAPI document](#open-api-support) or your APIs.
 
@@ -376,6 +377,40 @@ cert = "/path/to/cert.pem"
 ```
 
 When SSL is enabled the default server port becomes 443.
+
+### Filter Requests by Mime-type
+
+Nodecaf allow you to reject request bodies whose mime-type is not in a defined
+white-list. Denied requests will receive a 400 response with the apporpriate
+message.
+
+Define a filter for the entire app on your `api.js`:
+
+```
+module.exports = function({ }){
+
+    this.accept(['json', 'text/html']);
+
+}
+```
+
+Override the global accept per route on your `api.js`:
+
+```
+module.exports = function({ post, put, accept }){
+
+    // Define global accept rules
+    this.accept(['json', 'text/html']);
+
+    // Obtain accepts settings
+    let json = accept('json');
+    let img = accept([ 'png', 'jpg', 'svg', 'image/*' ]);
+
+    // Prepend accept definition in each route chain
+    post('/my/json/thing', json, myJSONHandler);
+    post('/my/img/thing', img, myImageHandler);
+}
+```
 
 ### API Description
 
