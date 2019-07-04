@@ -785,6 +785,29 @@ describe('API Docs', () => {
         assert('*/*' in spec.paths['/foo'].post.requestBody.content);
     });
 
+    it('Should add request body types based on app accepts', function(){
+        let doc = new APIDoc();
+        doc.api( function({ post }){
+            this.accept(['json', 'text/html']);
+            post('/foo', function(){});
+        });
+        let spec = doc.spec();
+        assert(/following types/.test(spec.paths['/foo'].post.requestBody.description));
+        assert('application/json' in spec.paths['/foo'].post.requestBody.content);
+        assert('text/html' in spec.paths['/foo'].post.requestBody.content);
+    });
+
+    it('Should add request body types based on route accepts', function(){
+        let doc = new APIDoc();
+        doc.api( function({ post, accept }){
+            let acc = accept('json');
+            post('/foo', acc, function(){});
+        });
+        let spec = doc.spec();
+        assert(/following types/.test(spec.paths['/foo'].post.requestBody.description));
+        assert('application/json' in spec.paths['/foo'].post.requestBody.content);
+    });
+
 });
 
 describe('HTTPS', () => {
