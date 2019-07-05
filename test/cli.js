@@ -124,6 +124,22 @@ describe('CLI: nodecaf', () => {
 
     });
 
+    describe('nodecaf -h', () => {
+        const help = require('../lib/cli/help');
+        it('Should output the top-level CLI help', () => {
+            let text = help();
+            assert(/Commands\:/.test(text));
+            assert(text.length > 100);
+        });
+    });
+
+    describe('nodecaf -v', () => {
+        const version = require('../lib/cli/version');
+        it('Should output a proper version number', () => {
+            assert(/^v\d+\.\d+\.\d+$/.test(version()));
+        });
+    });
+
 });
 
 
