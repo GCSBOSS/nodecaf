@@ -40,6 +40,15 @@ describe('CLI: nodecaf', () => {
             assert.throws( () => init({}), /package.json not found/g);
         });
 
+        it('Should fail when \'lib\' or \'bin\' directories already exist', () => {
+            fs.copyFileSync(resDir + 'test-package.json', './package.json');
+            fs.mkdirSync('./bin');
+            assert.throws( () => init({}), /already exists/g);
+            fs.rmdirSync('./bin');
+            fs.mkdirSync('./lib');
+            assert.throws( () => init({}), /already exists/g);
+        });
+
         it('Should generate basic structure files', () => {
             fs.copyFileSync(resDir + 'test-package.json', './package.json');
             init({});
