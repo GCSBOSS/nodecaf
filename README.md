@@ -479,7 +479,7 @@ directory.
 
 #### Open API Support
 
-`nodecaf openapi` Generates a [Open API](https://www.openapis.org/) compliant
+`nodecaf openapi` Generates an [Open API](https://www.openapis.org/) compliant
 document of a given Nodecaf API.
 
 **Options**
