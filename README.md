@@ -386,7 +386,7 @@ message.
 
 Define a filter for the entire app on your `api.js`:
 
-```
+```js
 module.exports = function({ }){
 
     this.accept(['json', 'text/html']);
@@ -396,8 +396,10 @@ module.exports = function({ }){
 
 Override the global accept per route on your `api.js`:
 
-```
-module.exports = function({ post, put, accept }){
+```js
+const { accept } = require('nodecaf');
+
+module.exports = function({ post, put }){
 
     // Define global accept rules
     this.accept(['json', 'text/html']);

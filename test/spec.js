@@ -419,10 +419,11 @@ describe('REST/Restify Features', () => {
     });
 
     describe('Accept setter', () => {
+        const { accept } = require('../lib/parse-types');
 
         it('Should reject unwanted content-types for the given route', async () => {
             let app = new AppServer();
-            app.api(function({ post, accept }){
+            app.api(function({ post }){
                 let acc = accept([ 'urlencoded', 'text/html' ]);
                 assert(acc.accept.includes('application/x-www-form-urlencoded'));
                 post('/foo', acc, ({ res }) => res.end());
@@ -440,7 +441,7 @@ describe('REST/Restify Features', () => {
 
         it('Should accept wanted content-types for the given route', async () => {
             let app = new AppServer();
-            app.api(function({ post, accept }){
+            app.api(function({ post }){
                 let acc = accept('text/html');
                 assert(acc.accept.includes('text/html'));
                 post('/foo', acc, ({ res }) => res.end());
@@ -719,6 +720,7 @@ describe('Logging', () => {
 describe('API Docs', () => {
     const APIDoc = require('../lib/open-api');
     const AppServer = require('../lib/app-server');
+    const { accept } = require('../lib/parse-types');
     const { post } = require('muhb');
 
     it('Should not interfere with working API code', async () => {
@@ -799,7 +801,7 @@ describe('API Docs', () => {
 
     it('Should add request body types based on route accepts', function(){
         let doc = new APIDoc();
-        doc.api( function({ post, accept }){
+        doc.api( function({ post }){
             let acc = accept('json');
             post('/foo', acc, function(){});
         });
