@@ -386,7 +386,7 @@ message.
 
 Define a filter for the entire app on your `api.js`:
 
-```
+```js
 module.exports = function({ }){
 
     this.accept(['json', 'text/html']);
@@ -396,8 +396,10 @@ module.exports = function({ }){
 
 Override the global accept per route on your `api.js`:
 
-```
-module.exports = function({ post, put, accept }){
+```js
+const { accept } = require('nodecaf');
+
+module.exports = function({ post, put }){
 
     // Define global accept rules
     this.accept(['json', 'text/html']);
@@ -479,7 +481,7 @@ directory.
 
 #### Open API Support
 
-`nodecaf openapi` Generates a [Open API](https://www.openapis.org/) compliant
+`nodecaf openapi` Generates an [Open API](https://www.openapis.org/) compliant
 document of a given Nodecaf API.
 
 **Options**

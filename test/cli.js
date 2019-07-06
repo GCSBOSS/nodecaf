@@ -40,6 +40,15 @@ describe('CLI: nodecaf', () => {
             assert.throws( () => init({}), /package.json not found/g);
         });
 
+        it('Should fail when \'lib\' or \'bin\' directories already exist', () => {
+            fs.copyFileSync(resDir + 'test-package.json', './package.json');
+            fs.mkdirSync('./bin');
+            assert.throws( () => init({}), /already exists/g);
+            fs.rmdirSync('./bin');
+            fs.mkdirSync('./lib');
+            assert.throws( () => init({}), /already exists/g);
+        });
+
         it('Should generate basic structure files', () => {
             fs.copyFileSync(resDir + 'test-package.json', './package.json');
             init({});
@@ -122,6 +131,22 @@ describe('CLI: nodecaf', () => {
             SwaggerParser.validate('./outfile.yml', done);
         });
 
+    });
+
+    describe('nodecaf -h', () => {
+        const help = require('../lib/cli/help');
+        it('Should output the top-level CLI help', () => {
+            let text = help();
+            assert(/Commands\:/.test(text));
+            assert(text.length > 100);
+        });
+    });
+
+    describe('nodecaf -v', () => {
+        const version = require('../lib/cli/version');
+        it('Should output a proper version number', () => {
+            assert(/^v\d+\.\d+\.\d+$/.test(version()));
+        });
     });
 
 });
