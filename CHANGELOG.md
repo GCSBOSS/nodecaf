@@ -5,6 +5,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.7.0] - 2019-07-07
+
+### Added
+- support for YAML config files
+- app method to filter requests by body content-type app-wide
+- top-level function to define per-route content-type filtering rules
+- default generic request body description to open api doc operations
+- accepted mime-types to operation request body api doc
+- global CLI help command to list available commands and usage
+- CLI command to output version of the globally installed Nodecaf
+- `--no-optional` flag to install command output by `nodecaf init`
+
+### Fixed
+- CLI error: unknown type "as-is" on cli options
+- CLI init error when lib or bin directory already exists
+
+### Changed
+- error messages to not be JSON by default
+
 ## [v0.6.0] - 2019-06-24
 
 ### Added
@@ -120,3 +139,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [v0.5.2]: https://gitlab.com/GCSBOSS/nodecaf/-/tags/v0.5.2
 [v0.5.3]: https://gitlab.com/GCSBOSS/nodecaf/-/tags/v0.5.3
 [v0.6.0]: https://gitlab.com/GCSBOSS/nodecaf/-/tags/v0.6.0
+[v0.7.0]: https://gitlab.com/GCSBOSS/nodecaf/-/tags/v0.7.0
