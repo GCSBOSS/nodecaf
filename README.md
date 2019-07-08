@@ -41,8 +41,8 @@ Using Nodecaf you'll get:
 const { AppServer } = require('nodecaf');
 const api = require('./api');
 
-module.exports = function init(conf){
-    let app = new AppServer(conf);
+module.exports = function init(){
+    let app = new AppServer();
 
     // Expose things to all routes putting them in the 'shared' object.
     let shared = {};
@@ -156,23 +156,41 @@ To setup a config file for an existing project, open the binary for your server
 in `bin/proj-name.js`. Then add a `confPath` key to the run parameter object
 whose value must be a string path pointing to your conf file.
 
-The data in the config file can be accessed in `lib/main.js` through the first
-parameter of the exported `init` function:
+The config data can be passed as an object to the app constructor in `lib/main.js`:
 
 ```js
-module.exports = function init(conf){
-    console.log(conf);
+module.exports = function init(){
+    let conf = { key: 'value' };
+    let app = new AppServer(conf);
 }
 ```
 
-You can also use the config data through [it's handler arg](#handler-args) in
+You can use the config data through [it's handler arg](#handler-args) in
 all route handlers as follows:
 
 ```js
 post('/foo', function({ conf }){
-    console.log(conf.myField);
+    console.log(conf.key); //=> 'value'
 });
 ```
+
+#### Layered Configs
+
+You can also use the `app.setup` to add a given configuration
+file or object on top of the current one as follows:
+
+```js
+app.setup('/path/to/settings.toml');
+
+app.setup('/path/to/settings.yaml', 'yaml');
+
+app.setup({ key: 'value' });
+
+app.setup({ key: 'new-value', foo: 'bar' });
+```
+
+Layering is useful, for example, to keep a **default** settings file in your server
+source code to be overwritten by your user's.
 
 ### Logging
 

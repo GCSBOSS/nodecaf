@@ -107,8 +107,9 @@ describe('CLI: nodecaf', () => {
         it('Should output a well formed JSON API doc to default file', done => {
             tmp.addFile('res/test-package.json', './package.json');
             tmp.addFile('res/api.js', './api.js');
+            tmp.addFile('res/conf.toml', './conf.toml');
 
-            openapi({ apiPath: './api.js' });
+            openapi({ apiPath: './api.js', confPath: './conf.toml' });
 
             SwaggerParser.validate('./output.json', done);
         });
