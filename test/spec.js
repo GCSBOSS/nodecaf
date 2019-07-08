@@ -62,11 +62,6 @@ describe('AppServer', () => {
             assert.strictEqual(app.settings.key, 'value');
         });
 
-        it('Should create the Express server', () => {
-            let app = new AppServer();
-            assert.strictEqual(typeof app.express.use, 'function');
-        });
-
     });
 
     describe('#start', () => {
