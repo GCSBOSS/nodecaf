@@ -1,37 +1,32 @@
 //const wtf = require('wtfnode');
-
 const assert = require('assert');
+const Tempper = require('tempper');
 
 const fs = require('fs');
-const os = require('os');
-const assertPathExists = p => fs.existsSync(p);
+const assertPathExists = p => assert(fs.existsSync(p));
 
 describe('CLI: nodecaf', () => {
-    var resDir, projDir;
+    var tmp;
 
     before(function(){
-        projDir = process.cwd();
         process.chdir('./test');
-        resDir = process.cwd() + '/res/';
+        tmp = new Tempper();
     });
 
     after(function(){
-        process.chdir(projDir);
+        tmp.clear();
+        process.chdir('..');
     });
 
     describe('nodecaf init', () => {
         const init = require('../lib/cli/init');
-        let tdir;
 
-        beforeEach(function(){
-            let suffix = Math.random() * 1e3;
-            tdir = os.tmpdir + '/' + String(new Date()).replace(/\D/g, '') + suffix + '/';
-            fs.mkdirSync(tdir);
-            process.chdir(tdir);
+        afterEach(function(){
+            tmp.refresh();
         });
 
         it('Should fail when unsupported conf type is sent', () => {
-            fs.copyFileSync(resDir + 'test-package.json', './package.json');
+            tmp.addFile('res/test-package.json', './package.json');
             assert.throws( () =>
                 init({ confPath: 'foo', confType: 'baz' }), /type not supported/g );
         });
@@ -41,49 +36,49 @@ describe('CLI: nodecaf', () => {
         });
 
         it('Should fail when \'lib\' or \'bin\' directories already exist', () => {
-            fs.copyFileSync(resDir + 'test-package.json', './package.json');
-            fs.mkdirSync('./bin');
+            tmp.addFile('res/test-package.json', './package.json');
+            tmp.mkdir('bin');
             assert.throws( () => init({}), /already exists/g);
             fs.rmdirSync('./bin');
-            fs.mkdirSync('./lib');
+            tmp.mkdir('lib');
             assert.throws( () => init({}), /already exists/g);
         });
 
         it('Should generate basic structure files', () => {
-            fs.copyFileSync(resDir + 'test-package.json', './package.json');
+            tmp.addFile('res/test-package.json', './package.json');
             init({});
             assertPathExists('./bin/my-proj.js');
             assertPathExists('./lib/main.js');
             assertPathExists('./lib/api.js');
-            let pkgInfo = require(tdir + 'package.json');
+            let pkgInfo = require(tmp.dir + '/package.json');
             assert.equal(pkgInfo.bin['my-proj'], 'bin/my-proj.js');
         });
 
         it('Should target specified directory', () => {
-            fs.mkdirSync('./foo');
-            fs.copyFileSync(resDir + 'nmless-package.json', './foo/package.json');
+            tmp.mkdir('foo');
+            tmp.addFile('res/nmless-package.json', './foo/package.json');
             const cli = require('cli');
             cli.setArgv(['thing', '-p', './foo']);
             init();
-            let pkgInfo = require(tdir + 'foo/package.json');
+            let pkgInfo = require(tmp.dir + '/foo/package.json');
             assert.equal(pkgInfo.bin['my-app'], 'bin/my-app.js');
         });
 
         it('Should use specified project name', () => {
-            fs.copyFileSync(resDir + 'test-package.json', './package.json');
+            tmp.addFile('res/test-package.json', './package.json');
             init({ name: 'proj-foo' });
-            let pkgInfo = require(tdir + 'package.json');
+            let pkgInfo = require(tmp.dir + '/package.json');
             assert.equal(pkgInfo.bin['proj-foo'], 'bin/proj-foo.js');
         });
 
         it('Should generate conf file if specified', () => {
-            fs.copyFileSync(resDir + 'nmless-package.json', './package.json');
+            tmp.addFile('res/nmless-package.json', './package.json');
             init({ confPath: './conf.toml' });
             assertPathExists('./conf.toml');
         });
 
         it('Should generate create conf file dir if it doesn\'t exist', () => {
-            fs.copyFileSync(resDir + 'nmless-package.json', './package.json');
+            tmp.addFile('res/nmless-package.json', './package.json');
             init({ confPath: './my/conf.toml' });
             assertPathExists('./my/conf.toml');
         });
@@ -92,13 +87,9 @@ describe('CLI: nodecaf', () => {
     describe('nodecaf openapi', () => {
         const openapi = require('../lib/cli/openapi');
         const SwaggerParser = require('swagger-parser');
-        let tdir;
 
-        beforeEach(function(){
-            let suffix = Math.random() * 1e3;
-            tdir = os.tmpdir + '/' + String(new Date()).replace(/\D/g, '') + suffix + '/';
-            fs.mkdirSync(tdir);
-            process.chdir(tdir);
+        afterEach(function(){
+            tmp.refresh();
         });
 
         it('Should fail when no package.json is found', () => {
@@ -106,7 +97,7 @@ describe('CLI: nodecaf', () => {
         });
 
         it('Should fail when no API file is found', () => {
-            fs.copyFileSync(resDir + 'test-package.json', './package.json');
+            tmp.addFile('res/test-package.json', './package.json');
             const cli = require('cli');
             cli.setArgv(['thing']);
             assert.throws( () =>
@@ -114,17 +105,18 @@ describe('CLI: nodecaf', () => {
         });
 
         it('Should output a well formed JSON API doc to default file', done => {
-            fs.copyFileSync(resDir + 'test-package.json', './package.json');
-            fs.copyFileSync(resDir + 'api.js', './api.js');
+            tmp.addFile('res/test-package.json', './package.json');
+            tmp.addFile('res/api.js', './api.js');
+            tmp.addFile('res/conf.toml', './conf.toml');
 
-            openapi({ apiPath: './api.js' });
+            openapi({ apiPath: './api.js', confPath: './conf.toml' });
 
             SwaggerParser.validate('./output.json', done);
         });
 
         it('Should output a well formed YAML API doc to given file', done => {
-            fs.copyFileSync(resDir + 'test-package.json', './package.json');
-            fs.copyFileSync(resDir + 'api.js', './api.js');
+            tmp.addFile('res/test-package.json', './package.json');
+            tmp.addFile('res/api.js', './api.js');
 
             openapi({ apiPath: './api.js', outFile: './outfile.yml' });
 

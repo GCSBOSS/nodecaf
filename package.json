@@ -50,6 +50,7 @@
         "form-data": "^2.4.0",
         "muhb": "^0.1.1",
         "swagger-parser": "^7.0.1",
+        "tempper": "^0.1.0",
         "wtfnode": "^0.8.0"
     }
 }

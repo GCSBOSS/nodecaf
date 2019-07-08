@@ -7,23 +7,25 @@ const LOCAL_HOST = 'http://localhost:80/'
 describe('Conf Loader', () => {
     const loadConf = require('../lib/conf-loader');
 
-    it('Should NOT fail if no conf file is specified', () => {
-        let obj = loadConf('toml');
-        assert.deepEqual(obj, {});
+    it('Should fail if no conf file is specified', () => {
+        assert.throws( () => loadConf() );
     });
 
-    it('Should NOT fail if conf file is not found', () => {
-        let obj = loadConf('toml', './bla');
-        assert.deepEqual(obj, {});
+    it('Should fail if conf file is not found', () => {
+        assert.throws( () => loadConf('./bla') );
+    });
+
+    it('Should fail if given conf type is not supported', () => {
+        assert.throws( () => loadConf('./test/res/conf.xml', 'xml'), /type not supported/ );
     });
 
     it('Should properly load a TOML file and generate an object', () => {
-        let obj = loadConf('toml', './test/res/conf.toml');
+        let obj = loadConf('./test/res/conf.toml');
         assert.strictEqual(obj.key, 'value');
     });
 
     it('Should properly load an YAML file and generate an object', () => {
-        let obj = loadConf('yaml', './test/res/conf.yaml');
+        let obj = loadConf('./test/res/conf.yaml', 'yaml');
         assert.strictEqual(obj.key, 'value');
     });
 });
@@ -60,11 +62,6 @@ describe('AppServer', () => {
         it('Should store any settings sent', () => {
             let app = new AppServer({ key: 'value' });
             assert.strictEqual(app.settings.key, 'value');
-        });
-
-        it('Should create the Express server', () => {
-            let app = new AppServer();
-            assert.strictEqual(typeof app.express.use, 'function');
         });
 
     });
@@ -237,7 +234,7 @@ describe('AppServer', () => {
             await app.start();
             let { body, status } = await post(
                 LOCAL_HOST + 'foo',
-                { '--no-auto': true },
+                { '--no-auto': true, 'Content-Length': 13 },
                 '{"foo":"bar"}'
             );
             assert.strictEqual(status, 400);
@@ -259,6 +256,38 @@ describe('AppServer', () => {
             );
             assert.strictEqual(status, 200);
             await app.stop();
+        });
+
+        it('Should accept requests without body payload', async () => {
+            let app = new AppServer();
+            app.api(function({ post }){
+                this.accept([ 'urlencoded', 'text/html' ]);
+                post('/foo', ({ res }) => res.end());
+            });
+            await app.start();
+            let { status } = await post(
+                LOCAL_HOST + 'foo',
+                { '--no-auto': true }
+            );
+            assert.strictEqual(status, 200);
+            await app.stop();
+        });
+
+    });
+
+    describe('::setup', () => {
+
+        it('Should apply settings on top of existing one', () => {
+            let app = new AppServer({ key: 'value' });
+            app.setup({ key: 'value2', key2: 'value' });
+            assert.strictEqual(app.settings.key, 'value2');
+            assert.strictEqual(app.settings.key2, 'value');
+        });
+
+        it('Should load form file when path is sent', () => {
+            let app = new AppServer({ key: 'valueOld' });
+            app.setup('test/res/conf.toml');
+            assert.strictEqual(app.settings.key, 'value');
         });
 
     });
@@ -356,7 +385,7 @@ describe('REST/Restify Features', () => {
         await app.start();
         let { status } = await post(
             LOCAL_HOST + 'foobar',
-            { '--no-auto': true },
+            { '--no-auto': true, 'Content-Length': 13 },
             JSON.stringify({foo: 'bar'})
         );
         assert.strictEqual(status, 200);
@@ -456,6 +485,22 @@ describe('REST/Restify Features', () => {
             await app.stop();
         });
 
+        it('Should accept requests without a body payload', async () => {
+            let app = new AppServer();
+            app.api(function({ post }){
+                let acc = accept('text/html');
+                post('/foo', acc, ({ res }) => res.end());
+            });
+            await app.start();
+            let { status } = await post(
+                LOCAL_HOST + 'foo',
+                { '--no-auto': true },
+                '{"foo":"bar"}'
+            );
+            assert.strictEqual(status, 200);
+            await app.stop();
+        });
+
     });
 
 });
@@ -476,8 +521,7 @@ describe('run()', () => {
 
     it('Should run the given app server', async () => {
         let app
-        await run({ init(settings){
-            assert(typeof settings == 'object');
+        await run({ init(){
             app = new AppServer();
             app.api(function({ get }){
                 get('/bar', ({ res }) => res.end('foo'));
@@ -486,6 +530,20 @@ describe('run()', () => {
         } });
         let { body } = await get(LOCAL_HOST + 'bar');
         assert.strictEqual(body, 'foo');
+        await app.stop();
+    });
+
+    it('Should inject the given conf file', async () => {
+        let app
+        await run({ init(){
+            app = new AppServer();
+            app.api(function({ get }){
+                get('/bar', ({ res, conf }) => res.end(conf.key));
+            });
+            return app;
+        }, confPath: 'test/res/conf.toml' });
+        let { body } = await get(LOCAL_HOST + 'bar');
+        assert.strictEqual(body, 'value');
         await app.stop();
     });
 
