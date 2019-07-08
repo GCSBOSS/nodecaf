@@ -237,7 +237,7 @@ describe('AppServer', () => {
             await app.start();
             let { body, status } = await post(
                 LOCAL_HOST + 'foo',
-                { '--no-auto': true },
+                { '--no-auto': true, 'Content-Length': 13 },
                 '{"foo":"bar"}'
             );
             assert.strictEqual(status, 400);
@@ -256,6 +256,21 @@ describe('AppServer', () => {
                 LOCAL_HOST + 'foo',
                 { 'Content-Type': 'text/html' },
                 '{"foo":"bar"}'
+            );
+            assert.strictEqual(status, 200);
+            await app.stop();
+        });
+
+        it('Should accept requests without body payload', async () => {
+            let app = new AppServer();
+            app.api(function({ post }){
+                this.accept([ 'urlencoded', 'text/html' ]);
+                post('/foo', ({ res }) => res.end());
+            });
+            await app.start();
+            let { status } = await post(
+                LOCAL_HOST + 'foo',
+                { '--no-auto': true }
             );
             assert.strictEqual(status, 200);
             await app.stop();
@@ -356,7 +371,7 @@ describe('REST/Restify Features', () => {
         await app.start();
         let { status } = await post(
             LOCAL_HOST + 'foobar',
-            { '--no-auto': true },
+            { '--no-auto': true, 'Content-Length': 13 },
             JSON.stringify({foo: 'bar'})
         );
         assert.strictEqual(status, 200);
@@ -450,6 +465,22 @@ describe('REST/Restify Features', () => {
             let { status } = await post(
                 LOCAL_HOST + 'foo',
                 { 'Content-Type': 'text/html' },
+                '{"foo":"bar"}'
+            );
+            assert.strictEqual(status, 200);
+            await app.stop();
+        });
+
+        it('Should accept requests without a body payload', async () => {
+            let app = new AppServer();
+            app.api(function({ post }){
+                let acc = accept('text/html');
+                post('/foo', acc, ({ res }) => res.end());
+            });
+            await app.start();
+            let { status } = await post(
+                LOCAL_HOST + 'foo',
+                { '--no-auto': true },
                 '{"foo":"bar"}'
             );
             assert.strictEqual(status, 200);
