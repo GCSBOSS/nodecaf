@@ -47,10 +47,10 @@
         "yaml": "^1.6.0"
     },
     "devDependencies": {
-        "form-data": "^2.4.0",
+        "form-data": "^2.5.0",
         "muhb": "^0.1.1",
-        "swagger-parser": "^7.0.1",
-        "tempper": "^0.1.0",
+        "swagger-parser": "^8.0.0",
+        "tempper": "^0.1.1",
         "wtfnode": "^0.8.0"
     }
 }
