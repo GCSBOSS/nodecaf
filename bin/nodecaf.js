@@ -1,15 +1,16 @@
 #!node
-const fs = require('fs');
-const path = require('path');
+const Eclipt = require('eclipt');
 
-let cf = path.resolve(__dirname, '../lib/cli', process.argv[2] + '.js');
+const cli = new Eclipt('nodecaf', {}, {
+    requireCommand: true,
+    noArgs: true,
+    getVersion: () => 'v' + require(__dirname + '/../package.json').version
+});
 
-if(fs.existsSync(cf)){
-    let cmd = require(cf);
-    try{
-        cmd();
-    }
-    catch(e){
-        console.error(e.message);
-    }
+cli.requireCommands(__dirname + '/../lib/cli');
+try{
+    cli.execute();
+}
+catch(e){
+    console.error(e.message);
 }

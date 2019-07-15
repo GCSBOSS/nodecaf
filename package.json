@@ -37,8 +37,8 @@
     "homepage": "https://gitlab.com/GCSBOSS/nodecaf#README",
     "dependencies": {
         "bunyan": "^1.8.12",
-        "cli": "^1.0.1",
         "compression": "^1.7.4",
+        "eclipt": "^0.1.2",
         "express": "^4.17.1",
         "express-fileupload": "^1.1.5",
         "http-errors": "^1.7.3",

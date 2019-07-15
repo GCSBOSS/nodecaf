@@ -19,7 +19,7 @@ describe('CLI: nodecaf', () => {
     });
 
     describe('nodecaf init', () => {
-        const init = require('../lib/cli/init');
+        const { callback: init } = require('../lib/cli/init');
 
         afterEach(function(){
             tmp.refresh();
@@ -57,9 +57,7 @@ describe('CLI: nodecaf', () => {
         it('Should target specified directory', () => {
             tmp.mkdir('foo');
             tmp.addFile('res/nmless-package.json', './foo/package.json');
-            const cli = require('cli');
-            cli.setArgv(['thing', '-p', './foo']);
-            init();
+            init({ path: './foo' });
             let pkgInfo = require(tmp.dir + '/foo/package.json');
             assert.equal(pkgInfo.bin['my-app'], 'bin/my-app.js');
         });
@@ -85,7 +83,7 @@ describe('CLI: nodecaf', () => {
     });
 
     describe('nodecaf openapi', () => {
-        const openapi = require('../lib/cli/openapi');
+        const { callback: openapi } = require('../lib/cli/openapi');
         const SwaggerParser = require('swagger-parser');
 
         afterEach(function(){
@@ -98,10 +96,7 @@ describe('CLI: nodecaf', () => {
 
         it('Should fail when no API file is found', () => {
             tmp.addFile('res/test-package.json', './package.json');
-            const cli = require('cli');
-            cli.setArgv(['thing']);
-            assert.throws( () =>
-                openapi(), /api.js not found/g );
+            assert.throws( () => openapi({}), /api.js not found/g );
         });
 
         it('Should output a well formed JSON API doc to default file', done => {
@@ -118,7 +113,7 @@ describe('CLI: nodecaf', () => {
             tmp.addFile('res/test-package.json', './package.json');
             tmp.addFile('res/api.js', './api.js');
 
-            openapi({ apiPath: './api.js', outFile: './outfile.yml' });
+            openapi({ apiPath: './api.js' }, './outfile.yml');
 
             SwaggerParser.validate('./outfile.yml', done);
         });
