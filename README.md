@@ -504,9 +504,11 @@ document of a given Nodecaf API.
 
 **Options**
 
-- `-o --outFile file`: A file path to save the generated document (required)
 - `-p --path directory`: Project root directory (defaults to working dir)
 - `--apiPath file`: A path to your project's API file (defaults to `lib/api.js`)
 - `-t --type (json | yaml)`: The type of document to be generated (defaults to JSON)
 - `-c --confPath [file]`: The config file to be considered
 - `--confType (yaml | toml)`: The type of the given config file
+
+**Arguments**
+- `outFile`: A file path to save the generated document (required)
