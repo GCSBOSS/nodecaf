@@ -49,7 +49,7 @@
     },
     "devDependencies": {
         "form-data": "^2.5.0",
-        "muhb": "^0.1.1",
+        "muhb": "^1.0.0",
         "swagger-parser": "^8.0.0",
         "tempper": "^0.1.1",
         "wtfnode": "^0.8.0"
