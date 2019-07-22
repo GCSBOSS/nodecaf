@@ -73,16 +73,16 @@ describe('AppServer', () => {
         it('Should start the http server on port 80', async () => {
             let app = new AppServer();
             await app.start();
-            let { status } = await base.get('');
-            assert.strictEqual(status, 404);
+            let { assert } = await base.get('');
+            assert.status.is(404);
             await app.stop();
         });
 
         it('Should start the http server on port sent', async () => {
             let app = new AppServer({ port: 8765 });
             await app.start();
-            let { status } = await get('http://127.0.0.1:8765/');
-            assert.strictEqual(status, 404);
+            let { assert } = await get('http://127.0.0.1:8765/');
+            assert.status.is(404);
             await app.stop();
         });
 
@@ -121,8 +121,8 @@ describe('AppServer', () => {
                 assert.strictEqual(typeof head, 'function');
             });
             await app.start();
-            let { status } = await base.post('foo');
-            assert.strictEqual(status, 500);
+            let { assert: { status } } = await base.post('foo');
+            status.is(500);
             await app.stop();
         });
 
@@ -135,8 +135,8 @@ describe('AppServer', () => {
                     ({ flash, res }) => res.end(flash.foo) );
             });
             await app.start();
-            let { body } = await base.get('bar');
-            assert.strictEqual(body, 'bar');
+            let { assert: { body } } = await base.get('bar');
+            body.exactly('bar');
             await app.stop();
         });
 
@@ -151,8 +151,8 @@ describe('AppServer', () => {
                 post('/bar', ({ foo, res }) => res.end(foo));
             });
             await app.start();
-            let { body } = await base.post('bar');
-            assert.strictEqual(body, 'foobar');
+            let { assert: { body } } = await base.post('bar');
+            body.exactly('foobar');
             await app.stop();
         });
 
@@ -196,11 +196,9 @@ describe('AppServer', () => {
         it('Should take down the sever and bring it back up', async () => {
             let app = new AppServer();
             await app.start();
-            let { status } = await base.get('');
-            assert.strictEqual(status, 404);
+            (await base.get('')).assert.status.is(404);
             await app.restart();
-            let { status: s } = await base.get('');
-            assert.strictEqual(s, 404);
+            (await base.get('')).assert.status.is(404);
             await app.stop();
         });
 
@@ -217,13 +215,13 @@ describe('AppServer', () => {
                 post('/foo', ({ res }) => res.end());
             });
             await app.start();
-            let { body, status } = await base.post(
+            let { assert: { body, status } } = await base.post(
                 'foo',
                 { 'Content-Type': 'application/json' },
                 '{"foo":"bar"}'
             );
-            assert.strictEqual(status, 400);
-            assert(/Unsupported/.test(body));
+            status.is(400);
+            body.match(/Unsupported/);
             await app.stop();
         });
 
@@ -234,13 +232,13 @@ describe('AppServer', () => {
                 post('/foo', ({ res }) => res.end());
             });
             await app.start();
-            let { body, status } = await base.post(
+            let { assert } = await base.post(
                 'foo',
                 { '--no-auto': true, 'Content-Length': 13 },
                 '{"foo":"bar"}'
             );
-            assert.strictEqual(status, 400);
-            assert(/Missing/.test(body));
+            assert.status.is(400);
+            assert.body.match(/Missing/);
             await app.stop();
         });
 
@@ -251,12 +249,12 @@ describe('AppServer', () => {
                 post('/foo', ({ res }) => res.end());
             });
             await app.start();
-            let { status } = await base.post(
+            let { assert } = await base.post(
                 'foo',
                 { 'Content-Type': 'text/html' },
                 '{"foo":"bar"}'
             );
-            assert.strictEqual(status, 200);
+            assert.status.is(200);
             await app.stop();
         });
 
@@ -267,11 +265,8 @@ describe('AppServer', () => {
                 post('/foo', ({ res }) => res.end());
             });
             await app.start();
-            let { status } = await base.post(
-                'foo',
-                { '--no-auto': true }
-            );
-            assert.strictEqual(status, 200);
+            let { assert } = await base.post('foo', { '--no-auto': true });
+            assert.status.is(200);
             await app.stop();
         });
 
@@ -327,8 +322,7 @@ describe('REST/Restify Features', () => {
             });
         });
         await app.start();
-        let { status } = await base.get('foo');
-        assert.strictEqual(status, 200);
+        (await base.get('foo')).assert.status.is(200);
         await app.stop();
     });
 
@@ -366,12 +360,12 @@ describe('REST/Restify Features', () => {
             });
         });
         await app.start();
-        let { status } = await base.post(
+        let { assert: { status } } = await base.post(
             'foobar',
             { 'Content-Type': 'application/json' },
             JSON.stringify({foo: 'bar'})
         );
-        assert.strictEqual(status, 200);
+        status.is(200);
         await app.stop();
     });
 
@@ -384,12 +378,12 @@ describe('REST/Restify Features', () => {
             });
         });
         await app.start();
-        let { status } = await base.post(
+        let { assert: { status } } = await base.post(
             'foobar',
             { '--no-auto': true, 'Content-Length': 13 },
             JSON.stringify({foo: 'bar'})
         );
-        assert.strictEqual(status, 200);
+        status.is(200);
         await app.stop();
     });
 
@@ -402,12 +396,12 @@ describe('REST/Restify Features', () => {
             });
         });
         await app.start();
-        let { status } = await base.post(
+        let { assert: { status } } = await base.post(
             'foobar',
             { 'Content-Type': 'application/x-www-form-urlencoded' },
             'foo=bar'
         );
-        assert.strictEqual(status, 200);
+        status.is(200);
         await app.stop();
     });
 
@@ -421,12 +415,12 @@ describe('REST/Restify Features', () => {
             });
         });
         await app.start();
-        let { status } = await base.post(
+        let { assert: { status } } = await base.post(
             'foobar',
             { 'Content-Type': 'application/x-www-form-urlencoded' },
             'foo=bar'
         );
-        assert.strictEqual(status, 200);
+        status.is(200);
         await app.stop();
     });
 
