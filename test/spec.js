@@ -53,9 +53,11 @@ describe('Promise Error Adapter', () => {
 
 });
 
+const { get, root } = require('muhb');
+let base = root(LOCAL_HOST);
+
 describe('AppServer', () => {
     const AppServer = require('../lib/app-server');
-    const { get, post } = require('muhb');
 
     describe('constructor', () => {
 
@@ -71,16 +73,16 @@ describe('AppServer', () => {
         it('Should start the http server on port 80', async () => {
             let app = new AppServer();
             await app.start();
-            let { status } = await get(LOCAL_HOST);
-            assert.strictEqual(status, 404);
+            let { assert } = await base.get('');
+            assert.status.is(404);
             await app.stop();
         });
 
         it('Should start the http server on port sent', async () => {
             let app = new AppServer({ port: 8765 });
             await app.start();
-            let { status } = await get('http://127.0.0.1:8765/');
-            assert.strictEqual(status, 404);
+            let { assert } = await get('http://127.0.0.1:8765/');
+            assert.status.is(404);
             await app.stop();
         });
 
@@ -119,8 +121,8 @@ describe('AppServer', () => {
                 assert.strictEqual(typeof head, 'function');
             });
             await app.start();
-            let { status } = await post(LOCAL_HOST + 'foo');
-            assert.strictEqual(status, 500);
+            let { assert: { status } } = await base.post('foo');
+            status.is(500);
             await app.stop();
         });
 
@@ -133,8 +135,8 @@ describe('AppServer', () => {
                     ({ flash, res }) => res.end(flash.foo) );
             });
             await app.start();
-            let { body } = await get(LOCAL_HOST + 'bar');
-            assert.strictEqual(body, 'bar');
+            let { assert: { body } } = await base.get('bar');
+            body.exactly('bar');
             await app.stop();
         });
 
@@ -149,8 +151,8 @@ describe('AppServer', () => {
                 post('/bar', ({ foo, res }) => res.end(foo));
             });
             await app.start();
-            let { body } = await post(LOCAL_HOST + 'bar');
-            assert.strictEqual(body, 'foobar');
+            let { assert: { body } } = await base.post('bar');
+            body.exactly('foobar');
             await app.stop();
         });
 
@@ -163,7 +165,7 @@ describe('AppServer', () => {
             await app.start();
             await app.stop();
             try{
-                await get(LOCAL_HOST);
+                await base.get('');
             }
             catch(e){
                 var rejected = e;
@@ -194,11 +196,9 @@ describe('AppServer', () => {
         it('Should take down the sever and bring it back up', async () => {
             let app = new AppServer();
             await app.start();
-            let { status } = await get(LOCAL_HOST);
-            assert.strictEqual(status, 404);
+            (await base.get('')).assert.status.is(404);
             await app.restart();
-            let { status: s } = await get(LOCAL_HOST);
-            assert.strictEqual(s, 404);
+            (await base.get('')).assert.status.is(404);
             await app.stop();
         });
 
@@ -215,13 +215,13 @@ describe('AppServer', () => {
                 post('/foo', ({ res }) => res.end());
             });
             await app.start();
-            let { body, status } = await post(
-                LOCAL_HOST + 'foo',
+            let { assert: { body, status } } = await base.post(
+                'foo',
                 { 'Content-Type': 'application/json' },
                 '{"foo":"bar"}'
             );
-            assert.strictEqual(status, 400);
-            assert(/Unsupported/.test(body));
+            status.is(400);
+            body.match(/Unsupported/);
             await app.stop();
         });
 
@@ -232,13 +232,13 @@ describe('AppServer', () => {
                 post('/foo', ({ res }) => res.end());
             });
             await app.start();
-            let { body, status } = await post(
-                LOCAL_HOST + 'foo',
+            let { assert } = await base.post(
+                'foo',
                 { '--no-auto': true, 'Content-Length': 13 },
                 '{"foo":"bar"}'
             );
-            assert.strictEqual(status, 400);
-            assert(/Missing/.test(body));
+            assert.status.is(400);
+            assert.body.match(/Missing/);
             await app.stop();
         });
 
@@ -249,12 +249,12 @@ describe('AppServer', () => {
                 post('/foo', ({ res }) => res.end());
             });
             await app.start();
-            let { status } = await post(
-                LOCAL_HOST + 'foo',
+            let { assert } = await base.post(
+                'foo',
                 { 'Content-Type': 'text/html' },
                 '{"foo":"bar"}'
             );
-            assert.strictEqual(status, 200);
+            assert.status.is(200);
             await app.stop();
         });
 
@@ -265,17 +265,14 @@ describe('AppServer', () => {
                 post('/foo', ({ res }) => res.end());
             });
             await app.start();
-            let { status } = await post(
-                LOCAL_HOST + 'foo',
-                { '--no-auto': true }
-            );
-            assert.strictEqual(status, 200);
+            let { assert } = await base.post('foo', { '--no-auto': true });
+            assert.status.is(200);
             await app.stop();
         });
 
     });
 
-    describe('::setup', () => {
+    describe('#setup', () => {
 
         it('Should apply settings on top of existing one', () => {
             let app = new AppServer({ key: 'value' });
@@ -297,7 +294,6 @@ describe('AppServer', () => {
 describe('REST/Restify Features', () => {
     const fs = require('fs');
     const AppServer = require('../lib/app-server');
-    const { post, get } = require('muhb');
 
     const { EventEmitter } = require('events');
     const { addRoute } = require('../lib/route-adapter');
@@ -326,8 +322,7 @@ describe('REST/Restify Features', () => {
             });
         });
         await app.start();
-        let { status } = await get(LOCAL_HOST + 'foo');
-        assert.strictEqual(status, 200);
+        (await base.get('foo')).assert.status.is(200);
         await app.stop();
     });
 
@@ -365,12 +360,12 @@ describe('REST/Restify Features', () => {
             });
         });
         await app.start();
-        let { status } = await post(
-            LOCAL_HOST + 'foobar',
+        let { assert: { status } } = await base.post(
+            'foobar',
             { 'Content-Type': 'application/json' },
             JSON.stringify({foo: 'bar'})
         );
-        assert.strictEqual(status, 200);
+        status.is(200);
         await app.stop();
     });
 
@@ -383,12 +378,12 @@ describe('REST/Restify Features', () => {
             });
         });
         await app.start();
-        let { status } = await post(
-            LOCAL_HOST + 'foobar',
+        let { assert: { status } } = await base.post(
+            'foobar',
             { '--no-auto': true, 'Content-Length': 13 },
             JSON.stringify({foo: 'bar'})
         );
-        assert.strictEqual(status, 200);
+        status.is(200);
         await app.stop();
     });
 
@@ -401,12 +396,31 @@ describe('REST/Restify Features', () => {
             });
         });
         await app.start();
-        let { status } = await post(
-            LOCAL_HOST + 'foobar',
+        let { assert: { status } } = await base.post(
+            'foobar',
             { 'Content-Type': 'application/x-www-form-urlencoded' },
             'foo=bar'
         );
-        assert.strictEqual(status, 200);
+        status.is(200);
+        await app.stop();
+    });
+
+    it('Should not parse request body when setup so', async () => {
+        let app = new AppServer();
+        app.shouldParseBody = false;
+        app.api(function({ post }){
+            post('/foobar', ({ body, res }) => {
+                assert(!body);
+                res.end();
+            });
+        });
+        await app.start();
+        let { assert: { status } } = await base.post(
+            'foobar',
+            { 'Content-Type': 'application/x-www-form-urlencoded' },
+            'foo=bar'
+        );
+        status.is(200);
         await app.stop();
     });
 
@@ -419,7 +433,7 @@ describe('REST/Restify Features', () => {
             });
         });
         await app.start();
-        let { status } = await post(LOCAL_HOST + 'foobar?foo=bar');
+        let { status } = await base.post('foobar?foo=bar');
         assert.strictEqual(status, 200);
         await app.stop();
     });
@@ -428,7 +442,7 @@ describe('REST/Restify Features', () => {
         let app = new AppServer();
         app.api(function(){  });
         await app.start();
-        let { status, body } = await post(LOCAL_HOST + 'foobar');
+        let { status, body } = await base.post('foobar');
         assert.strictEqual(status, 404);
         assert.strictEqual(body, '');
         await app.stop();
@@ -442,7 +456,7 @@ describe('REST/Restify Features', () => {
             });
         });
         await app.start();
-        let { body } = await post(LOCAL_HOST + 'foobar');
+        let { body } = await base.post('foobar');
         assert.doesNotThrow( () => JSON.parse(body) );
         await app.stop();
     });
@@ -458,8 +472,8 @@ describe('REST/Restify Features', () => {
                 post('/foo', acc, ({ res }) => res.end());
             });
             await app.start();
-            let { body, status } = await post(
-                LOCAL_HOST + 'foo',
+            let { body, status } = await base.post(
+                'foo',
                 { 'Content-Type': 'application/json' },
                 '{"foo":"bar"}'
             );
@@ -476,8 +490,8 @@ describe('REST/Restify Features', () => {
                 post('/foo', acc, ({ res }) => res.end());
             });
             await app.start();
-            let { status } = await post(
-                LOCAL_HOST + 'foo',
+            let { status } = await base.post(
+                'foo',
                 { 'Content-Type': 'text/html' },
                 '{"foo":"bar"}'
             );
@@ -492,8 +506,8 @@ describe('REST/Restify Features', () => {
                 post('/foo', acc, ({ res }) => res.end());
             });
             await app.start();
-            let { status } = await post(
-                LOCAL_HOST + 'foo',
+            let { status } = await base.post(
+                'foo',
                 { '--no-auto': true },
                 '{"foo":"bar"}'
             );
@@ -507,7 +521,6 @@ describe('REST/Restify Features', () => {
 
 describe('run()', () => {
     const { run, AppServer } = require('../lib/main');
-    const { get } = require('muhb');
 
     it('Should fail when non function is sent', async () => {
         try{
@@ -528,7 +541,7 @@ describe('run()', () => {
             });
             return app;
         } });
-        let { body } = await get(LOCAL_HOST + 'bar');
+        let { body } = await base.get('bar');
         assert.strictEqual(body, 'foo');
         await app.stop();
     });
@@ -542,7 +555,7 @@ describe('run()', () => {
             });
             return app;
         }, confPath: 'test/res/conf.toml' });
-        let { body } = await get(LOCAL_HOST + 'bar');
+        let { body } = await base.get('bar');
         assert.strictEqual(body, 'value');
         await app.stop();
     });
@@ -584,7 +597,6 @@ describe('Assertions', () => {
 
 describe('Error Handling', () => {
     const AppServer = require('../lib/app-server');
-    const { post } = require('muhb');
     const fs = require('fs');
 
     it('Should handle Error thrown sync on the route', async () => {
@@ -595,7 +607,7 @@ describe('Error Handling', () => {
             });
         });
         await app.start();
-        let { status: status } = await post(LOCAL_HOST + 'unknown');
+        let { status: status } = await base.post('unknown');
         assert.strictEqual(status, 500);
         await app.stop();
     });
@@ -611,9 +623,9 @@ describe('Error Handling', () => {
             });
         });
         await app.start();
-        let { status } = await post(LOCAL_HOST + 'known');
+        let { status } = await base.post('known');
         assert.strictEqual(status, 404);
-        let { status: s2 } = await post(LOCAL_HOST + 'unknown');
+        let { status: s2 } = await base.post('unknown');
         assert.strictEqual(s2, 500);
         await app.stop();
     });
@@ -637,11 +649,11 @@ describe('Error Handling', () => {
             });
         });
         await app.start();
-        let { status } = await post(LOCAL_HOST + 'known');
+        let { status } = await base.post('known');
         assert.strictEqual(status, 404);
-        let { status: s2 } = await post(LOCAL_HOST + 'unknown');
+        let { status: s2 } = await base.post('unknown');
         assert.strictEqual(s2, 500);
-        let { status: s3 } = await post(LOCAL_HOST + 'unknown/object');
+        let { status: s3 } = await base.post('unknown/object');
         assert.strictEqual(s3, 500);
         await app.stop();
     });
@@ -662,9 +674,9 @@ describe('Error Handling', () => {
             });
         });
         await app.start();
-        let { status } = await post(LOCAL_HOST + 'known');
+        let { status } = await base.post('known');
         assert.strictEqual(status, 500);
-        let { status: s2 } = await post(LOCAL_HOST + 'unknown');
+        let { status: s2 } = await base.post('unknown');
         assert.strictEqual(s2, 404);
         assert.strictEqual(count, 2);
         await app.stop();
@@ -681,7 +693,7 @@ describe('Error Handling', () => {
             });
         });
         await app.start();
-        let { status } = await post(LOCAL_HOST + 'unknown');
+        let { status } = await base.post('unknown');
         assert.strictEqual(status, 401);
         await app.stop();
     });
@@ -690,7 +702,6 @@ describe('Error Handling', () => {
 
 describe('Logging', () => {
     const { run, AppServer } = require('../lib/main');
-    const { post } = require('muhb');
     const fs = require('fs');
     const os = require('os');
     const path = require('path');
@@ -711,7 +722,7 @@ describe('Logging', () => {
             });
         });
         await app.start();
-        await post(LOCAL_HOST + 'foo');
+        await base.post('foo');
         let data = await fs.promises.readFile(file, 'utf-8');
         assert(data.indexOf('logfile') > 0);
         await app.stop();
@@ -728,7 +739,7 @@ describe('Logging', () => {
             });
         });
         await app.start();
-        await post(LOCAL_HOST + 'foo');
+        await base.post('foo');
         let data = await fs.promises.readFile(file, 'utf-8');
         assert(data.indexOf('logstream') > 0);
         await app.stop();
@@ -742,7 +753,7 @@ describe('Logging', () => {
             post('/foo', ({ res }) => res.end() );
         });
         await app.start();
-        await post(LOCAL_HOST + 'foo');
+        await base.post('foo');
         let data = await fs.promises.readFile(file, 'utf-8');
         assert(data.indexOf('POST') > 0);
         await app.stop();
@@ -756,7 +767,7 @@ describe('Logging', () => {
             post('/foo', () => { throw new Error('Oh yeah') } );
         });
         await app.start();
-        await post(LOCAL_HOST + 'foo');
+        await base.post('foo');
         let data = await fs.promises.readFile(file, 'utf-8');
         assert(data.indexOf('Oh yeah') > 0);
         await app.stop();
@@ -779,7 +790,6 @@ describe('API Docs', () => {
     const APIDoc = require('../lib/open-api');
     const AppServer = require('../lib/app-server');
     const { accept } = require('../lib/parse-types');
-    const { post } = require('muhb');
 
     it('Should not interfere with working API code', async () => {
         let app = new AppServer();
@@ -793,7 +803,7 @@ describe('API Docs', () => {
         });
 
         await app.start();
-        let { body } = await post(LOCAL_HOST + 'foo/baz');
+        let { body } = await base.post('foo/baz');
         assert.strictEqual(body, 'OK');
         await app.stop();
     });
@@ -903,7 +913,6 @@ describe('HTTPS', () => {
 
 describe('Regression', () => {
     const AppServer = require('../lib/app-server');
-    const { post } = require('muhb');
 
     it('Should handle errors even when error event has no listeners', async () => {
         let app = new AppServer();
@@ -913,7 +922,7 @@ describe('Regression', () => {
             });
         });
         await app.start();
-        let { status } = await post(LOCAL_HOST + 'bar');
+        let { status } = await base.post('bar');
         assert.strictEqual(status, 500);
         await app.stop();
     });
@@ -928,9 +937,9 @@ describe('Regression', () => {
         });
         await app.start();
 
-        let r1 = (await post(LOCAL_HOST + 'bar')).body;
-        let r2 = (await post(LOCAL_HOST + 'bar')).body;
-        let r3 = (await post(LOCAL_HOST + 'bar')).body;
+        let r1 = (await base.post('bar')).body;
+        let r2 = (await base.post('bar')).body;
+        let r3 = (await base.post('bar')).body;
         assert(r1 == r2 && r2 == r3 && r3 == 'errfoobar');
 
         await app.stop();
@@ -946,7 +955,7 @@ describe('Regression', () => {
         });
         await app.start();
 
-        let m = (await post(LOCAL_HOST + 'bar')).body;
+        let m = (await base.post('bar')).body;
         assert.strictEqual(m, 'NotFound');
 
         await app.stop();
@@ -965,7 +974,7 @@ describe('Regression', () => {
             gotHere = true;
         };
         await app.start();
-        await post(LOCAL_HOST + 'bar');
+        await base.post('bar');
         await app.stop();
         assert(gotHere);
     });
