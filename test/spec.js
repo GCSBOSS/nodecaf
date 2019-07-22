@@ -275,7 +275,7 @@ describe('AppServer', () => {
 
     });
 
-    describe('::setup', () => {
+    describe('#setup', () => {
 
         it('Should apply settings on top of existing one', () => {
             let app = new AppServer({ key: 'value' });
@@ -397,6 +397,25 @@ describe('REST/Restify Features', () => {
         app.api(function({ post }){
             post('/foobar', ({ body, res }) => {
                 assert.strictEqual(body.foo, 'bar');
+                res.end();
+            });
+        });
+        await app.start();
+        let { status } = await post(
+            LOCAL_HOST + 'foobar',
+            { 'Content-Type': 'application/x-www-form-urlencoded' },
+            'foo=bar'
+        );
+        assert.strictEqual(status, 200);
+        await app.stop();
+    });
+
+    it('Should not parse request body when setup so', async () => {
+        let app = new AppServer();
+        app.shouldParseBody = false;
+        app.api(function({ post }){
+            post('/foobar', ({ body, res }) => {
+                assert(!body);
                 res.end();
             });
         });
