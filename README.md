@@ -476,6 +476,15 @@ to set the
 [Operation object](https://github.com/OAI/OpenAPI-Specification/blob/master/versions/3.0.2.md#operationObject)'s
 `summary` property and the rest of the text to set the `description` (CommonMark).
 
+### Other Settings
+
+| Property | Type | Description | Default |
+|----------|------|-------------|---------|
+| `app.name` | String | Name to be displayed in logs and documentation | `'express'` |
+| `app.version` | String | Verison to be displayed in logs and documentation | `'0.0.0'` |
+| `app.settings.port` | Integer | Port for the web server to listen (also exposed as user conf) | `80` or `443` |
+| `app.shouldParseBody` | Boolean | Wether supported request body types should be parsed | `true` |
+
 ### CLI
 
 Nodecaf also provides some CLI tools to ease your development. To install the cli
