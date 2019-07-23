@@ -5,7 +5,7 @@
     "main": "lib/main.js",
     "scripts": {
         "test": "mocha -b --no-diff test/*.js",
-        "coverage": "nyc -r html -r text-summary mocha -b --no-diff test/*.js"
+        "coverage": "nyc -r html -r text-summary mocha -b --no-diff --no-warnings test/*.js"
     },
     "repository": {
         "type": "git",

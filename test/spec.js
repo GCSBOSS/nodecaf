@@ -636,7 +636,6 @@ describe('Error Handling', () => {
             post('/known', ({ error }) => {
                 fs.readdir('.', function(){
                     error('NotFound', 'errfoobar');
-                    error('NotFound');
                 });
             });
             post('/unknown', ({ error }) => {
@@ -974,6 +973,7 @@ describe('Regression', () => {
             gotHere = true;
         };
         await app.start();
+        app.express.set('env', 'test');
         await base.post('bar');
         await app.stop();
         assert(gotHere);
