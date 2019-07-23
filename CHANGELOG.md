@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.7.5] - 2019-07-23
+
+### Added
+- setting for a path where to store files uploaded as `multipart/form-data`
+- app version to startup message when running through binary
+
 ## [v0.7.4] - 2019-07-22
 
 ### Added
@@ -180,3 +186,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [v0.7.2]: https://gitlab.com/GCSBOSS/nodecaf/-/tags/v0.7.2
 [v0.7.3]: https://gitlab.com/GCSBOSS/nodecaf/-/tags/v0.7.3
 [v0.7.4]: https://gitlab.com/GCSBOSS/nodecaf/-/tags/v0.7.4
+[v0.7.5]: https://gitlab.com/GCSBOSS/nodecaf/-/tags/v0.7.5
