@@ -14,6 +14,7 @@ Using Nodecaf you'll get:
 - Built-in [assertions for most common REST scenarios](#rest-assertions).
 - Function to [expose global objects](#expose-globals) to all routes (eg.:
   database connections).
+- Shortcut for [permissive CORS](#cors) on all routes.
 - [HTTPS capability](#https).
 - Functions to [describe your API](#api-description) making your code the main
   source of truth.
@@ -380,6 +381,15 @@ Then in all routes you can:
 get('/my/thing', function({ db, libX }){
     // use your global stuff
 });
+```
+
+### CORS
+
+Nodecaf provides a setting to enable permissive CORS on all routes. Defaults to
+disabled. In your conf file:
+
+```js
+cors = true
 ```
 
 ### HTTPS
