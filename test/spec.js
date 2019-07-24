@@ -461,6 +461,25 @@ describe('REST/Restify Features', () => {
         await app.stop();
     });
 
+    describe('CORS', () => {
+
+        it('Should send permissive CORS headers when setup so [cors]', async () => {
+            let app = new AppServer();
+            app.settings.cors = true;
+            app.api(function({ get }){
+                get('/foobar', ({ res }) => res.end() );
+            });
+            await app.start();
+            const { assert } = await base.get('foobar', { 'Origin': 'http://outsider.com' });
+            assert.status.is(200);
+            assert.headers.match('access-control-allow-origin', '*');
+            const { assert: { headers } } = await base.options('foobar', { 'Origin': 'http://outsider.com' });
+            headers.match('access-control-allow-methods', 'GET,HEAD,PUT,PATCH,POST,DELETE');
+            await app.stop();
+        });
+
+    });
+
     describe('Accept setter', () => {
         const { accept } = require('../lib/parse-types');
 
