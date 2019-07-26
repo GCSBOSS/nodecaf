@@ -74,7 +74,7 @@ describe('AppServer', () => {
             let app = new AppServer();
             await app.start();
             let { assert } = await base.get('');
-            assert.status.is(404);
+            assert.status.is(503);
             await app.stop();
         });
 
@@ -82,7 +82,7 @@ describe('AppServer', () => {
             let app = new AppServer({ port: 8765 });
             await app.start();
             let { assert } = await get('http://127.0.0.1:8765/');
-            assert.status.is(404);
+            assert.status.is(503);
             await app.stop();
         });
 
@@ -196,9 +196,9 @@ describe('AppServer', () => {
         it('Should take down the sever and bring it back up', async () => {
             let app = new AppServer();
             await app.start();
-            (await base.get('')).assert.status.is(404);
+            (await base.get('')).assert.status.is(503);
             await app.restart();
-            (await base.get('')).assert.status.is(404);
+            (await base.get('')).assert.status.is(503);
             await app.stop();
         });
 
