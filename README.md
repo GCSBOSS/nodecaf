@@ -19,8 +19,7 @@ Using Nodecaf you'll get:
 - Functions to [describe your API](#api-description) making your code the main
   source of truth.
 - Functions to [filter request bodies](#filter-requests-by-mime-type) by mime-type.
-- CLI command to [generate a basic Nodecaf project structure](#init-project).
-- CLI command to [generate an OpenAPI document](#open-api-support) or your APIs.
+- Helpful [command line interface](https://gitlab.com/GCSBOSS/nodecaf-cli).
 
 > If you are unfamiliar with Express, checkout
 > [their routing docs](https://expressjs.com/en/starter/basic-routing.html)
@@ -32,7 +31,7 @@ Using Nodecaf you'll get:
 > dependency of bunyan. Chek out
 > [their issue](https://github.com/trentm/node-bunyan/issues/601).
 
-1. Install the cli utilities: `npm i --no-optional -g nodecaf`.
+1. Install the cli utilities: `npm i -P -g nodecaf-cli`.
 2. Create or just go to your node project directory (you must have a
    `package.json`).
 3. Add to your project with: `npm i --no-optional nodecaf`.
@@ -446,7 +445,8 @@ module.exports = function({ post, put }){
 
 Nodecaf allows you to descibe your api and it's functionality, effectively turning
 your code in the single source of truth. The described API can later be used to
-[generate](#open-api-support) an [Open API](https://www.openapis.org/) compatible
+[generate](https://gitlab.com/GCSBOSS/nodecaf-cli#open-api-support) an
+[Open API](https://www.openapis.org/) compatible
 document.
 
 In `lib/api.js` describe your API as whole through the `info` parameter:
@@ -495,40 +495,3 @@ to set the
 | `app.settings.port` | Integer | Port for the web server to listen (also exposed as user conf) | `80` or `443` |
 | `app.shouldParseBody` | Boolean | Wether supported request body types should be parsed | `true` |
 | `app.settings.formFileDir` | Path | Where to store files uploaded as form-data | OS default temp dir |
-
-### CLI
-
-Nodecaf also provides some CLI tools to ease your development. To install the cli
-commands, run: `npm i --no-optional -g nodecaf`.
-
-Check below the commands we provide.
-
-#### Init Project
-
-`nodecaf init` Generates a skelleton Nodecaf project file structure in the current
-directory.
-
-> You must already have a well-formed package.json in the target directory.
-
-**Options**
-
-- `-p --path [directory]`: Project root directory (defaults to working dir)
-- `-c --confPath [file]`: Generate a config file and plug it in the structure
-- `-n --name [string]`: A name/title for the generated app structure
-- `--confType (yaml | toml)`: The type for the generated config file
-
-#### Open API Support
-
-`nodecaf openapi` Generates an [Open API](https://www.openapis.org/) compliant
-document of a given Nodecaf API.
-
-**Options**
-
-- `-p --path directory`: Project root directory (defaults to working dir)
-- `--apiPath file`: A path to your project's API file (defaults to `lib/api.js`)
-- `-t --type (json | yaml)`: The type of document to be generated (defaults to JSON)
-- `-c --confPath [file]`: The config file to be considered
-- `--confType (yaml | toml)`: The type of the given config file
-
-**Arguments**
-- `outFile`: A file path to save the generated document (required)
