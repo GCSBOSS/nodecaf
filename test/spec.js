@@ -74,7 +74,7 @@ describe('AppServer', () => {
             let app = new AppServer();
             await app.start();
             let { assert } = await base.get('');
-            assert.status.is(404);
+            assert.status.is(503);
             await app.stop();
         });
 
@@ -82,7 +82,7 @@ describe('AppServer', () => {
             let app = new AppServer({ port: 8765 });
             await app.start();
             let { assert } = await get('http://127.0.0.1:8765/');
-            assert.status.is(404);
+            assert.status.is(503);
             await app.stop();
         });
 
@@ -92,6 +92,22 @@ describe('AppServer', () => {
             app.beforeStart = async () => done = await true;
             await app.start();
             assert(done);
+            await app.stop();
+        });
+
+        it('Should rebuild the api when setup [this.alwaysRebuildAPI]', async () => {
+            let app = new AppServer();
+            app.alwaysRebuildAPI = true;
+            await app.start();
+            let { assert } = await base.get('');
+            assert.status.is(404);
+            await app.stop();
+            app.buildAPI = function({ get }){
+                get('/foobar', ({ res }) => res.end());
+            };
+            await app.start();
+            let { assert: { status} } = await base.get('foobar');
+            status.is(200);
             await app.stop();
         });
 
@@ -137,6 +153,19 @@ describe('AppServer', () => {
             await app.start();
             let { assert: { body } } = await base.get('bar');
             body.exactly('bar');
+            await app.stop();
+        });
+
+        it('Should not bulid the API right away if setup [this.alwaysRebuildAPI]', async () => {
+            let app = new AppServer();
+            app.alwaysRebuildAPI = true;
+            app.api(function({ get }){
+                get('/foobar', ({ res }) => res.end());
+            });
+            app.alwaysRebuildAPI = false;
+            await app.start();
+            let { assert } = await base.get('foobar');
+            assert.status.is(503);
             await app.stop();
         });
 
@@ -196,9 +225,9 @@ describe('AppServer', () => {
         it('Should take down the sever and bring it back up', async () => {
             let app = new AppServer();
             await app.start();
-            (await base.get('')).assert.status.is(404);
+            (await base.get('')).assert.status.is(503);
             await app.restart();
-            (await base.get('')).assert.status.is(404);
+            (await base.get('')).assert.status.is(503);
             await app.stop();
         });
 
@@ -285,6 +314,20 @@ describe('AppServer', () => {
             let app = new AppServer({ key: 'valueOld' });
             app.setup('test/res/conf.toml');
             assert.strictEqual(app.settings.key, 'value');
+        });
+
+        it('Should rebuild the api when setup [this.alwaysRebuildAPI]', async () => {
+            let app = new AppServer();
+            app.alwaysRebuildAPI = true;
+            app.buildAPI = function({ get }){
+                get('/foobar', ({ res }) => res.end());
+            };
+            app.setup();
+            app.alwaysRebuildAPI = false;
+            await app.start();
+            let { assert: { status} } = await base.get('foobar');
+            status.is(200);
+            await app.stop();
         });
 
     });
@@ -800,100 +843,6 @@ describe('Logging', () => {
         } });
         let data = await fs.promises.readFile(file, 'utf-8');
         assert(data.indexOf('fatality') > 0);
-    });
-
-});
-
-describe('API Docs', () => {
-    const APIDoc = require('../lib/open-api');
-    const AppServer = require('../lib/app-server');
-    const { accept } = require('../lib/parse-types');
-
-    it('Should not interfere with working API code', async () => {
-        let app = new AppServer();
-        app.api(function({ info, post }){
-            info({
-                termsOfService: 'http://foo/bar/baz'
-            });
-            post('/foo/:bar', ({ res }) => {
-                res.end('OK');
-            }).desc('foobahbaz bahbaz bahfoo foo\nfoobah bazbah foo foo bar');
-        });
-
-        await app.start();
-        let { body } = await base.post('foo/baz');
-        assert.strictEqual(body, 'OK');
-        await app.stop();
-    });
-
-    it('Should have app name and version by default', function(){
-        let doc = new APIDoc();
-        let spec = doc.spec();
-        assert.strictEqual(typeof spec.info.title, 'string');
-        assert.strictEqual(spec.info.version, '0.0.0');
-    });
-
-    it('Should replace given fields of the info object', function(){
-        let doc = new APIDoc();
-        doc.api( ({ info }) => info({ version: 'barbaz', foo: 'bar' }) );
-        let spec = doc.spec();
-        assert.strictEqual(spec.info.version, 'barbaz');
-        assert.strictEqual(spec.info.foo, 'bar');
-    });
-
-    it('Should add operation summary and description', function(){
-        let doc = new APIDoc();
-        doc.api( ({ post }) => {
-            post('/foo', function(){}).desc('foo\nbar\nbaz');
-            post('/baz', function(){}).desc('foo');
-        });
-        let spec = doc.spec();
-        assert.strictEqual(spec.paths['/foo'].post.summary, 'foo');
-        assert.strictEqual(spec.paths['/baz'].post.summary, 'foo');
-        assert.strictEqual(spec.paths['/foo'].post.description, 'bar\nbaz');
-    });
-
-    it('Should auto-populate spec with path parameters', function(){
-        let doc = new APIDoc();
-        doc.api( ({ post }) => {
-            post('/foo/:bar', function(){});
-        });
-        let spec = doc.spec();
-        assert.strictEqual(spec.paths['/foo/:bar'].parameters[0].name, 'bar');
-    });
-
-    it('Should auto-populate operation with permissive requests body', function(){
-        let doc = new APIDoc();
-        doc.api( ({ post }) => {
-            post('/foo', function(){});
-            post('/baz', function(){});
-        });
-        let spec = doc.spec();
-        assert.strictEqual(typeof spec.paths['/foo'].post.requestBody, 'object');
-        assert('*/*' in spec.paths['/foo'].post.requestBody.content);
-    });
-
-    it('Should add request body types based on app accepts', function(){
-        let doc = new APIDoc();
-        doc.api( function({ post }){
-            this.accept(['json', 'text/html']);
-            post('/foo', function(){});
-        });
-        let spec = doc.spec();
-        assert(/following types/.test(spec.paths['/foo'].post.requestBody.description));
-        assert('application/json' in spec.paths['/foo'].post.requestBody.content);
-        assert('text/html' in spec.paths['/foo'].post.requestBody.content);
-    });
-
-    it('Should add request body types based on route accepts', function(){
-        let doc = new APIDoc();
-        doc.api( function({ post }){
-            let acc = accept('json');
-            post('/foo', acc, function(){});
-        });
-        let spec = doc.spec();
-        assert(/following types/.test(spec.paths['/foo'].post.requestBody.description));
-        assert('application/json' in spec.paths['/foo'].post.requestBody.content);
     });
 
 });
