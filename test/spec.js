@@ -330,6 +330,12 @@ describe('AppServer', () => {
             await app.stop();
         });
 
+        it('Should store added conf file paths', () => {
+            let app = new AppServer();
+            app.setup('test/res/conf.toml');
+            assert.strictEqual(app.confs[1][0], 'test/res/conf.toml');
+        });
+
     });
 
 });
