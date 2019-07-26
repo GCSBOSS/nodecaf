@@ -495,3 +495,4 @@ to set the
 | `app.settings.port` | Integer | Port for the web server to listen (also exposed as user conf) | `80` or `443` |
 | `app.shouldParseBody` | Boolean | Wether supported request body types should be parsed | `true` |
 | `app.settings.formFileDir` | Path | Where to store files uploaded as form-data | OS default temp dir |
+| `app.alwaysRebuildAPI` | Boolean | Wether the API should be rebuilt dynamically for every start or setup operation | `false` |

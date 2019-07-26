@@ -95,6 +95,22 @@ describe('AppServer', () => {
             await app.stop();
         });
 
+        it('Should rebuild the api when setup [this.alwaysRebuildAPI]', async () => {
+            let app = new AppServer();
+            app.alwaysRebuildAPI = true;
+            await app.start();
+            let { assert } = await base.get('');
+            assert.status.is(404);
+            await app.stop();
+            app.buildAPI = function({ get }){
+                get('/foobar', ({ res }) => res.end());
+            };
+            await app.start();
+            let { assert: { status} } = await base.get('foobar');
+            status.is(200);
+            await app.stop();
+        });
+
     });
 
     describe('#api', () => {
@@ -137,6 +153,19 @@ describe('AppServer', () => {
             await app.start();
             let { assert: { body } } = await base.get('bar');
             body.exactly('bar');
+            await app.stop();
+        });
+
+        it('Should not bulid the API right away if setup [this.alwaysRebuildAPI]', async () => {
+            let app = new AppServer();
+            app.alwaysRebuildAPI = true;
+            app.api(function({ get }){
+                get('/foobar', ({ res }) => res.end());
+            });
+            app.alwaysRebuildAPI = false;
+            await app.start();
+            let { assert } = await base.get('foobar');
+            assert.status.is(503);
             await app.stop();
         });
 
@@ -285,6 +314,20 @@ describe('AppServer', () => {
             let app = new AppServer({ key: 'valueOld' });
             app.setup('test/res/conf.toml');
             assert.strictEqual(app.settings.key, 'value');
+        });
+
+        it('Should rebuild the api when setup [this.alwaysRebuildAPI]', async () => {
+            let app = new AppServer();
+            app.alwaysRebuildAPI = true;
+            app.buildAPI = function({ get }){
+                get('/foobar', ({ res }) => res.end());
+            };
+            app.setup();
+            app.alwaysRebuildAPI = false;
+            await app.start();
+            let { assert: { status} } = await base.get('foobar');
+            status.is(200);
+            await app.stop();
         });
 
     });
