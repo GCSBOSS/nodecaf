@@ -148,7 +148,7 @@ Use this feature to manage:
 - Nodecaf settings such as SSL and logging
 - Your own server application settings for your users
 
-Suported config formats: **TOML**, **YAML**
+Suported config formats: **TOML**, **YAML**, **JSON**
 
 > Check out how to [generate a project with configuration file already plugged in](#init-project)
 
@@ -182,7 +182,7 @@ file or object on top of the current one as follows:
 ```js
 app.setup('/path/to/settings.toml');
 
-app.setup('/path/to/settings.yaml', 'yaml');
+app.setup('/path/to/settings.yaml');
 
 app.setup({ key: 'value' });
 

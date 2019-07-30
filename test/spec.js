@@ -4,32 +4,6 @@ const assert = require('assert');
 // Address for the tests' local servers to listen.
 const LOCAL_HOST = 'http://localhost:80/'
 
-describe('Conf Loader', () => {
-    const loadConf = require('../lib/conf-loader');
-
-    it('Should fail if no conf file is specified', () => {
-        assert.throws( () => loadConf() );
-    });
-
-    it('Should fail if conf file is not found', () => {
-        assert.throws( () => loadConf('./bla') );
-    });
-
-    it('Should fail if given conf type is not supported', () => {
-        assert.throws( () => loadConf('./test/res/conf.xml', 'xml'), /type not supported/ );
-    });
-
-    it('Should properly load a TOML file and generate an object', () => {
-        let obj = loadConf('./test/res/conf.toml');
-        assert.strictEqual(obj.key, 'value');
-    });
-
-    it('Should properly load an YAML file and generate an object', () => {
-        let obj = loadConf('./test/res/conf.yaml', 'yaml');
-        assert.strictEqual(obj.key, 'value');
-    });
-});
-
 describe('Promise Error Adapter', () => {
     const adapt = require('../lib/a-sync-error-adapter');
 
@@ -328,12 +302,6 @@ describe('AppServer', () => {
             let { assert: { status} } = await base.get('foobar');
             status.is(200);
             await app.stop();
-        });
-
-        it('Should store added conf file paths', () => {
-            let app = new AppServer();
-            app.setup('test/res/conf.toml');
-            assert.strictEqual(app.confs[1][0], 'test/res/conf.toml');
         });
 
     });
