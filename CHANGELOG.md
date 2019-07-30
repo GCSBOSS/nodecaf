@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.7.7] - 2019-07-30
+
+### Added
+- setting to rebuild the API on every start or setup
+- log entries for server start, stop and restart event
+- live application reload for conf file changes in debug mode
+- support for JSON conf files
+
+### Changed
+- status when API was not setup from 'Not Found' to 'Service Unavailable'
+- conf file logic to use [Confort](https://www.npmjs.com/package/confort) module
+
+### Removed
+- all CLI functionality to [own project](https://gitlab.com/GCSBOSS/nodecaf-cli)
+- conf type parameter in favor of reading the extension of path
+
 ## [v0.7.6] - 2019-07-24
 
 ### Added
@@ -193,3 +209,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [v0.7.4]: https://gitlab.com/GCSBOSS/nodecaf/-/tags/v0.7.4
 [v0.7.5]: https://gitlab.com/GCSBOSS/nodecaf/-/tags/v0.7.5
 [v0.7.6]: https://gitlab.com/GCSBOSS/nodecaf/-/tags/v0.7.6
+[v0.7.7]: https://gitlab.com/GCSBOSS/nodecaf/-/tags/v0.7.7
