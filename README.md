@@ -6,7 +6,7 @@ Nodecaf is an Express framework for developing REST APIs in a quick and
 convenient manner.
 Using Nodecaf you'll get:
 - Useful [handler arguments](#handlers-args).
-- Built-in [settings file support](#settings-file).
+- Built-in [settings file support](#settings-file) with layering and live reload.
 - [Out-of-the-box logging](#logging) through Bunyan.
 - Seamless support for [async functions as route handlers](#async-handlers).
 - [Uncaught exceptions](#error-handling) in routes always produce proper REST
@@ -148,7 +148,7 @@ Use this feature to manage:
 - Nodecaf settings such as SSL and logging
 - Your own server application settings for your users
 
-Suported config formats: **TOML**, **YAML**
+Suported config formats: **TOML**, **YAML**, **JSON**
 
 > Check out how to [generate a project with configuration file already plugged in](#init-project)
 
@@ -182,7 +182,7 @@ file or object on top of the current one as follows:
 ```js
 app.setup('/path/to/settings.toml');
 
-app.setup('/path/to/settings.yaml', 'yaml');
+app.setup('/path/to/settings.yaml');
 
 app.setup({ key: 'value' });
 
@@ -191,6 +191,12 @@ app.setup({ key: 'new-value', foo: 'bar' });
 
 Layering is useful, for example, to keep a **default** settings file in your server
 source code to be overwritten by your user's.
+
+##### Live Reload
+
+When in debug mode (`app.setup({ debug: true })`) changes to loaded config files
+will trigger aspplication reloads, so you don't have to manually restart the
+whole node process.
 
 ### Logging
 

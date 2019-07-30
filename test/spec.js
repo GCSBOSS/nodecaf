@@ -4,32 +4,6 @@ const assert = require('assert');
 // Address for the tests' local servers to listen.
 const LOCAL_HOST = 'http://localhost:80/'
 
-describe('Conf Loader', () => {
-    const loadConf = require('../lib/conf-loader');
-
-    it('Should fail if no conf file is specified', () => {
-        assert.throws( () => loadConf() );
-    });
-
-    it('Should fail if conf file is not found', () => {
-        assert.throws( () => loadConf('./bla') );
-    });
-
-    it('Should fail if given conf type is not supported', () => {
-        assert.throws( () => loadConf('./test/res/conf.xml', 'xml'), /type not supported/ );
-    });
-
-    it('Should properly load a TOML file and generate an object', () => {
-        let obj = loadConf('./test/res/conf.toml');
-        assert.strictEqual(obj.key, 'value');
-    });
-
-    it('Should properly load an YAML file and generate an object', () => {
-        let obj = loadConf('./test/res/conf.yaml', 'yaml');
-        assert.strictEqual(obj.key, 'value');
-    });
-});
-
 describe('Promise Error Adapter', () => {
     const adapt = require('../lib/a-sync-error-adapter');
 
@@ -876,6 +850,25 @@ describe('HTTPS', () => {
         await app.stop();
         process.env['NODE_TLS_REJECT_UNAUTHORIZED'] = 1;
     });
+});
+
+describe('Watch Conf Files', () => {
+    const AppServer = require('../lib/app-server');
+
+    it('Should watch changes on layered config files [this.watchConfFiles]', async function(){
+        const fs = require('fs');
+        fs.copyFileSync('./test/res/conf.toml', './node_modules/conf.toml');
+        let app = new AppServer({ debug: true });
+        app.setup('./node_modules/conf.toml');
+        await app.start();
+        await new Promise( done => {
+            app.conf.on('reload', () => setTimeout(done, 1000));
+            fs.writeFileSync('./node_modules/conf.toml', 'key = \'value2\'');
+        });
+        await app.stop();
+        assert.strictEqual(app.settings.key, 'value2');
+    });
+
 });
 
 describe('Regression', () => {
