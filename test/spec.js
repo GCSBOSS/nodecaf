@@ -852,6 +852,25 @@ describe('HTTPS', () => {
     });
 });
 
+describe('Watch Conf Files', () => {
+    const AppServer = require('../lib/app-server');
+
+    it('Should watch changes on layered config files [this.watchConfFiles]', async function(){
+        const fs = require('fs');
+        fs.copyFileSync('./test/res/conf.toml', './node_modules/conf.toml');
+        let app = new AppServer({ debug: true });
+        app.setup('./node_modules/conf.toml');
+        await app.start();
+        await new Promise( done => {
+            app.conf.on('reload', () => setTimeout(done, 1000));
+            fs.writeFileSync('./node_modules/conf.toml', 'key = \'value2\'');
+        });
+        await app.stop();
+        assert.strictEqual(app.settings.key, 'value2');
+    });
+
+});
+
 describe('Regression', () => {
     const AppServer = require('../lib/app-server');
 
