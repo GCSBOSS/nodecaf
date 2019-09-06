@@ -733,6 +733,21 @@ describe('Error Handling', () => {
         await app.stop();
     });
 
+    it('Should expose handler args object to user error handler', async () => {
+        let app = new AppServer();
+        app.onRouteError = function(input){
+            assert.strictEqual(typeof input.req, 'object');
+        };
+        app.api(function({ post }){
+            post('/unknown', () => {
+                throw new Error('resterr');
+            });
+        });
+        await app.start();
+        await base.post('unknown');
+        await app.stop();
+    });
+
 });
 
 describe('Logging', () => {

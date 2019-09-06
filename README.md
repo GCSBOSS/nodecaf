@@ -115,7 +115,7 @@ the only argument of any route handler function. The code below shows all
 handler args exposed by Nodecaf:
 
 ```js
-function({ req, res, next, query, params, body, flash, conf, log, error }){
+function({ req, res, next, query, params, body, flash, conf, log, error, headers }){
     // Do your stuff.
 }
 ```
@@ -123,7 +123,7 @@ function({ req, res, next, query, params, body, flash, conf, log, error }){
 Quick reference:
 
 - `req`, `res`, `next`: The good old parameters used regularly in Express.
-- `query`, `parameters`, `body`: Shortcuts to the homonymous properties of `req`.
+- `query`, `parameters`, `body`, `headers`: Shortcuts to the homonymous properties of `req`.
   They contain respectively the query string, the URL parameters, and the request
   body data.
 - `flash`: Is a shortcut to Express `req.locals`. Keys inserted in this a object
