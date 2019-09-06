@@ -502,3 +502,4 @@ to set the
 | `app.shouldParseBody` | Boolean | Wether supported request body types should be parsed | `true` |
 | `app.settings.formFileDir` | Path | Where to store files uploaded as form-data | OS default temp dir |
 | `app.alwaysRebuildAPI` | Boolean | Wether the API should be rebuilt dynamically for every start or setup operation | `false` |
+| `app.cookieSecret` | String | A secure random string to be used for signing cookies | none |
