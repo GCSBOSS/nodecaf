@@ -7,7 +7,7 @@ convenient manner.
 Using Nodecaf you'll get:
 - Useful [handler arguments](#handlers-args).
 - Built-in [settings file support](#settings-file) with layering and live reload.
-- [Out-of-the-box logging](#logging) through Bunyan.
+- [Out-of-the-box logging](#logging) through GoLog.
 - Seamless support for [async functions as route handlers](#async-handlers).
 - [Uncaught exceptions](#error-handling) in routes always produce proper REST
   responses.
@@ -27,14 +27,10 @@ Using Nodecaf you'll get:
 
 ## Get Started
 
-> `--no-optional` is meant to ignore DTrace package which is a compiled
-> dependency of bunyan. Chek out
-> [their issue](https://github.com/trentm/node-bunyan/issues/601).
-
 1. Install the cli utilities: `npm i -P -g nodecaf-cli`.
 2. Create or just go to your node project directory (you must have a
    `package.json`).
-3. Add to your project with: `npm i --no-optional nodecaf`.
+3. Add to your project with: `npm i -P nodecaf`.
 4. Create a skelleton project with: `nodecaf init`.
 5. Add your globals in `lib/main.js`
 ```js
@@ -131,7 +127,7 @@ Quick reference:
   of a route chain.
 - `conf`: This object contains the entire
   [application configuration data](#settings-file).
-- `log`: A bunyan logger instance. Use it to [log custom events](#logging) of
+- `log`: A GoLog logger instance. Use it to [log custom events](#logging) of
   your application.
 - Also all keys of the [globally exposed object](#expose-globals) are available
   as handler args for all routes.
@@ -218,7 +214,7 @@ file = "path/to/conf/file.log"
 ```
 
 In your route handlers, use the `log` handler arg as a
-[bunyan](https://github.com/trentm/node-bunyan) instance:
+[GoLog](https://gitlab.com/GCSBOSS/golog) instance:
 
 ```js
 function({ log }){
