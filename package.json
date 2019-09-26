@@ -33,21 +33,19 @@
     },
     "homepage": "https://gitlab.com/GCSBOSS/nodecaf#README",
     "dependencies": {
-        "bunyan": "^1.8.12",
         "compression": "^1.7.4",
-        "confort": "^0.1.0",
+        "confort": "^0.1.2",
         "cookie-parser": "^1.4.4",
         "cors": "^2.8.5",
         "express": "^4.17.1",
         "express-fileupload": "^1.1.5",
+        "golog": "^0.1.1",
         "http-errors": "^1.7.3",
-        "mime": "^2.4.4",
-        "toml": "^3.0.0",
-        "yaml": "^1.6.0"
+        "mime": "^2.4.4"
     },
     "devDependencies": {
-        "form-data": "^2.5.0",
-        "muhb": "^1.0.0",
+        "form-data": "^2.5.1",
+        "muhb": "^2.0.2",
         "wtfnode": "^0.8.0"
     }
 }
