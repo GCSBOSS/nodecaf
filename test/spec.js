@@ -2,7 +2,7 @@
 const assert = require('assert');
 
 // Address for the tests' local servers to listen.
-const LOCAL_HOST = 'http://localhost:80/'
+const LOCAL_HOST = 'http://localhost:80'
 
 describe('Promise Error Adapter', () => {
     const adapt = require('../lib/a-sync-error-adapter');
@@ -27,8 +27,8 @@ describe('Promise Error Adapter', () => {
 
 });
 
-const { get, root } = require('muhb');
-let base = root(LOCAL_HOST);
+const { get, context } = require('muhb');
+let base = context(LOCAL_HOST);
 
 describe('AppServer', () => {
     const AppServer = require('../lib/app-server');
@@ -80,7 +80,7 @@ describe('AppServer', () => {
                 get('/foobar', ({ res }) => res.end());
             };
             await app.start();
-            let { assert: { status} } = await base.get('foobar');
+            let { assert: { status } } = await base.get('foobar');
             status.is(200);
             await app.stop();
         });
@@ -359,7 +359,7 @@ describe('REST/Restify Features', () => {
         form.append('foo', 'bar');
         form.append('foobar', fs.createReadStream('./test/res/file.txt'));
         await new Promise(resolve =>
-            form.submit(LOCAL_HOST + 'bar/', (err, res) => {
+            form.submit(LOCAL_HOST + '/bar/', (err, res) => {
                 assert(res.headers['x-test'] == 'file.txt');
                 resolve();
             })

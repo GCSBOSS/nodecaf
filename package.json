@@ -45,7 +45,7 @@
     },
     "devDependencies": {
         "form-data": "^2.5.1",
-        "muhb": "^1.0.0",
+        "muhb": "^2.0.2",
         "wtfnode": "^0.8.0"
     }
 }
