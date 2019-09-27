@@ -43,6 +43,9 @@ publish:
   only:
     - tags
     - triggers
+  except:
+    variables:
+      - $CI_COMMIT_TAG =~ /beta/
   script:
     - npm install -g npm-cli-login
     - npm-cli-login
