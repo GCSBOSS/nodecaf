@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.7.10] - 2019-10-16
+
+### Added
+- conf argument to 'restart' method for updating the settings
+- 'running' property to check whether the server is listening
+- conf as an arg object key to API callback
+
+### Fixed
+- log entry for uncaught errors to use the original error stack and name
+- config layering for null values to not throw errors anymore
+
+### Removed
+- config data form server start, stop and restart log entries
+
 ## [v0.7.9] - 2019-09-26
 
 ### Changed
@@ -235,3 +249,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [v0.7.7]: https://gitlab.com/GCSBOSS/nodecaf/-/tags/v0.7.7
 [v0.7.8]: https://gitlab.com/GCSBOSS/nodecaf/-/tags/v0.7.8
 [v0.7.9]: https://gitlab.com/GCSBOSS/nodecaf/-/tags/v0.7.9
+[v0.7.10]: https://gitlab.com/GCSBOSS/nodecaf/-/tags/v0.7.10
