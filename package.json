@@ -39,7 +39,6 @@
         "cors": "^2.8.5",
         "express": "^4.17.1",
         "express-fileupload": "^1.1.6",
-        "golog": "^0.1.2",
         "http-errors": "^1.7.3",
         "mime": "^2.4.4"
     },

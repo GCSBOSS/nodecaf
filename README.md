@@ -7,7 +7,7 @@ convenient manner.
 Using Nodecaf you'll get:
 - Useful [handler arguments](#handlers-args).
 - Built-in [settings file support](#settings-file) with layering and live reload.
-- [Out-of-the-box logging](#logging) through GoLog.
+- [Logging functions](#logging).
 - Seamless support for [async functions as route handlers](#async-handlers).
 - [Uncaught exceptions](#error-handling) in routes always produce proper REST
   responses.
@@ -127,7 +127,7 @@ Quick reference:
   of a route chain.
 - `conf`: This object contains the entire
   [application configuration data](#settings-file).
-- `log`: A GoLog logger instance. Use it to [log custom events](#logging) of
+- `log`: A logger instance. Use it to [log events](#logging) of
   your application.
 - Also all keys of the [globally exposed object](#expose-globals) are available
   as handler args for all routes.
@@ -196,42 +196,37 @@ whole node process.
 
 ### Logging
 
-To setup Nodecaf logger you must add a `log` key to the application server config
-object like this:
-
-```js
-conf.log = { file: 'path/to/conf/file.log' }; // Use this for a file
-conf.log = { stream: process.stdout }; // Use this for a write stream
-let app = new AppServer(conf);
-```
-
-You can also setup a log file in your settings file to be automatically
-transferred to the `conf` argument of `init`.
-
-```toml
-[log]
-file = "path/to/conf/file.log"
-```
-
-In your route handlers, use the `log` handler arg as a
-[GoLog](https://gitlab.com/GCSBOSS/golog) instance:
+Nodecaf logs events to stdout by default where each line of the ouput is a JSON object.
+The log entries will have some default predefined values like pid, hostname etc...
+In your route handlers, use the functions available in the `log` object as follows:
 
 ```js
 function({ log }){
     log.info('hi');
     log.warn({lang: 'fr'}, 'au revoir');
+    log.fatal({ err: new Error() }, 'The error code is %d', 1234);
 }
 ```
+
+Below is described the signature of the available logging methods.
+
+- Method Name: one of the available log levels (`debug`, `info`, `warn`, `error`, `fatal`)
+- First argument (optional): An object whose keys will be injected in the final entry.
+- Second argument: A message to be the main line of the log. May contain printf-like replacements (%d, %s...)
+- Remaning arguments: Will be inserted into the message (printf-like)
 
 Nodecaf will automatically log some useful server events as described in the
 table below:
 
-| Level | Event |
-|-------|-------|
-| warn  | An error happened inside a route after the headers were already sent |
-| error | An error happened inside a route and was not caught |
-| fatal | An error happened that crashed the server process |
-| debug | A request has arrived |
+| Class | Level | Event |
+|-------|-------|-------|
+| error after headers sent | warn | An error happened inside a route after the headers were already sent |
+| route error | error | An error happened inside a route and was not caught |
+| fatal error | fatal | An error happened that crashed the server process |
+| request | info | A request has arrived |
+| server | info | The server has started |
+| server | info | The server has stopped |
+| server | info | The server configuration has been reloaded |
 
 ### Async Handlers
 
