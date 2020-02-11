@@ -5,6 +5,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.8.0] - 2020-02-11
+
+### Added
+- interface for logging to stdout as per 12 factor app
+- automatic log entry to all http responses sent by the server
+
+### Fixed
+- unhandled exception for 'undefined' or 'null' route handlers
+- intentional 500 responses being logged as uncaught route errors
+
+### Changed
+- default service name hoping to force authors into changing it
+
+### Removed
+- file/stream logging api in favor of stdout logging only
+
+### Security
+- fixed vulnerability on express-fileupload dependency by upgrading it
+
 ## [v0.7.10] - 2019-10-16
 
 ### Added
@@ -250,3 +269,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [v0.7.8]: https://gitlab.com/GCSBOSS/nodecaf/-/tags/v0.7.8
 [v0.7.9]: https://gitlab.com/GCSBOSS/nodecaf/-/tags/v0.7.9
 [v0.7.10]: https://gitlab.com/GCSBOSS/nodecaf/-/tags/v0.7.10
+[v0.8.0]: https://gitlab.com/GCSBOSS/nodecaf/-/tags/v0.8.0
