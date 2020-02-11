@@ -659,7 +659,7 @@ describe('Error Handling', () => {
         let app = new AppServer();
         app.api(function({ post }){
             post('/known', ({ error }) => {
-                error('NotFound');
+                error('ServerFault');
             });
             post('/unknown', ({ error }) => {
                 error(new Error('errfoobar'));
@@ -667,7 +667,7 @@ describe('Error Handling', () => {
         });
         await app.start();
         let { status } = await base.post('known');
-        assert.strictEqual(status, 404);
+        assert.strictEqual(status, 500);
         let { status: s2 } = await base.post('unknown');
         assert.strictEqual(s2, 500);
         await app.stop();
