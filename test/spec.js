@@ -1,5 +1,6 @@
-//const wtf = require('wtfnode');
 const assert = require('assert');
+
+process.env.NODE_ENV = 'testing';
 
 // Address for the tests' local servers to listen.
 const LOCAL_HOST = 'http://localhost:80'
@@ -753,87 +754,20 @@ describe('Error Handling', () => {
 });
 
 describe('Logging', () => {
-    const { run, AppServer } = require('../lib/main');
-    const fs = require('fs');
-    const os = require('os');
-    const path = require('path');
-    let dir;
+    const { AppServer } = require('../lib/main');
 
-    beforeEach(async function(){
-        dir = path.resolve(os.tmpdir(), String(Math.random()));
-        await fs.promises.mkdir(dir);
-    });
-
-    it('Should log to specified file', async () => {
-        let file = path.resolve(dir, 'logfile.txt');
-        let app = new AppServer({ log: { file: file } });
+    it('Should log given event', async () => {
+        let app = new AppServer();
         app.api(function({ post }){
             post('/foo', ({ log, res }) => {
-                log.info(file);
+                let entry = log.info('foobar');
+                assert.strictEqual(entry.msg, 'foobar');
                 res.end();
             });
         });
         await app.start();
         await base.post('foo');
-        let data = await fs.promises.readFile(file, 'utf-8');
-        assert(data.indexOf('logfile') > 0);
         await app.stop();
-    });
-
-    it('Should log to specified stream', async () => {
-        let file = path.resolve(dir, 'logstream.txt');
-        let stream = fs.createWriteStream(file);
-        let app = new AppServer({ log: { stream: stream } });
-        app.api(function({ post }){
-            post('/foo', ({ log, res }) => {
-                log.info(file);
-                res.end();
-            });
-        });
-        await app.start();
-        await base.post('foo');
-        let data = await fs.promises.readFile(file, 'utf-8');
-        assert(data.indexOf('logstream') > 0);
-        await app.stop();
-    });
-
-    it('Should log all requests when level is debug or lower', async () => {
-        let file = path.resolve(dir, 'logstream.txt');
-        let stream = fs.createWriteStream(file);
-        let app = new AppServer({ log: { stream: stream, level: 'debug' } });
-        app.api(function({ post }){
-            post('/foo', ({ res }) => res.end() );
-        });
-        await app.start();
-        await base.post('foo');
-        let data = await fs.promises.readFile(file, 'utf-8');
-        assert(data.indexOf('POST') > 0);
-        await app.stop();
-    });
-
-    it('Should log uncaught route errors when level is error or lower', async () => {
-        let file = path.resolve(dir, 'logstream.txt');
-        let stream = fs.createWriteStream(file);
-        let app = new AppServer({ log: { stream: stream, level: 'error' } });
-        app.api(function({ post }){
-            post('/foo', () => { throw new Error('Oh yeah') } );
-        });
-        await app.start();
-        await base.post('foo');
-        let data = await fs.promises.readFile(file, 'utf-8');
-        assert(data.indexOf('Oh yeah') > 0);
-        await app.stop();
-    });
-
-    it.skip('Should log errors that crash the server process', async () => {
-        let file = path.resolve(dir, 'logstream.txt');
-        let stream = fs.createWriteStream(file);
-        await run({ init(){
-            new AppServer({ log: { stream: stream, level: 'fatal' } });
-            throw new Error('fatality');
-        } });
-        let data = await fs.promises.readFile(file, 'utf-8');
-        assert(data.indexOf('fatality') > 0);
     });
 
 });
@@ -958,5 +892,3 @@ describe('Regression', () => {
     });
 
 });
-
-//after(() => wtf.dump());
