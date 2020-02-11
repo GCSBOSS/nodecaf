@@ -224,6 +224,7 @@ table below:
 | route error | error | An error happened inside a route and was not caught |
 | fatal error | fatal | An error happened that crashed the server process |
 | request | info | A request has arrived |
+| response | info | A response has been sent |
 | server | info | The server has started |
 | server | info | The server has stopped |
 | server | info | The server configuration has been reloaded |
