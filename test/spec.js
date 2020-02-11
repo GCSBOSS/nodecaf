@@ -163,17 +163,12 @@ describe('AppServer', () => {
 
     describe('#stop', () => {
 
-        it('Should stop the http server', async () => {
+        it('Should stop the http server', async function(){
             let app = new AppServer();
             await app.start();
             await app.stop();
-            try{
-                await base.get('');
-            }
-            catch(e){
-                var rejected = e;
-            }
-            assert(rejected);
+            this.timeout(3000);
+            await assert.rejects(base.get(''));
         });
 
         it('Should trigger after stop event', async () => {
@@ -220,7 +215,7 @@ describe('AppServer', () => {
             await app.start();
             let { assert: { body, status } } = await base.post(
                 'foo',
-                { 'Content-Type': 'application/json' },
+                { 'Content-Type': '2342' },
                 '{"foo":"bar"}'
             );
             status.is(400);
@@ -237,7 +232,7 @@ describe('AppServer', () => {
             await app.start();
             let { assert } = await base.post(
                 'foo',
-                { '--no-auto': true, 'Content-Length': 13 },
+                { 'no-auto': true, 'Content-Length': 13 },
                 '{"foo":"bar"}'
             );
             assert.status.is(400);
@@ -268,7 +263,7 @@ describe('AppServer', () => {
                 post('/foo', ({ res }) => res.end());
             });
             await app.start();
-            let { assert } = await base.post('foo', { '--no-auto': true });
+            let { assert } = await base.post('foo', { 'no-auto': true });
             assert.status.is(200);
             await app.stop();
         });
@@ -551,7 +546,7 @@ describe('REST/Restify Features', () => {
             await app.start();
             let { status } = await base.post(
                 'foo',
-                { '--no-auto': true },
+                { 'no-auto': true },
                 '{"foo":"bar"}'
             );
             assert.strictEqual(status, 200);
