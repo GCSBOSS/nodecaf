@@ -478,6 +478,13 @@ describe('REST/Restify Features', () => {
         await app.stop();
     });
 
+    it('Should throw exception when routes handlers are anything other than function or object', () => {
+        let app = new AppServer();
+        app.api(function({ post }){
+            assert.throws(() => post('/foobar', undefined), TypeError);
+        });
+    });
+
     describe('CORS', () => {
 
         it('Should send permissive CORS headers when setup so [cors]', async () => {
