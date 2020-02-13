@@ -190,9 +190,12 @@ source code to be overwritten by your user's.
 
 ##### Live Reload
 
-When in debug mode (`app.setup({ debug: true })`) changes to loaded config files
-will trigger aspplication reloads, so you don't have to manually restart the
-whole node process.
+```js
+app.watchConfFiles = true;
+```
+
+When enabled, changes to loaded config files will trigger application reloads,
+so you don't have to manually restart the whole node process.
 
 ### Logging
 
