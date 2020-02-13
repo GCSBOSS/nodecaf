@@ -809,7 +809,8 @@ describe('Watch Conf Files', () => {
     it('Should watch changes on layered config files [this.watchConfFiles]', async function(){
         const fs = require('fs');
         fs.copyFileSync('./test/res/conf.toml', './node_modules/conf.toml');
-        let app = new AppServer({ debug: true });
+        let app = new AppServer();
+        app.watchConfFiles = true;
         app.setup('./node_modules/conf.toml');
         await app.start();
         await new Promise( done => {
