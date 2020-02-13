@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.8.1] - 2020-02-13
+
+### Added
+- app attribute exposing server port number
+- app attribute to toggle conf live reload instead of relying on debug mode
+
+### Changed
+- hange global error handler to log errors properly instead of just dumping
+- uncaught errors ungly dump to proper log entry
+- SIGTER and SIGINT handling to rely on NODE_ENV instead of debug mode
+
+### Removed
+- startup and terminate raw console messages in favor of server log entries
+- debug mode setting
+
 ## [v0.8.0] - 2020-02-11
 
 ### Added
@@ -270,3 +285,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [v0.7.9]: https://gitlab.com/GCSBOSS/nodecaf/-/tags/v0.7.9
 [v0.7.10]: https://gitlab.com/GCSBOSS/nodecaf/-/tags/v0.7.10
 [v0.8.0]: https://gitlab.com/GCSBOSS/nodecaf/-/tags/v0.8.0
+[v0.8.1]: https://gitlab.com/GCSBOSS/nodecaf/-/tags/v0.8.1
