@@ -16,6 +16,7 @@ Using Nodecaf you'll get:
   database connections).
 - Shortcut for [permissive CORS](#cors) on all routes.
 - [HTTPS capability](#https).
+- Functions to define [Websocket Routes](#websocket-routes).
 - Functions to [describe your API](#api-description) making your code the main
   source of truth.
 - Functions to [filter request bodies](#filter-requests-by-mime-type) by mime-type.
@@ -79,12 +80,12 @@ module.exports = function({ post, get, del, head, patch, put }){
 };
 ```
 
-## Reporting Bugs
-If you have found any problems with this module, please:
+## Reporting Bugs **or Vulnerabilities**
+If you have found any problems with Nodecaf, please:
 
 1. [Open an issue](https://gitlab.com/GCSBOSS/nodecaf/issues/new).
 2. Describe what happened and how.
-3. Also in the issue text, reference the label `~bug`.
+3. Also in the issue text, reference the label `~bug` or `~security`.
 
 We will make sure to take a look when time allows us.
 
@@ -99,6 +100,11 @@ If you have spotted any enhancements to be made and is willing to get your hands
 dirty about it, fork us and
 [submit your merge request](https://gitlab.com/GCSBOSS/nodecaf/merge_requests/new)
 so we can collaborate effectively.
+
+- For coding style, we provide an [ESLint](https://eslint.org/) configuration
+  file in the root of the repository.
+- All commits are submit to SAST and Dependency Scanning as well as Code Quality
+  analisys, so expect to be boarded on your MRs.
 
 ## Manual
 On top of all the cool features Express offers, check out how to use all
@@ -231,6 +237,9 @@ table below:
 | server | info | The server has started |
 | server | info | The server has stopped |
 | server | info | The server configuration has been reloaded |
+| websocket | info | A new websocket connection happened |
+| websocket | debug | A message was received |
+| websocket | info | A websocket connection was closed |
 
 ### Async Handlers
 
@@ -405,6 +414,39 @@ cert = "/path/to/cert.pem"
 ```
 
 When SSL is enabled the default server port becomes 443.
+
+## WebSocket Routes
+
+With nodecaf you can define paths to be accessible as WebSocket endpoints.
+
+In your api file use the `ws(path, events)` method with the folling arguments:
+
+1. `path`: where the websocket will be accessible
+2. `events`: object containing any of the following handlers: `connect`, `message`, `close`.
+
+```js
+module.exports = function({ post, get, del, head, patch, put, ws }){
+
+    // Regular api routes...
+
+    // Websocket routes
+
+    ws('/my-path-1', {
+        connect: (client, req) => console.log('NEW CLIENT'),
+        message: (message, client, req) => console.log('NEW MESSAGE'),
+        close: (client, req) => console.log('BYE CLIENT')
+    });
+
+    ws('/my-path-2', {
+        connect: (client, req) => console.log('NEW CLIENT 2'),
+        message: (message, client, req) => console.log('NEW MESSAGE 2'),
+        close: (client, req) => console.log('BYE CLIENT 2')
+    });
+
+};
+```
+
+All handlers are optional for each websocket endpoint.
 
 ### Filter Requests by Mime-type
 
