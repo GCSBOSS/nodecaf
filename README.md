@@ -80,12 +80,12 @@ module.exports = function({ post, get, del, head, patch, put }){
 };
 ```
 
-## Reporting Bugs
-If you have found any problems with this module, please:
+## Reporting Bugs **or Vulnerabilities**
+If you have found any problems with Nodecaf, please:
 
 1. [Open an issue](https://gitlab.com/GCSBOSS/nodecaf/issues/new).
 2. Describe what happened and how.
-3. Also in the issue text, reference the label `~bug`.
+3. Also in the issue text, reference the label `~bug` or `~security`.
 
 We will make sure to take a look when time allows us.
 
@@ -100,6 +100,11 @@ If you have spotted any enhancements to be made and is willing to get your hands
 dirty about it, fork us and
 [submit your merge request](https://gitlab.com/GCSBOSS/nodecaf/merge_requests/new)
 so we can collaborate effectively.
+
+- For coding style, we provide an [ESLint](https://eslint.org/) configuration
+  file in the root of the repository.
+- All commits are submit to SAST and Dependency Scanning as well as Code Quality
+  analisys, so expect to be boarded on your MRs.
 
 ## Manual
 On top of all the cool features Express offers, check out how to use all
