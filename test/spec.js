@@ -893,3 +893,50 @@ describe('Regression', () => {
     });
 
 });
+
+describe('WebSocket', function(){
+
+    const AppServer = require('../lib/app-server');
+    const WebSocket = require('ws');
+
+    it('Should accept websocket connections and messages', function(done){
+        let count = 0;
+        let app = new AppServer();
+        app.api(({ ws }) => {
+            ws('/foo', {
+                connect: () => count++,
+                async message(message){
+                    assert.strictEqual('foobar', message);
+                    await app.stop();
+                    count++;
+                },
+                close(){
+                    assert.strictEqual(count, 2);
+                    done();
+                }
+            });
+        });
+        (async function(){
+            await app.start();
+            const ws = new WebSocket('ws://localhost/foo');
+            ws.on('open', () => {
+                ws.pong();
+                ws.send('foobar');
+            });
+        })();
+    });
+
+    it('Should reject connection to path that is not setup', function(done){
+        let app = new AppServer();
+        app.api(({ ws }) => ws('/foo', {}));
+        (async function(){
+            await app.start();
+            const ws = new WebSocket('ws://localhost/foobar');
+            ws.on('error', async () => {
+                await app.stop();
+                done()
+            });
+        })();
+    });
+
+});
