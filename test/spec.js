@@ -53,6 +53,13 @@ describe('AppServer', () => {
             await app.stop();
         });
 
+        it('Should prevent starting a running server', async () => {
+            let app = new AppServer();
+            await app.start();
+            assert.strictEqual(await app.start(), false);
+            await app.stop();
+        });
+
         it('Should start the http server on port sent', async () => {
             let app = new AppServer({ port: 8765 });
             await app.start();
