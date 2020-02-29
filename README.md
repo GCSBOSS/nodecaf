@@ -14,7 +14,7 @@ Using Nodecaf you'll get:
 - Built-in [assertions for most common REST scenarios](#rest-assertions).
 - Function to [expose global objects](#expose-globals) to all routes (eg.:
   database connections).
-- Shortcut for [permissive CORS](#cors) on all routes.
+- Shortcut for [CORS Settings](#cors) on all routes.
 - [HTTPS capability](#https).
 - Functions to define [Websocket Routes](#websocket-routes).
 - Functions to [describe your API](#api-description) making your code the main
@@ -397,9 +397,13 @@ get('/my/thing', function({ db, libX }){
 Nodecaf provides a setting to enable permissive CORS on all routes. Defaults to
 disabled. In your conf file:
 
-```js
+```toml
 cors = true
+cors = 'my://origin'
+cors = [ 'my://origin1', 'my://origin2' ]
 ```
+
+Setup the cors according to the [popular CORS Express middleware](https://github.com/expressjs/cors#configuration-options).
 
 ### HTTPS
 
