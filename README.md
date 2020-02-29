@@ -538,7 +538,7 @@ to set the
 | Property | Type | Description | Default |
 |----------|------|-------------|---------|
 | `app.name` | String | Name to be displayed in logs and documentation | `'express'` |
-| `app.version` | String | Verison to be displayed in logs and documentation | `'0.0.0'` |
+| `app.version` | String | Verison to be displayed in logs and documentation | Version in Package JSON |
 | `app.settings.port` | Integer | Port for the web server to listen (also exposed as user conf) | `80` or `443` |
 | `app.shouldParseBody` | Boolean | Wether supported request body types should be parsed | `true` |
 | `app.settings.formFileDir` | Path | Where to store files uploaded as form-data | OS default temp dir |
