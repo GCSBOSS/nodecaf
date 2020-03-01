@@ -241,6 +241,15 @@ table below:
 | websocket | debug | A message was received |
 | websocket | info | A websocket connection was closed |
 
+Additionally, you can filter log entries by level and class with the following
+settings:
+
+```toml
+[log]
+level = 'warn' # Only produce log entries with level 'warn' or higher ('error' & 'fatal')
+class = 'my-class' # Only produce log entries with class matching exactly 'my-class'
+```
+
 ### Async Handlers
 
 Nodecaf brings the useful feature of accepting async functions as route handlers

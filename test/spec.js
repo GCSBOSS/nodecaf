@@ -777,6 +777,16 @@ describe('Logging', () => {
         await app.stop();
     });
 
+    it('Should not log filtered level and class', async () => {
+        let app = new AppServer();
+        app.setup({ log: { class: 'test', level: 'info' } });
+        await app.start();
+        assert.strictEqual(app.log.debug({ class: 'test' }), false);
+        assert.strictEqual(app.log.info({ class: 'foo' }), false);
+        assert(app.log.info({ class: 'test' }));
+        await app.stop();
+    });
+
 });
 
 describe('HTTPS', () => {
