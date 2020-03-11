@@ -232,8 +232,8 @@ table below:
 | error after headers sent | warn | An error happened inside a route after the headers were already sent |
 | route error | error | An error happened inside a route and was not caught |
 | fatal error | fatal | An error happened that crashed the server process |
-| request | info | A request has arrived |
-| response | info | A response has been sent |
+| request | debug | A request has arrived |
+| response | debug | A response has been sent |
 | server | info | The server has started |
 | server | info | The server has stopped |
 | server | info | The server configuration has been reloaded |

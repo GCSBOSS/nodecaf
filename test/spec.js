@@ -334,10 +334,11 @@ describe('REST/Restify Features', () => {
     it('Should pass all the required args to adapted function', async () => {
         let app = new AppServer();
         app.api(function({ get }){
-            get('/foo', (obj) => {
+            get('/foo', function(obj){
                 assert(obj.res && obj.req && obj.next && obj.body === ''
                     && obj.params && obj.query && obj.flash && obj.error
                     && obj.conf && obj.log);
+                assert(this instanceof AppServer);
                 obj.res.end();
             });
         });
@@ -841,6 +842,7 @@ describe('Watch Conf Files', () => {
 });
 
 describe('Regression', () => {
+    const WebSocket = require('ws');
     const AppServer = require('../lib/app-server');
 
     it('Should handle errors even when error event has no listeners', async () => {
@@ -907,6 +909,33 @@ describe('Regression', () => {
         await base.post('bar');
         await app.stop();
         assert(gotHere);
+    });
+
+    it('Should not hang up connections when they have a query string', function(done){
+        let count = 0;
+        let app = new AppServer();
+        app.api(({ ws }) => {
+            ws('/foo', {
+                connect: () => count++,
+                async message(message){
+                    assert.strictEqual('foobar', message);
+                    await app.stop();
+                    count++;
+                },
+                close(){
+                    assert.strictEqual(count, 2);
+                    done();
+                }
+            });
+        });
+        (async function(){
+            await app.start();
+            const ws = new WebSocket('ws://localhost/foo?test=foobar');
+            ws.on('open', () => {
+                ws.pong();
+                ws.send('foobar');
+            });
+        })();
     });
 
 });
