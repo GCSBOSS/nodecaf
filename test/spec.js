@@ -334,10 +334,11 @@ describe('REST/Restify Features', () => {
     it('Should pass all the required args to adapted function', async () => {
         let app = new AppServer();
         app.api(function({ get }){
-            get('/foo', (obj) => {
+            get('/foo', function(obj){
                 assert(obj.res && obj.req && obj.next && obj.body === ''
                     && obj.params && obj.query && obj.flash && obj.error
                     && obj.conf && obj.log);
+                assert(this instanceof AppServer);
                 obj.res.end();
             });
         });
