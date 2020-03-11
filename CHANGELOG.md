@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.8.5] - 2020-03-11
+
+### Changed
+- request and response log entries level to 'debug'
+- 5xx response log entries level to 'warn'
+- exposed app instance to all route handlers via 'this'
+
+### Fixed
+- ws hang up when connection url has a query string
+
 ## [v0.8.4] - 2020-03-01
 
 ### Fixed
@@ -314,3 +324,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [v0.8.2]: https://gitlab.com/GCSBOSS/nodecaf/-/tags/v0.8.2
 [v0.8.3]: https://gitlab.com/GCSBOSS/nodecaf/-/tags/v0.8.3
 [v0.8.4]: https://gitlab.com/GCSBOSS/nodecaf/-/tags/v0.8.4
+[v0.8.5]: https://gitlab.com/GCSBOSS/nodecaf/-/tags/v0.8.5
