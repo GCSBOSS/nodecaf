@@ -489,6 +489,21 @@ describe('REST/Restify Features', () => {
         });
     });
 
+    it('Should output a JSON when the error message is an object', async () => {
+        let app = new AppServer();
+        app.shouldCompress = true;
+        app.api(function({ post }){
+            post('/foobar', ({ res }) => {
+                res.set('Content-Type', 'text/plain');
+                res.end([...Array(1500).keys()].join(','));
+            });
+        });
+        await app.start();
+        let { assert } = await base.post('foobar', { 'Accept-Encoding': 'gzip' });
+        assert.headers.match('content-encoding', 'gzip');
+        await app.stop();
+    });
+
     describe('CORS', () => {
 
         it('Should send permissive CORS headers when setup so [cors]', async () => {
