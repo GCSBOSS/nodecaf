@@ -38,7 +38,7 @@ describe('AppServer', () => {
 
         it('Should store any settings sent', () => {
             let app = new AppServer({ key: 'value' });
-            assert.strictEqual(app.settings.key, 'value');
+            assert.strictEqual(app.conf.key, 'value');
         });
 
     });
@@ -283,14 +283,14 @@ describe('AppServer', () => {
         it('Should apply settings on top of existing one', () => {
             let app = new AppServer({ key: 'value' });
             app.setup({ key: 'value2', key2: 'value' });
-            assert.strictEqual(app.settings.key, 'value2');
-            assert.strictEqual(app.settings.key2, 'value');
+            assert.strictEqual(app.conf.key, 'value2');
+            assert.strictEqual(app.conf.key2, 'value');
         });
 
         it('Should load form file when path is sent', () => {
             let app = new AppServer({ key: 'valueOld' });
             app.setup('test/res/conf.toml');
-            assert.strictEqual(app.settings.key, 'value');
+            assert.strictEqual(app.conf.key, 'value');
         });
 
         it('Should rebuild the api when setup [this.alwaysRebuildAPI]', async () => {
@@ -492,8 +492,7 @@ describe('REST/Restify Features', () => {
     describe('CORS', () => {
 
         it('Should send permissive CORS headers when setup so [cors]', async () => {
-            let app = new AppServer();
-            app.settings.cors = true;
+            let app = new AppServer({ cors: true });
             app.api(function({ get }){
                 get('/foobar', ({ res }) => res.end() );
             });
@@ -832,11 +831,11 @@ describe('Watch Conf Files', () => {
         app.setup('./node_modules/conf.toml');
         await app.start();
         await new Promise( done => {
-            app.conf.on('reload', () => setTimeout(done, 1000));
+            app.confort.on('reload', () => setTimeout(done, 1000));
             fs.writeFileSync('./node_modules/conf.toml', 'key = \'value2\'');
         });
         await app.stop();
-        assert.strictEqual(app.settings.key, 'value2');
+        assert.strictEqual(app.conf.key, 'value2');
     });
 
 });
