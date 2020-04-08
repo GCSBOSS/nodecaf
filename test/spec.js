@@ -565,49 +565,6 @@ describe('REST/Restify Features', () => {
 
 });
 
-describe('run()', () => {
-    const { run, AppServer } = require('../lib/main');
-
-    it('Should fail when non function is sent', async () => {
-        try{
-            await run({ init: false });
-        }
-        catch(e){
-            var failed = e;
-        }
-        assert(failed);
-    });
-
-    it('Should run the given app server', async () => {
-        let app
-        await run({ init(){
-            app = new AppServer();
-            app.api(function({ get }){
-                get('/bar', ({ res }) => res.end('foo'));
-            });
-            return app;
-        } });
-        let { body } = await base.get('bar');
-        assert.strictEqual(body, 'foo');
-        await app.stop();
-    });
-
-    it('Should inject the given conf file', async () => {
-        let app
-        await run({ init(){
-            app = new AppServer();
-            app.api(function({ get }){
-                get('/bar', ({ res, conf }) => res.end(conf.key));
-            });
-            return app;
-        }, confPath: 'test/res/conf.toml' });
-        let { body } = await base.get('bar');
-        assert.strictEqual(body, 'value');
-        await app.stop();
-    });
-
-});
-
 describe('Assertions', () => {
     const { valid, authorized, authn, exist, able } = require('../lib/assertions');
 
