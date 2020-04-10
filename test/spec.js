@@ -873,7 +873,7 @@ describe('Regression', () => {
         app.api(({ ws }) => {
             ws('/foo', {
                 connect: () => count++,
-                async message(message){
+                async message({ message }){
                     assert.strictEqual('foobar', message);
                     await app.stop();
                     count++;
@@ -907,7 +907,7 @@ describe('WebSocket', function(){
         app.api(({ ws }) => {
             ws('/foo', {
                 connect: () => count++,
-                async message(message){
+                async message({ message }){
                     assert.strictEqual('foobar', message);
                     await app.stop();
                     count++;
