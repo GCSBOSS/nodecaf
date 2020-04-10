@@ -80,6 +80,8 @@ module.exports = function({ post, get, del, head, patch, put }){
 };
 ```
 
+7. In your app root directory run with: `nodecaf run .`
+
 ## Reporting Bugs **or Vulnerabilities**
 If you have found any problems with Nodecaf, please:
 
@@ -154,18 +156,8 @@ Suported config formats: **TOML**, **YAML**, **JSON**
 
 > Check out how to [generate a project with configuration file already plugged in](#init-project)
 
-To setup a config file for an existing project, open the binary for your server
-in `bin/proj-name.js`. Then add a `confPath` key to the run parameter object
-whose value must be a string path pointing to your conf file.
-
-The config data can be passed as an object to the app constructor in `lib/main.js`:
-
-```js
-module.exports = function init(){
-    let conf = { key: 'value' };
-    let app = new AppServer(conf);
-}
-```
+To load a config file in your app, use the `-c` flag through the CLI pointing
+to your conf file path: `nodecaf run -c my/conf/path.toml my/app`
 
 You can use the config data through [it's handler arg](#handler-args) in
 all route handlers as follows:
@@ -174,6 +166,23 @@ all route handlers as follows:
 post('/foo', function({ conf }){
     console.log(conf.key); //=> 'value'
 });
+```
+
+Config data can also be passed as an object to the app constructor in `lib/main.js`:
+
+```js
+module.exports = function init(){
+    let conf = { key: 'value' };
+    let app = new AppServer(conf);
+}
+```
+
+Or a file path if you want to have a fixed config file for setting defaults or any other reason:
+
+```js
+module.exports = function init(){
+    let app = new AppServer(__dirname + '/default.toml');
+}
 ```
 
 #### Layered Configs
@@ -548,8 +557,8 @@ to set the
 |----------|------|-------------|---------|
 | `app.name` | String | Name to be displayed in logs and documentation | `'express'` |
 | `app.version` | String | Verison to be displayed in logs and documentation | Version in Package JSON |
-| `app.settings.port` | Integer | Port for the web server to listen (also exposed as user conf) | `80` or `443` |
+| `app.conf.port` | Integer | Port for the web server to listen (also exposed as user conf) | `80` or `443` |
 | `app.shouldParseBody` | Boolean | Wether supported request body types should be parsed | `true` |
-| `app.settings.formFileDir` | Path | Where to store files uploaded as form-data | OS default temp dir |
+| `app.conf.formFileDir` | Path | Where to store files uploaded as form-data | OS default temp dir |
 | `app.alwaysRebuildAPI` | Boolean | Wether the API should be rebuilt dynamically for every start or setup operation | `false` |
 | `app.cookieSecret` | String | A secure random string to be used for signing cookies | none |
