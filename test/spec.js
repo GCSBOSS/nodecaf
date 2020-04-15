@@ -28,7 +28,7 @@ describe('Promise Error Adapter', () => {
 
 });
 
-const { get, context } = require('muhb');
+const { get, context, request } = require('muhb');
 let base = context(LOCAL_HOST);
 
 describe('AppServer', () => {
@@ -940,5 +940,27 @@ describe('WebSocket', function(){
             });
         })();
     });
+
+});
+
+describe('Other Features', function(){
+    const AppServer = require('../lib/app-server');
+
+    it('Should delay server initialization by given milliseconds [delay]', async function(){
+        let app = new AppServer({ delay: 1500 });
+        app.api(function({ get }){
+            get('/foobar', ({ res }) => res.end());
+        });
+        let ps = app.start();
+        await new Promise(done => setTimeout(done, 400));
+        await assert.rejects(request({
+            url: 'http://localhost:80/foobar',
+            method: 'GET', timeout: 200
+        }));
+        await ps;
+        let { assert: ensure } = await base.get('foobar');
+        ensure.status.is(200);
+        await app.stop();
+    })
 
 });
