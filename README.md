@@ -6,7 +6,7 @@ Nodecaf is an Express framework for developing REST APIs in a quick and
 convenient manner.
 Using Nodecaf you'll get:
 - Useful [handler arguments](#handlers-args).
-- Built-in [settings file support](#settings-file) with layering and live reload.
+- Built-in [settings file support](#settings-file) with layering.
 - [Logging functions](#logging).
 - Seamless support for [async functions as route handlers](#async-handlers).
 - [Uncaught exceptions](#error-handling) in routes always produce proper REST
@@ -202,15 +202,6 @@ app.setup({ key: 'new-value', foo: 'bar' });
 
 Layering is useful, for example, to keep a **default** settings file in your server
 source code to be overwritten by your user's.
-
-##### Live Reload
-
-```js
-app.watchConfFiles = true;
-```
-
-When enabled, changes to loaded config files will trigger application reloads,
-so you don't have to manually restart the whole node process.
 
 ### Logging
 
