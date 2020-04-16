@@ -28,7 +28,7 @@ describe('Promise Error Adapter', () => {
 
 });
 
-const { get, context } = require('muhb');
+const { get, context, request } = require('muhb');
 let base = context(LOCAL_HOST);
 
 describe('AppServer', () => {
@@ -205,6 +205,14 @@ describe('AppServer', () => {
             (await base.get('')).assert.status.is(503);
             await app.restart();
             (await base.get('')).assert.status.is(503);
+            await app.stop();
+        });
+
+        it('Should reload conf when new object is sent', async () => {
+            let app = new AppServer();
+            await app.start();
+            await app.restart({ myKey: 3 });
+            assert.strictEqual(app.conf.myKey, 3);
             await app.stop();
         });
 
@@ -777,26 +785,6 @@ describe('HTTPS', () => {
     });
 });
 
-describe('Watch Conf Files', () => {
-    const AppServer = require('../lib/app-server');
-
-    it('Should watch changes on layered config files [this.watchConfFiles]', async function(){
-        const fs = require('fs');
-        fs.copyFileSync('./test/res/conf.toml', './node_modules/conf.toml');
-        let app = new AppServer();
-        app.watchConfFiles = true;
-        app.setup('./node_modules/conf.toml');
-        await app.start();
-        await new Promise( done => {
-            app.confort.on('reload', () => setTimeout(done, 1000));
-            fs.writeFileSync('./node_modules/conf.toml', 'key = \'value2\'');
-        });
-        await app.stop();
-        assert.strictEqual(app.conf.key, 'value2');
-    });
-
-});
-
 describe('Regression', () => {
     const WebSocket = require('ws');
     const AppServer = require('../lib/app-server');
@@ -940,5 +928,27 @@ describe('WebSocket', function(){
             });
         })();
     });
+
+});
+
+describe('Other Features', function(){
+    const AppServer = require('../lib/app-server');
+
+    it('Should delay server initialization by given milliseconds [delay]', async function(){
+        let app = new AppServer({ delay: 1500 });
+        app.api(function({ get }){
+            get('/foobar', ({ res }) => res.end());
+        });
+        let ps = app.start();
+        await new Promise(done => setTimeout(done, 400));
+        await assert.rejects(request({
+            url: 'http://localhost:80/foobar',
+            method: 'GET', timeout: 200
+        }));
+        await ps;
+        let { assert: ensure } = await base.get('foobar');
+        ensure.status.is(200);
+        await app.stop();
+    })
 
 });
