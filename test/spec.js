@@ -208,6 +208,14 @@ describe('AppServer', () => {
             await app.stop();
         });
 
+        it('Should reload conf when new object is sent', async () => {
+            let app = new AppServer();
+            await app.start();
+            await app.restart({ myKey: 3 });
+            assert.strictEqual(app.conf.myKey, 3);
+            await app.stop();
+        });
+
     });
 
     describe('#accept', () => {
@@ -775,26 +783,6 @@ describe('HTTPS', () => {
         await app.stop();
         process.env['NODE_TLS_REJECT_UNAUTHORIZED'] = 1;
     });
-});
-
-describe('Watch Conf Files', () => {
-    const AppServer = require('../lib/app-server');
-
-    it('Should watch changes on layered config files [this.watchConfFiles]', async function(){
-        const fs = require('fs');
-        fs.copyFileSync('./test/res/conf.toml', './node_modules/conf.toml');
-        let app = new AppServer();
-        app.watchConfFiles = true;
-        app.setup('./node_modules/conf.toml');
-        await app.start();
-        await new Promise( done => {
-            app.confort.on('reload', () => setTimeout(done, 1000));
-            fs.writeFileSync('./node_modules/conf.toml', 'key = \'value2\'');
-        });
-        await app.stop();
-        assert.strictEqual(app.conf.key, 'value2');
-    });
-
 });
 
 describe('Regression', () => {
