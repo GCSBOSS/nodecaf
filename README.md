@@ -237,9 +237,10 @@ table below:
 | server | info | The server has started |
 | server | info | The server has stopped |
 | server | info | The server configuration has been reloaded |
-| websocket | info | A new websocket connection happened |
+| websocket | debug | A new websocket connection happened |
 | websocket | debug | A message was received |
-| websocket | info | A websocket connection was closed |
+| websocket | debug | A websocket connection was closed |
+| websocket | debug | Rejected a websocket connection to invalid path |
 
 Additionally, you can filter log entries by level and class with the following
 settings:
