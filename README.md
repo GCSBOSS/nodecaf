@@ -241,6 +241,7 @@ table below:
 | websocket | debug | A message was received |
 | websocket | debug | A websocket connection was closed |
 | websocket | debug | Rejected a websocket connection to invalid path |
+| websocket | error | An error happened with a websocket connection |
 
 Additionally, you can filter log entries by level and class with the following
 settings:
@@ -437,7 +438,7 @@ With nodecaf you can define paths to be accessible as WebSocket endpoints.
 In your api file use the `ws(path, events)` method with the folling arguments:
 
 1. `path`: where the websocket will be accessible
-2. `events`: object containing any of the following handlers: `connect`, `message`, `close`.
+2. `events`: object containing any of the following handlers: `connect`, `message`, `close`, `error`.
 
 ```js
 module.exports = function({ post, get, del, head, patch, put, ws }){
@@ -450,12 +451,14 @@ module.exports = function({ post, get, del, head, patch, put, ws }){
         connect: ({ client }) => console.log('NEW CLIENT'),
         message: ({ message, client }) => console.log('NEW MESSAGE'),
         close: ({ client }) => console.log('BYE CLIENT'),
+        error: ({ err, client }) => console.log('I FEEL ODD')
     });
 
     ws('/my-path-2', {
         connect: ({ client }) => console.log('NEW CLIENT 2'),
         message: ({ message, client }) => console.log('NEW MESSAGE 2'),
-        close: ({ client }) => console.log('BYE CLIENT 2')
+        close: ({ client }) => console.log('BYE CLIENT 2'),
+        error: ({ err, client }) => console.log('I FEEL ODD 2')
     });
 
 };
@@ -463,7 +466,7 @@ module.exports = function({ post, get, del, head, patch, put, ws }){
 
 All handlers are optional for each websocket endpoint.
 
-Apart from the ones showing, the following handler args are present in all events: `client`, `req`, `flash`, `conf`, `log`, `headers`.
+Besides the ones showing, the following handler args are present in all ws handlers: `client`, `req`, `flash`, `conf`, `log`, `headers`, `query` and exposed vars.
 
 ### Filter Requests by Mime-type
 

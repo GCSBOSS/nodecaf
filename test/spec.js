@@ -895,6 +895,7 @@ describe('WebSocket', function(){
         app.api(({ ws }) => {
             ws('/foo', {
                 connect: () => count++,
+                error: Function.prototype,
                 async message({ message }){
                     assert.strictEqual('foobar', message);
                     await app.stop();
@@ -928,6 +929,18 @@ describe('WebSocket', function(){
             });
         })();
     });
+
+    // it('Should properly handle client errors', function(done){
+    //     let app = new AppServer();
+    //     app.api(({ ws }) => {
+    //         ws('/foo', { error: done });
+    //     });
+    //     (async function(){
+    //         await app.start();
+    //         let ws = new WebSocket('ws://localhost/foo');
+    //         ws.destroy();
+    //     })();
+    // });
 
 });
 
