@@ -42,6 +42,7 @@
         "http-errors": "^1.7.3",
         "mime": "^2.4.4",
         "stdout-stream": "^1.4.1",
+        "path-to-regexp": "^6.1.0",
         "ws": "^7.2.1"
     },
     "devDependencies": {
