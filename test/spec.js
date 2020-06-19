@@ -882,6 +882,14 @@ describe('Regression', () => {
         })();
     });
 
+    it('Should not fail when attempting to close during startup', async () => {
+        let app = new AppServer();
+        let p = app.start();
+        await assert.doesNotReject( app.stop() );
+        await p;
+        await app.stop();
+    });
+
 });
 
 describe('WebSocket', function(){
