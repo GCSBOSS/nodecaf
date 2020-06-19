@@ -362,6 +362,7 @@ Along with `exist`, the following assertions with similar behavior are provided:
 
 | Method | Error to be output |
 |--------|--------------------|
+| `exist` | `NotFound` |
 | `valid` | `InvalidContent` |
 | `authorized` | `Unauthorized` |
 | `authn` | `InvalidCredentials` |
@@ -446,21 +447,23 @@ module.exports = function({ post, get, del, head, patch, put, ws }){
     // Websocket routes
 
     ws('/my-path-1', {
-        connect: (client, req) => console.log('NEW CLIENT'),
-        message: (message, client, req) => console.log('NEW MESSAGE'),
-        close: (client, req) => console.log('BYE CLIENT')
+        connect: ({ client }) => console.log('NEW CLIENT'),
+        message: ({ message, client }) => console.log('NEW MESSAGE'),
+        close: ({ client }) => console.log('BYE CLIENT'),
     });
 
     ws('/my-path-2', {
-        connect: (client, req) => console.log('NEW CLIENT 2'),
-        message: (message, client, req) => console.log('NEW MESSAGE 2'),
-        close: (client, req) => console.log('BYE CLIENT 2')
+        connect: ({ client }) => console.log('NEW CLIENT 2'),
+        message: ({ message, client }) => console.log('NEW MESSAGE 2'),
+        close: ({ client }) => console.log('BYE CLIENT 2')
     });
 
 };
 ```
 
 All handlers are optional for each websocket endpoint.
+
+Apart from the ones showing, the following handler args are present in all events: `client`, `req`, `flash`, `conf`, `log`, `headers`.
 
 ### Filter Requests by Mime-type
 
