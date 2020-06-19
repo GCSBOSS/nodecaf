@@ -950,6 +950,18 @@ describe('WebSocket', function(){
     //     })();
     // });
 
+    // it('Should not fail when client breaks connection during req body read', async () => {
+    //     let app = new AppServer();
+    //     app.api(function({ post }){
+    //         post('/foo', Function.prototype);
+    //     });
+    //     await app.start();
+    //     let req = require('http').request(LOCAL_HOST + '/foo', { method: 'POST' });
+    //     req.write(JSON.stringify([...Array(2048)].keys()));
+    //     req.abort();
+    //     await app.stop();
+    // });
+
 });
 
 describe('Other Features', function(){
