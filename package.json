@@ -47,6 +47,6 @@
     },
     "devDependencies": {
         "form-data": "^3.0.0",
-        "muhb": "^3.0.0"
+        "muhb": "^3.0.3"
     }
 }
