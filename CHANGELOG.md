@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.9.2] - 2020-06-23
+
+### Added
+- ws connection error handler interface
+
+### Fixed
+- uncaught error when request is aborted during body reading
+- error while calling `stop()` during startup process
+
+### Changed
+- logger to use non-blocking I/O
+- all websocket log entries to debug level
+
+### Removed
+- date leaving only time on log entries in dev env
+
 ## [v0.9.1] - 2020-04-16
 
 ### Added
@@ -347,3 +363,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [v0.8.5]: https://gitlab.com/GCSBOSS/nodecaf/-/tags/v0.8.5
 [v0.9.0]: https://gitlab.com/GCSBOSS/nodecaf/-/tags/v0.9.0
 [v0.9.1]: https://gitlab.com/GCSBOSS/nodecaf/-/tags/v0.9.1
+[v0.9.2]: https://gitlab.com/GCSBOSS/nodecaf/-/tags/v0.9.2
