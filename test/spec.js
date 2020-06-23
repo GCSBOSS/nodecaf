@@ -8,7 +8,7 @@ const LOCAL_HOST = 'http://localhost:80'
 const { get, context, request } = require('muhb');
 let base = context(LOCAL_HOST);
 
-const Nodecaf = require('../lib/app');
+const Nodecaf = require('../lib/main');
 
 describe('Nodecaf', () => {
 
@@ -125,7 +125,10 @@ describe('Nodecaf', () => {
             app.api(function({ get }){
                 get('/bar',
                     ({ flash, next }) => { flash.foo = 'bar'; next(); },
-                    ({ flash, res }) => { res.text(flash.foo); });
+                    ({ flash, res }) => {
+                        res.type('text/plain');
+                        res.end(flash.foo); 
+                    });
             });
             await app.start();
             let { assert: { body } } = await base.get('bar');
@@ -751,7 +754,7 @@ describe('Regression', () => {
         assert(gotHere);
     });
 
-    it.skip('Should not hang up connections when they have a query string', function(done){
+    it('Should not hang up connections when they have a query string', function(done){
         let count = 0;
         let app = new Nodecaf();
         app.api(({ ws }) => {
@@ -788,7 +791,7 @@ describe('Regression', () => {
 
 });
 
-describe.skip('WebSocket', function(){
+describe('WebSocket', function(){
 
     const WebSocket = require('ws');
 
