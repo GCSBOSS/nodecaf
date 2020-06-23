@@ -73,7 +73,30 @@ describe('Nodecaf', () => {
 
     });
 
+    describe('#startup', () => {
+
+        it('Should fail when startup handler is not a function', () => {
+            let app = new Nodecaf();
+            assert.throws( () => app.startup(), /function/ );
+        });
+
+    });
+
+    describe('#shutdown', () => {
+
+        it('Should fail when shutdown handler is not a function', () => {
+            let app = new Nodecaf();
+            assert.throws( () => app.shutdown(), /function/ );
+        });
+
+    });
+
     describe('#api', () => {
+
+        it('Should fail when builder is not a function', () => {
+            let app = new Nodecaf();
+            assert.throws( () => app.api(), /function/ );
+        });
 
         it('Should execute the callback passing the method funcs', done => {
             let app = new Nodecaf();
@@ -186,74 +209,6 @@ describe('Nodecaf', () => {
             await app.start();
             await app.restart({ myKey: 3 });
             assert.strictEqual(app.conf.myKey, 3);
-            await app.stop();
-        });
-
-    });
-
-    describe.skip('#accept', () => {
-
-        it('Should reject unwanted content-types API-wide', async () => {
-            let app = new Nodecaf();
-            app.api(function({ post }){
-                this.accept([ 'urlencoded', 'text/html' ]);
-                assert(this.accepts.includes('application/x-www-form-urlencoded'));
-                assert.strictEqual(this.accepts.length, 2);
-                post('/foo', ({ res }) => res.end());
-            });
-            await app.start();
-            let { assert: { body, status } } = await base.post(
-                'foo',
-                { 'Content-Type': '2342' },
-                '{"foo":"bar"}'
-            );
-            status.is(400);
-            body.match(/Unsupported/);
-            await app.stop();
-        });
-
-        it('Should reject requests without content-type', async () => {
-            let app = new Nodecaf();
-            app.api(function({ post }){
-                this.accept('text/html');
-                post('/foo', ({ res }) => res.end());
-            });
-            await app.start();
-            let { assert } = await base.post(
-                'foo',
-                { 'no-auto': true, 'Content-Length': 13 },
-                '{"foo":"bar"}'
-            );
-            assert.status.is(400);
-            assert.body.match(/Missing/);
-            await app.stop();
-        });
-
-        it('Should accept wanted content-types API-wide', async () => {
-            let app = new Nodecaf();
-            app.api(function({ post }){
-                this.accept([ 'urlencoded', 'text/html' ]);
-                post('/foo', ({ res }) => res.end());
-            });
-            await app.start();
-            let { assert } = await base.post(
-                'foo',
-                { 'Content-Type': 'text/html' },
-                '{"foo":"bar"}'
-            );
-            assert.status.is(200);
-            await app.stop();
-        });
-
-        it('Should accept requests without body payload', async () => {
-            let app = new Nodecaf();
-            app.api(function({ post }){
-                this.accept([ 'urlencoded', 'text/html' ]);
-                post('/foo', ({ res }) => res.end());
-            });
-            await app.start();
-            let { assert } = await base.post('foo', { 'no-auto': true });
-            assert.status.is(200);
             await app.stop();
         });
 
@@ -376,13 +331,13 @@ describe('Body Parsing', () => {
 
     const fs = require('fs');
 
-    it.skip('Should expose file content sent as multipart/form-data', async () => {
+    it('Should expose file content sent as multipart/form-data', async () => {
         const FormData = require('form-data');
         let app = new Nodecaf();
         app.api(function({ post }){
-            post('/bar', ({ res, req }) => {
-                assert(req.files.foobar.size > 0);
-                res.set('X-Test', req.files.foobar.name);
+            post('/bar', ({ body, res }) => {
+                assert(body.foobar.size > 10);
+                res.set('X-Test', body.foobar.name);
                 res.end();
             });
         });
@@ -487,62 +442,6 @@ describe('CORS', () => {
         assert.headers.match('access-control-allow-origin', '*');
         const { assert: { headers } } = await base.options('foobar', { 'Origin': 'http://outsider.com' });
         headers.match('access-control-allow-methods', 'GET,HEAD,PUT,PATCH,POST,DELETE');
-        await app.stop();
-    });
-
-});
-
-describe.skip('Accept setter', () => {
-    //const { accept } = require('../lib/parse-types');
-
-    it('Should reject unwanted content-types for the given route', async () => {
-        let app = new Nodecaf();
-        app.api(function({ post }){
-            let acc = accept([ 'urlencoded', 'text/html' ]);
-            assert(acc.accept.includes('application/x-www-form-urlencoded'));
-            post('/foo', acc, ({ res }) => res.end());
-        });
-        await app.start();
-        let { body, status } = await base.post(
-            'foo',
-            { 'Content-Type': 'application/json' },
-            '{"foo":"bar"}'
-        );
-        assert.strictEqual(status, 400);
-        assert(/Unsupported/.test(body));
-        await app.stop();
-    });
-
-    it('Should accept wanted content-types for the given route', async () => {
-        let app = new Nodecaf();
-        app.api(function({ post }){
-            let acc = accept('text/html');
-            assert(acc.accept.includes('text/html'));
-            post('/foo', acc, ({ res }) => res.end());
-        });
-        await app.start();
-        let { status } = await base.post(
-            'foo',
-            { 'Content-Type': 'text/html' },
-            '{"foo":"bar"}'
-        );
-        assert.strictEqual(status, 200);
-        await app.stop();
-    });
-
-    it('Should accept requests without a body payload', async () => {
-        let app = new Nodecaf();
-        app.api(function({ post }){
-            let acc = accept('text/html');
-            post('/foo', acc, ({ res }) => res.end());
-        });
-        await app.start();
-        let { status } = await base.post(
-            'foo',
-            { 'no-auto': true },
-            '{"foo":"bar"}'
-        );
-        assert.strictEqual(status, 200);
         await app.stop();
     });
 
