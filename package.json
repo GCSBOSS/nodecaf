@@ -1,6 +1,6 @@
 {
     "name": "nodecaf",
-    "version": "0.9.2",
+    "version": "0.10.0-rc",
     "description": "Nodecaf is a framework on top of Express for building RESTful services in a quick and convenient manner.",
     "main": "lib/main.js",
     "scripts": {
