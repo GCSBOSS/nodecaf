@@ -543,8 +543,6 @@ to set the
 
 | Property | Type | Description | Default |
 |----------|------|-------------|---------|
-| `app.name` | String | Name to be displayed in logs and documentation | `'Untitled'` |
-| `app.version` | String | Verison to be displayed in logs and documentation | Version in Package JSON |
 | `app.conf.delay` | Integer | Milliseconds to wait before actually starting the app | `0` |
 | `app.conf.port` | Integer | Port for the web server to listen (also exposed as user conf) | `80` or `443` |
 | `app.conf.formFileDir` | Path | Where to store files uploaded as form-data | OS default temp dir |
