@@ -378,9 +378,11 @@ instanced libraries) across all route handlers. In your `lib/main.js` you can
 expose an object of which all keys will become handler args.
 
 ```js
-app.expose({
-    db: myDbConnection,
-    libX: new LibXInstance()
+module.exports = () => new Nodecaf({
+    startup({ global }){
+        global.db = myDbConnection;
+        global.libX = new LibXInstance();
+    }    
 });
 ```
 
