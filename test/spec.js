@@ -8,7 +8,7 @@ const LOCAL_HOST = 'http://localhost:80'
 const { get, context, request } = require('muhb');
 let base = context(LOCAL_HOST);
 
-const { Nodecaf, assertions } = require('../lib/main');
+const Nodecaf = require('../lib/main');
 
 describe('Nodecaf', () => {
 
@@ -242,8 +242,7 @@ describe('Handlers', () => {
             api({ get }){
                 get('/fo/:o', Function.prototype);
                 get('/foo/:bar', function({ params, res }){
-                    //res.badRequest(params.bar !== 'test');
-                    assertions.valid(params.bar == 'test');
+                    res.badRequest(params.bar !== 'test');
                     res.end();
                 });
             }
@@ -320,10 +319,8 @@ describe('Handlers', () => {
                 });
 
                 get('/bar', function({ req, res }){
-                    //res.badRequest(req.cookies.testa !== 'bar');
-                    //res.badRequest(req.signedCookies.test !== 'foo');
-                    assertions.valid(req.cookies.testa == 'bar');
-                    assertions.valid(req.signedCookies.test == 'foo');
+                    res.badRequest(req.cookies.testa !== 'bar');
+                    res.badRequest(req.signedCookies.test !== 'foo');
                     res.end();
                 });
             }
@@ -498,34 +495,43 @@ describe('Body Parsing', () => {
 });
 
 describe('Assertions', () => {
-    const { valid, authorized, authn, exist, able } = require('../lib/assertions');
 
-    describe('Simple assertions ( condition, message, ...args )', () => {
-
-        it('Should throw when condition evaluates to false', () => {
-            assert.throws( () => valid(false, 'foo') );
-            assert.throws( () => authorized(false, 'foo') );
-            assert.throws( () => authn(false, 'foo') );
-            assert.throws( () => exist(false) );
-            assert.throws( () => able(false, 'foo') );
+    it('Should throw when condition evaluates to true', async () => {
+        let app = new Nodecaf({
+            api({ get }){
+                get('/foo', function({ res }){
+                    assert.throws( () => res.badRequest(true) );
+                    assert.throws( () => res.unauthorized(true) );
+                    assert.throws( () => res.forbidden(true) );
+                    assert.throws( () => res.notFound(true) );
+                    assert.throws( () => res.conflict(true) );
+                    assert.throws( () => res.gone(true) );
+                    res.end();
+                });
+            }
         });
+        await app.start();
+        await base.get('foo');
+        await app.stop();
+    });
 
-        it('Should do nothing when condition evaluates to true', () => {
-            assert.doesNotThrow( () => valid(true, 'foo') );
-            assert.doesNotThrow( () => authorized(true, 'foo') );
-            assert.doesNotThrow( () => authn(true, 'foo') );
-            assert.doesNotThrow( () => exist(true, 'foo') );
-            assert.doesNotThrow( () => able(true, 'foo') );
+    it('Should do nothing when condition evaluates to false', async () => {
+        let app = new Nodecaf({
+            api({ get }){
+                get('/foo', function({ res }){
+                    assert.doesNotThrow( () => res.badRequest(false) );
+                    assert.doesNotThrow( () => res.unauthorized(false) );
+                    assert.doesNotThrow( () => res.forbidden(false) );
+                    assert.doesNotThrow( () => res.notFound(false) );
+                    assert.doesNotThrow( () => res.conflict(false) );
+                    assert.doesNotThrow( () => res.gone(false) );
+                    res.end();
+                });
+            }
         });
-
-        it('Should execute handler when sent', done => {
-            const func = e => {
-                assert.strictEqual(e.type, 'Unauthorized');
-                done();
-            };
-            assert.doesNotThrow( () => authorized(false, 'foo', func) );
-        });
-
+        await app.start();
+        await base.get('foo');
+        await app.stop();
     });
 
 });

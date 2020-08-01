@@ -11,7 +11,7 @@ Using Nodecaf you'll get:
 - Seamless support for [async functions as route handlers](#async-handlers).
 - [Uncaught exceptions](#error-handling) in routes always produce proper REST
   responses.
-- Built-in [assertions for most common REST scenarios](#rest-assertions).
+- Built-in [assertions for readable RESTful error handling](#rest-assertions).
 - Function to [expose global objects](#expose-globals) to all routes (eg.:
   database connections).
 - Shortcut for [CORS Settings](#cors) on all routes.
@@ -301,28 +301,27 @@ the most common REST outputs based on some condition. Check an example to
 trigger a 404 in case a database record doesn't exist.
 
 ```js
-let { exist } = require('nodecaf').assertions;
-
-get('/my/thing/:id', function({ params, db }){
+get('/my/thing/:id', function({ params, db, res }){
     let thing = await db.getById(params.id);
-    exist(thing, 'thing not found');
+    res.notFound(!thing, 'thing not found');
 
     doStuff();
 });
 ```
 
-If the record is not found, the `exist` call will stop the route execution right
+If the record is not found, the `res.notfound()` call will stop the route execution right
 away and generate a [RESTful `NotFound` error](#error-handling).
 
-Along with `exist`, the following assertions with similar behavior are provided:
+Along with `notFound`, the following assertions with similar behavior are provided:
 
-| Method | Error to be output |
-|--------|--------------------|
-| `exist` | `NotFound` |
-| `valid` | `InvalidContent` |
-| `authorized` | `Unauthorized` |
-| `authn` | `InvalidCredentials` |
-| `able` | `InvalidActionForState` |
+| Method | Status Code |
+|--------|-------------|
+| `badRequest`   | 400 |
+| `unauthorized` | 401 |
+| `forbidden`    | 403 |
+| `notFound`     | 404 |
+| `conflict`     | 409 |
+| `gone`         | 410 |
 
 ### Expose Globals
 
