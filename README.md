@@ -212,7 +212,7 @@ In your route handlers, use the functions available in the `log` object as follo
 ```js
 function({ log }){
     log.info('hi');
-    log.warn({lang: 'fr'}, 'au revoir');
+    log.warn({ lang: 'fr' }, 'au revoir');
     log.fatal({ err: new Error() }, 'The error code is %d', 1234);
 }
 ```
@@ -227,7 +227,7 @@ Below is described the signature of the available logging methods.
 Nodecaf will automatically log some useful server events as described in the
 table below:
 
-| Class | Level | Event |
+| Type | Level | Event |
 |-------|-------|-------|
 | error after headers sent | warn | An error happened inside a route after the headers were already sent |
 | route error | error | An error happened inside a route and was not caught |
@@ -243,13 +243,13 @@ table below:
 | websocket | debug | Rejected a websocket connection to invalid path |
 | websocket | error | An error happened with a websocket connection |
 
-Additionally, you can filter log entries by level and class with the following
+Additionally, you can filter log entries by level and type with the following
 settings:
 
 ```toml
 [log]
 level = 'warn' # Only produce log entries with level 'warn' or higher ('error' & 'fatal')
-class = 'my-class' # Only produce log entries with class matching exactly 'my-class'
+type = 'my-type' # Only produce log entries with type matching exactly 'my-type'
 ```
 You can disable logging entirely for a given app by setting it to `false` in the config
 

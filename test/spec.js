@@ -742,13 +742,13 @@ describe('Logging', () => {
         await app.stop();
     });
 
-    it('Should not log filtered level and class', async () => {
+    it('Should not log filtered level and type', async () => {
         let app = new AppServer();
-        app.setup({ log: { class: 'test', level: 'info' } });
+        app.setup({ log: { type: 'test', level: 'info' } });
         await app.start();
-        assert.strictEqual(app.log.debug({ class: 'test' }), false);
-        assert.strictEqual(app.log.info({ class: 'foo' }), false);
-        assert(app.log.info({ class: 'test' }));
+        assert.strictEqual(app.log.debug({ type: 'test' }), false);
+        assert.strictEqual(app.log.info({ type: 'foo' }), false);
+        assert(app.log.info({ type: 'test' }));
         await app.stop();
     });
 
