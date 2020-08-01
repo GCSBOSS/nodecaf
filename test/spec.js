@@ -752,6 +752,14 @@ describe('Logging', () => {
         await app.stop();
     });
 
+    it('Should not log when disbled via conf', async () => {
+        let app = new AppServer({ log: false });
+        await app.start();
+        assert.strictEqual(app.log.debug('my entry'), false);
+        assert.strictEqual(app.log.error({ type: 'foo' }), false);
+        await app.stop();
+    });
+
 });
 
 describe('HTTPS', () => {

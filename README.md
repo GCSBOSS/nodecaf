@@ -251,6 +251,11 @@ settings:
 level = 'warn' # Only produce log entries with level 'warn' or higher ('error' & 'fatal')
 class = 'my-class' # Only produce log entries with class matching exactly 'my-class'
 ```
+You can disable logging entirely for a given app by setting it to `false` in the config
+
+```toml
+log = false
+```
 
 ### Async Handlers
 
