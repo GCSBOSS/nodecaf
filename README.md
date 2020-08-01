@@ -35,37 +35,25 @@ Using Nodecaf you'll get:
 4. Create a skelleton project with: `nodecaf init`.
 5. Add your globals in `lib/main.js`
 ```js
-const { AppServer } = require('nodecaf');
+const Nodecaf = require('nodecaf');
 const api = require('./api');
 
-module.exports = function init(){
-    let app = new AppServer();
-
-    // Expose things to all routes putting them in the 'shared' object.
-    let shared = {};
-    app.expose(shared);
-
-    // You can intercept all error that escape the route handlers.
-    app.onRuoteError = function(input, err, send){
-        // Any error that is not handled here will just become a harmless 500.
-    };
-
-    // Perform your server initialization logic.
-    app.beforeStart = async function(){
-
-    };
-
-    // Perform your server finalization logic.
-    app.afterStop = async function(){
-
-    };
+module.exports = () => new Nodecaf({
 
     // Load your routes and API definitions.
-    app.api(api);
+    api,
 
-    // Don't forget to return your app.
-    return app;
-}
+    // Perform your server initialization logic.
+    async startup({ conf, log, global }){
+
+    },
+
+    // Perform your server finalization logic.
+    async shutdown({ conf, log, global }){
+
+    }
+
+});
 ```
 
 6. Add your routes in `lib/api.js`
@@ -152,7 +140,7 @@ Use this feature to manage:
 - Nodecaf settings such as SSL and logging
 - Your own server application settings for your users
 
-Suported config formats: **TOML**, **YAML**, **JSON**
+Suported config formats: **TOML**, **YAML**, **JSON**, **CSON**
 
 > Check out how to [generate a project with configuration file already plugged in](#init-project)
 
@@ -171,18 +159,13 @@ post('/foo', function({ conf }){
 Config data can also be passed as an object to the app constructor in `lib/main.js`:
 
 ```js
-module.exports = function init(){
-    let conf = { key: 'value' };
-    let app = new AppServer(conf);
-}
+module.exports = () => new Nodecaf({ conf: { key: 'value' } });
 ```
 
 Or a file path if you want to have a fixed config file for setting defaults or any other reason:
 
 ```js
-module.exports = function init(){
-    let app = new AppServer(__dirname + '/default.toml');
-}
+module.exports = () => new Nodecaf({ conf: __dirname + '/default.toml' });
 ```
 
 #### Layered Configs
@@ -330,7 +313,7 @@ global error handler. In your `lib/main.js` add an `onRuoteError` function
 property to the `app`.
 
 ```js
-app.onRuoteError = function(input, err, send){
+app.onRouteError = function(input, err, send){
 
     if(err instanceof MyDBError)
         send('ServerFalut', 'Sorry! Database is sleeping.');
@@ -562,7 +545,7 @@ to set the
 | `app.version` | String | Verison to be displayed in logs and documentation | Version in Package JSON |
 | `app.conf.delay` | Integer | Milliseconds to wait before actually starting the app | `0` |
 | `app.conf.port` | Integer | Port for the web server to listen (also exposed as user conf) | `80` or `443` |
-| `app.shouldParseBody` | Boolean | Wether supported request body types should be parsed | `true` |
 | `app.conf.formFileDir` | Path | Where to store files uploaded as form-data | OS default temp dir |
-| `app.alwaysRebuildAPI` | Boolean | Wether the API should be rebuilt dynamically for every start or setup operation | `false` |
 | `app.conf.cookie.secret` | String | A secure random string to be used for signing cookies | none |
+| `opts.shouldParseBody` | Boolean | Wether supported request body types should be parsed | `true` |
+| `opts.alwaysRebuildAPI` | Boolean | Wether the API should be rebuilt dynamically for every start or setup operation | `false` |
