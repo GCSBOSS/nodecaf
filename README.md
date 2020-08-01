@@ -2,9 +2,9 @@
 
 > Docs for version v0.9.x.
 
-Nodecaf is an Express framework for developing REST APIs in a quick and
-convenient manner.
+Nodecaf is a light framework for developing RESTful Apps in a quick and convenient manner.
 Using Nodecaf you'll get:
+- Familiar middleware style routes declaration
 - Useful [handler arguments](#handlers-args).
 - Built-in [settings file support](#settings-file) with layering.
 - [Logging functions](#logging).
@@ -21,10 +21,6 @@ Using Nodecaf you'll get:
   source of truth.
 - Functions to [filter request bodies](#filter-requests-by-mime-type) by mime-type.
 - Helpful [command line interface](https://gitlab.com/GCSBOSS/nodecaf-cli).
-
-> If you are unfamiliar with Express, checkout
-> [their routing docs](https://expressjs.com/en/starter/basic-routing.html)
-> so that you can better grasp Nodecaf features and whatnot.
 
 ## Get Started
 
@@ -61,7 +57,7 @@ module.exports = () => new Nodecaf({
 ```js
 module.exports = function({ post, get, del, head, patch, put }){
 
-    // Use express routes and a list of functions (async or regular no matter).
+    // Define routes and a list of middleware functions (async or regular no matter).
     get('/foo/:f/bar/:b', Foo.read, Bar.read);
     post('/foo/:f/bar', Foo.read, Bar.write);
     // ...
@@ -97,8 +93,8 @@ so we can collaborate effectively.
   analisys, so expect to be boarded on your MRs.
 
 ## Manual
-On top of all the cool features Express offers, check out how to use all
-the awesome goodies Nodecaf introduces.
+Formerly based on Express, Nodecaf preserves the same interface for defining routes
+through middleware chains. Check out how to use all the awesome goodies Nodecaf introduces.
 
 ### Handler Args
 
@@ -107,28 +103,26 @@ the only argument of any route handler function. The code below shows all
 handler args exposed by Nodecaf:
 
 ```js
-function({ req, res, next, query, params, body, flash, conf, log, error, headers }){
+function({ req, res, next, query, params, body, flash, conf, log, headers }){
     // Do your stuff.
 }
 ```
 
 Quick reference:
 
-- `req`, `res`, `next`: The good old parameters used regularly in Express.
+- `req`, `res`, `next`: The good old parameters used regularly in middleware-like frameworks.
 - `query`, `parameters`, `body`, `headers`: Shortcuts to the homonymous properties of `req`.
   They contain respectively the query string, the URL parameters, and the request
   body data.
-- `flash`: Is a shortcut to Express `req.locals`. Keys inserted in this a object
-  are preserved for the lifetime of a request and can be accessed in all handlers
-  of a route chain.
+- `flash`: Is an object where you can store arbitrary values. Keys inserted in this
+  object are preserved for the lifetime of a request and can be accessed in all
+  handlers of a route chain.
 - `conf`: This object contains the entire
   [application configuration data](#settings-file).
 - `log`: A logger instance. Use it to [log events](#logging) of
   your application.
 - Also all keys of the [globally exposed object](#expose-globals) are available
   as handler args for all routes.
-- `error`: A function to [output REST errors](#error-handling) and abort the
-  handler chain execution.
 
 ### Settings File
 
@@ -271,31 +265,23 @@ post('/my/thing', function(){
 });
 ```
 
-To support the callback error pattern, use the `error` handler arg.
+To support the callback error pattern, use the `res.error()` function arg. This
+function will stop the middleware chain from being executed any further.
 
 ```js
 const fs = require('fs');
 
-post('/my/thing', function({ error, res }){
+post('/my/thing', function({ res }){
     fs.readFile('./my/file', 'utf8', function(err, contents){
         if(err)
-            return error(err, 'Optional message to replace the original');
+            return res.error(err);
         res.end(contents);
     });
 });
 ```
 
-To use other HTTP status codes you can send a string in the first parameter of
-`error`. The supported error names are the following:
-
-| Error name | Status Code |
-|------------|-------------|
-| `NotFound` | **404** |
-| `Unauthorized` |  **401** |
-| `ServerFault` | **500** |
-| `InvalidActionForState` | **405** |
-| `InvalidCredentials` | **400** |
-| `InvalidContent` | **400** |
+To use other HTTP status codes you can send an integer in the first parameter of
+`res.error()`.
 
 ```js
 post('/my/thing', function({ error }){
@@ -303,29 +289,10 @@ post('/my/thing', function({ error }){
         doThing();
     }
     catch(e){
-        error('NotFound', 'Optional message for the JSON response');
+        error(404, 'Optional message for the response');
     }
 });
 ```
-
-You can always deal with uncaught exceptions in all routes through a default
-global error handler. In your `lib/main.js` add an `onRuoteError` function
-property to the `app`.
-
-```js
-app.onRouteError = function(input, err, send){
-
-    if(err instanceof MyDBError)
-        send('ServerFalut', 'Sorry! Database is sleeping.');
-    else if(err instanceof ValidationError)
-        send('InvalidContent', err.data);
-}
-```
-
-- The `send` function will instruct Nodecaf to output the given error.
-- The `input` arg contain all handler args for the request.
-- If you do nothing for a specific type of `Error` the normal 500 behavior will
-  take place.
 
 ### REST Assertions
 
@@ -356,20 +323,6 @@ Along with `exist`, the following assertions with similar behavior are provided:
 | `authorized` | `Unauthorized` |
 | `authn` | `InvalidCredentials` |
 | `able` | `InvalidActionForState` |
-
-To use it with callback style functions, pass the `error` handler arg as the
-third parameter.
-
-```js
-let { exist } = require('nodecaf').assertions;
-
-post('/my/file/:id', function({ error, res, params }){
-    fs.readFile('./my/file/' + params.id, 'utf8', function(err, contents){
-        exist(!err, 'File not found', error);
-        res.end(contents);
-    });
-});
-```
 
 ### Expose Globals
 
