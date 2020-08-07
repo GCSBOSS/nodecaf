@@ -5,6 +5,42 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.10.0] - 2020-08-07
+
+### Added
+- `res.type()` method for defining content type header
+- `res.text()` for ending response with text/plain body
+- log entry when failed to parse request body
+- missing cookie passing to websocket handlers
+- log entry for app startup logic before server is actualy listening
+- option to disable log completely through conf `log = false`
+- auto-parsing of keys `err`, `res`, `req` and `ws` on logger methods
+- assertion methods to `res` handler arg (`notFound`, `badRequest`...)
+
+### Changed
+- constructor interface to accept a single `opts` object instead of conf
+- `class` and `name` fields from log entries to `type` and `app` respectively
+- form-data file handling interface fields
+- response log entry to include request method along with path
+- socket object var name from `client` to `ws` on websocket handler args
+- main class name from `AppServer` ro `Nodecaf`
+- main exports to point directly to main class
+- rest assertions to now output any default request body
+- `app.accept()` to generate an accept middleware instead of setting global accept rules
+
+### Removed
+- `app.onRouteError` handler
+- `app.name` and `app.version` that are now always inferred from package.json
+- `app.beforeStart` and `app.afterStop` in favor of `opts.startup` and `opts.shutdown` respectively
+- express instance entirely
+- `app.expose()` method in favor of using `app.global` object directly
+- `app.api()` method in favor of `opts.api`
+- `app.cookieSecret` attribute in favor of setting conf `cookie.secret`
+- `app.port` attribute, use config `port` instead
+- `error()` handlers arg in favor of `res.error()`
+- `assertions` module from main export in favor of response object assertions
+- middleware `accept` setting
+
 ## [v0.9.3] - 2020-08-07
 
 ### Security
@@ -370,3 +406,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [v0.9.1]: https://gitlab.com/GCSBOSS/nodecaf/-/tags/v0.9.1
 [v0.9.2]: https://gitlab.com/GCSBOSS/nodecaf/-/tags/v0.9.2
 [v0.9.3]: https://gitlab.com/GCSBOSS/nodecaf/-/tags/v0.9.3
+[v0.10.0]: https://gitlab.com/GCSBOSS/nodecaf/-/tags/v0.10.0

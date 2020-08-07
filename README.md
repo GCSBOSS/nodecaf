@@ -1,6 +1,6 @@
 # [Nodecaf](https://gitlab.com/GCSBOSS/nodecaf)
 
-> Docs for version v0.9.x.
+> Docs for version v0.10.x.
 
 Nodecaf is a light framework for developing RESTful Apps in a quick and convenient manner.
 Using Nodecaf you'll get:
