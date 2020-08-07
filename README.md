@@ -2,16 +2,16 @@
 
 > Docs for version v0.9.x.
 
-Nodecaf is an Express framework for developing REST APIs in a quick and
-convenient manner.
+Nodecaf is a light framework for developing RESTful Apps in a quick and convenient manner.
 Using Nodecaf you'll get:
+- Familiar middleware style routes declaration
 - Useful [handler arguments](#handlers-args).
 - Built-in [settings file support](#settings-file) with layering.
 - [Logging functions](#logging).
 - Seamless support for [async functions as route handlers](#async-handlers).
 - [Uncaught exceptions](#error-handling) in routes always produce proper REST
   responses.
-- Built-in [assertions for most common REST scenarios](#rest-assertions).
+- Built-in [assertions for readable RESTful error handling](#rest-assertions).
 - Function to [expose global objects](#expose-globals) to all routes (eg.:
   database connections).
 - Shortcut for [CORS Settings](#cors) on all routes.
@@ -22,10 +22,6 @@ Using Nodecaf you'll get:
 - Functions to [filter request bodies](#filter-requests-by-mime-type) by mime-type.
 - Helpful [command line interface](https://gitlab.com/GCSBOSS/nodecaf-cli).
 
-> If you are unfamiliar with Express, checkout
-> [their routing docs](https://expressjs.com/en/starter/basic-routing.html)
-> so that you can better grasp Nodecaf features and whatnot.
-
 ## Get Started
 
 1. Install the cli utilities: `npm i -P -g nodecaf-cli`.
@@ -35,37 +31,25 @@ Using Nodecaf you'll get:
 4. Create a skelleton project with: `nodecaf init`.
 5. Add your globals in `lib/main.js`
 ```js
-const { AppServer } = require('nodecaf');
+const Nodecaf = require('nodecaf');
 const api = require('./api');
 
-module.exports = function init(){
-    let app = new AppServer();
-
-    // Expose things to all routes putting them in the 'shared' object.
-    let shared = {};
-    app.expose(shared);
-
-    // You can intercept all error that escape the route handlers.
-    app.onRuoteError = function(input, err, send){
-        // Any error that is not handled here will just become a harmless 500.
-    };
-
-    // Perform your server initialization logic.
-    app.beforeStart = async function(){
-
-    };
-
-    // Perform your server finalization logic.
-    app.afterStop = async function(){
-
-    };
+module.exports = () => new Nodecaf({
 
     // Load your routes and API definitions.
-    app.api(api);
+    api,
 
-    // Don't forget to return your app.
-    return app;
-}
+    // Perform your server initialization logic.
+    async startup({ conf, log, global }){
+
+    },
+
+    // Perform your server finalization logic.
+    async shutdown({ conf, log, global }){
+
+    }
+
+});
 ```
 
 6. Add your routes in `lib/api.js`
@@ -73,7 +57,7 @@ module.exports = function init(){
 ```js
 module.exports = function({ post, get, del, head, patch, put }){
 
-    // Use express routes and a list of functions (async or regular no matter).
+    // Define routes and a list of middleware functions (async or regular no matter).
     get('/foo/:f/bar/:b', Foo.read, Bar.read);
     post('/foo/:f/bar', Foo.read, Bar.write);
     // ...
@@ -109,8 +93,8 @@ so we can collaborate effectively.
   analisys, so expect to be boarded on your MRs.
 
 ## Manual
-On top of all the cool features Express offers, check out how to use all
-the awesome goodies Nodecaf introduces.
+Formerly based on Express, Nodecaf preserves the same interface for defining routes
+through middleware chains. Check out how to use all the awesome goodies Nodecaf introduces.
 
 ### Handler Args
 
@@ -119,28 +103,26 @@ the only argument of any route handler function. The code below shows all
 handler args exposed by Nodecaf:
 
 ```js
-function({ req, res, next, query, params, body, flash, conf, log, error, headers }){
+function({ req, res, next, query, params, body, flash, conf, log, headers }){
     // Do your stuff.
 }
 ```
 
 Quick reference:
 
-- `req`, `res`, `next`: The good old parameters used regularly in Express.
+- `req`, `res`, `next`: The good old parameters used regularly in middleware-like frameworks.
 - `query`, `parameters`, `body`, `headers`: Shortcuts to the homonymous properties of `req`.
   They contain respectively the query string, the URL parameters, and the request
   body data.
-- `flash`: Is a shortcut to Express `req.locals`. Keys inserted in this a object
-  are preserved for the lifetime of a request and can be accessed in all handlers
-  of a route chain.
+- `flash`: Is an object where you can store arbitrary values. Keys inserted in this
+  object are preserved for the lifetime of a request and can be accessed in all
+  handlers of a route chain.
 - `conf`: This object contains the entire
   [application configuration data](#settings-file).
 - `log`: A logger instance. Use it to [log events](#logging) of
   your application.
 - Also all keys of the [globally exposed object](#expose-globals) are available
   as handler args for all routes.
-- `error`: A function to [output REST errors](#error-handling) and abort the
-  handler chain execution.
 
 ### Settings File
 
@@ -152,7 +134,7 @@ Use this feature to manage:
 - Nodecaf settings such as SSL and logging
 - Your own server application settings for your users
 
-Suported config formats: **TOML**, **YAML**, **JSON**
+Suported config formats: **TOML**, **YAML**, **JSON**, **CSON**
 
 > Check out how to [generate a project with configuration file already plugged in](#init-project)
 
@@ -171,18 +153,13 @@ post('/foo', function({ conf }){
 Config data can also be passed as an object to the app constructor in `lib/main.js`:
 
 ```js
-module.exports = function init(){
-    let conf = { key: 'value' };
-    let app = new AppServer(conf);
-}
+module.exports = () => new Nodecaf({ conf: { key: 'value' } });
 ```
 
 Or a file path if you want to have a fixed config file for setting defaults or any other reason:
 
 ```js
-module.exports = function init(){
-    let app = new AppServer(__dirname + '/default.toml');
-}
+module.exports = () => new Nodecaf({ conf: __dirname + '/default.toml' });
 ```
 
 #### Layered Configs
@@ -212,7 +189,7 @@ In your route handlers, use the functions available in the `log` object as follo
 ```js
 function({ log }){
     log.info('hi');
-    log.warn({lang: 'fr'}, 'au revoir');
+    log.warn({ lang: 'fr' }, 'au revoir');
     log.fatal({ err: new Error() }, 'The error code is %d', 1234);
 }
 ```
@@ -227,7 +204,7 @@ Below is described the signature of the available logging methods.
 Nodecaf will automatically log some useful server events as described in the
 table below:
 
-| Class | Level | Event |
+| Type | Level | Event |
 |-------|-------|-------|
 | error after headers sent | warn | An error happened inside a route after the headers were already sent |
 | route error | error | An error happened inside a route and was not caught |
@@ -243,13 +220,18 @@ table below:
 | websocket | debug | Rejected a websocket connection to invalid path |
 | websocket | error | An error happened with a websocket connection |
 
-Additionally, you can filter log entries by level and class with the following
+Additionally, you can filter log entries by level and type with the following
 settings:
 
 ```toml
 [log]
 level = 'warn' # Only produce log entries with level 'warn' or higher ('error' & 'fatal')
-class = 'my-class' # Only produce log entries with class matching exactly 'my-class'
+type = 'my-type' # Only produce log entries with type matching exactly 'my-type'
+```
+You can disable logging entirely for a given app by setting it to `false` in the config
+
+```toml
+log = false
 ```
 
 ### Async Handlers
@@ -283,31 +265,23 @@ post('/my/thing', function(){
 });
 ```
 
-To support the callback error pattern, use the `error` handler arg.
+To support the callback error pattern, use the `res.error()` function arg. This
+function will stop the middleware chain from being executed any further.
 
 ```js
 const fs = require('fs');
 
-post('/my/thing', function({ error, res }){
+post('/my/thing', function({ res }){
     fs.readFile('./my/file', 'utf8', function(err, contents){
         if(err)
-            return error(err, 'Optional message to replace the original');
+            return res.error(err);
         res.end(contents);
     });
 });
 ```
 
-To use other HTTP status codes you can send a string in the first parameter of
-`error`. The supported error names are the following:
-
-| Error name | Status Code |
-|------------|-------------|
-| `NotFound` | **404** |
-| `Unauthorized` |  **401** |
-| `ServerFault` | **500** |
-| `InvalidActionForState` | **405** |
-| `InvalidCredentials` | **400** |
-| `InvalidContent` | **400** |
+To use other HTTP status codes you can send an integer in the first parameter of
+`res.error()`.
 
 ```js
 post('/my/thing', function({ error }){
@@ -315,29 +289,10 @@ post('/my/thing', function({ error }){
         doThing();
     }
     catch(e){
-        error('NotFound', 'Optional message for the JSON response');
+        error(404, 'Optional message for the response');
     }
 });
 ```
-
-You can always deal with uncaught exceptions in all routes through a default
-global error handler. In your `lib/main.js` add an `onRuoteError` function
-property to the `app`.
-
-```js
-app.onRuoteError = function(input, err, send){
-
-    if(err instanceof MyDBError)
-        send('ServerFalut', 'Sorry! Database is sleeping.');
-    else if(err instanceof ValidationError)
-        send('InvalidContent', err.data);
-}
-```
-
-- The `send` function will instruct Nodecaf to output the given error.
-- The `input` arg contain all handler args for the request.
-- If you do nothing for a specific type of `Error` the normal 500 behavior will
-  take place.
 
 ### REST Assertions
 
@@ -346,42 +301,27 @@ the most common REST outputs based on some condition. Check an example to
 trigger a 404 in case a database record doesn't exist.
 
 ```js
-let { exist } = require('nodecaf').assertions;
-
-get('/my/thing/:id', function({ params, db }){
+get('/my/thing/:id', function({ params, db, res }){
     let thing = await db.getById(params.id);
-    exist(thing, 'thing not found');
+    res.notFound(!thing, 'thing not found');
 
     doStuff();
 });
 ```
 
-If the record is not found, the `exist` call will stop the route execution right
+If the record is not found, the `res.notfound()` call will stop the route execution right
 away and generate a [RESTful `NotFound` error](#error-handling).
 
-Along with `exist`, the following assertions with similar behavior are provided:
+Along with `notFound`, the following assertions with similar behavior are provided:
 
-| Method | Error to be output |
-|--------|--------------------|
-| `exist` | `NotFound` |
-| `valid` | `InvalidContent` |
-| `authorized` | `Unauthorized` |
-| `authn` | `InvalidCredentials` |
-| `able` | `InvalidActionForState` |
-
-To use it with callback style functions, pass the `error` handler arg as the
-third parameter.
-
-```js
-let { exist } = require('nodecaf').assertions;
-
-post('/my/file/:id', function({ error, res, params }){
-    fs.readFile('./my/file/' + params.id, 'utf8', function(err, contents){
-        exist(!err, 'File not found', error);
-        res.end(contents);
-    });
-});
-```
+| Method | Status Code |
+|--------|-------------|
+| `badRequest`   | 400 |
+| `unauthorized` | 401 |
+| `forbidden`    | 403 |
+| `notFound`     | 404 |
+| `conflict`     | 409 |
+| `gone`         | 410 |
 
 ### Expose Globals
 
@@ -390,9 +330,11 @@ instanced libraries) across all route handlers. In your `lib/main.js` you can
 expose an object of which all keys will become handler args.
 
 ```js
-app.expose({
-    db: myDbConnection,
-    libX: new LibXInstance()
+module.exports = () => new Nodecaf({
+    startup({ global }){
+        global.db = myDbConnection;
+        global.libX = new LibXInstance();
+    }    
 });
 ```
 
@@ -553,11 +495,9 @@ to set the
 
 | Property | Type | Description | Default |
 |----------|------|-------------|---------|
-| `app.name` | String | Name to be displayed in logs and documentation | `'Untitled'` |
-| `app.version` | String | Verison to be displayed in logs and documentation | Version in Package JSON |
 | `app.conf.delay` | Integer | Milliseconds to wait before actually starting the app | `0` |
 | `app.conf.port` | Integer | Port for the web server to listen (also exposed as user conf) | `80` or `443` |
-| `app.shouldParseBody` | Boolean | Wether supported request body types should be parsed | `true` |
 | `app.conf.formFileDir` | Path | Where to store files uploaded as form-data | OS default temp dir |
-| `app.alwaysRebuildAPI` | Boolean | Wether the API should be rebuilt dynamically for every start or setup operation | `false` |
-| `app.cookieSecret` | String | A secure random string to be used for signing cookies | none |
+| `app.conf.cookie.secret` | String | A secure random string to be used for signing cookies | none |
+| `opts.shouldParseBody` | Boolean | Wether supported request body types should be parsed | `true` |
+| `opts.alwaysRebuildAPI` | Boolean | Wether the API should be rebuilt dynamically for every start or setup operation | `false` |
