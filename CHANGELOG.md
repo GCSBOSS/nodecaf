@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.9.3] - 2020-08-07
+
+### Security
+- Fixed vulnerability on outdated version of express fileupload dependency
+
 ## [v0.9.2] - 2020-06-23
 
 ### Added
@@ -364,3 +369,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [v0.9.0]: https://gitlab.com/GCSBOSS/nodecaf/-/tags/v0.9.0
 [v0.9.1]: https://gitlab.com/GCSBOSS/nodecaf/-/tags/v0.9.1
 [v0.9.2]: https://gitlab.com/GCSBOSS/nodecaf/-/tags/v0.9.2
+[v0.9.3]: https://gitlab.com/GCSBOSS/nodecaf/-/tags/v0.9.3
