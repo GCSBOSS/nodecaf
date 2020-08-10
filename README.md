@@ -499,5 +499,7 @@ to set the
 | `app.conf.port` | Integer | Port for the web server to listen (also exposed as user conf) | `80` or `443` |
 | `app.conf.formFileDir` | Path | Where to store files uploaded as form-data | OS default temp dir |
 | `app.conf.cookie.secret` | String | A secure random string to be used for signing cookies | none |
+| `opts.name` | String | Manually set application name used in various places | `package.json`s |
+| `opts.version` | String | Manually set application version | `package.json`s |
 | `opts.shouldParseBody` | Boolean | Wether supported request body types should be parsed | `true` |
 | `opts.alwaysRebuildAPI` | Boolean | Wether the API should be rebuilt dynamically for every start or setup operation | `false` |
