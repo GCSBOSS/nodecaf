@@ -45,7 +45,6 @@ describe('Nodecaf', () => {
             await app.stop();
         });
 
-
         it('Should preserve flash vars across handlers in a route', async function(){
             this.timeout(4000);
             let app = new Nodecaf({
@@ -709,6 +708,11 @@ describe('Regression', () => {
         await assert.doesNotReject( app.stop() );
         await p;
         await app.stop();
+    });
+
+    it('Should read correct package.json for name and version', () => {
+        let app = new Nodecaf();
+        assert.strictEqual(app._name, 'nodecaf');
     });
 
 });
