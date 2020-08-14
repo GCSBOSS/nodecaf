@@ -845,8 +845,8 @@ describe('Other Features', function(){
                 })
             }
         });
-        app.global.foo = 'foobar';
         await app.start();
+        app.global.foo = 'foobar';
         let { assert: { body } } = await base.post('bar');
         body.exactly('foobar');
         await app.stop();
