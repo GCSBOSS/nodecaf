@@ -622,24 +622,9 @@ describe('Error Handling', () => {
 
 describe('Logging', () => {
 
-    it('Should log given event', async () => {
-        let app = new Nodecaf({
-            api({ post }){
-                post('/foo', ({ log, res }) => {
-                    let entry = log.info('foobar');
-                    assert.strictEqual(entry.msg, 'foobar');
-                    res.end();
-                });
-            }
-        });
-        await app.start();
-        await base.post('foo');
-        await app.stop();
-    });
-
     it('Should not log filtered level and type', async () => {
         let app = new Nodecaf();
-        app.setup({ log: { type: 'test', level: 'info' } });
+        app.setup({ log: { only: 'test', level: 'info' } });
         await app.start();
         assert.strictEqual(app.log.debug({ type: 'test' }), false);
         assert.strictEqual(app.log.info({ type: 'foo' }), false);
@@ -845,8 +830,8 @@ describe('Other Features', function(){
                 })
             }
         });
-        app.global.foo = 'foobar';
         await app.start();
+        app.global.foo = 'foobar';
         let { assert: { body } } = await base.post('bar');
         body.exactly('foobar');
         await app.stop();

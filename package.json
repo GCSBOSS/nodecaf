@@ -44,6 +44,7 @@
         "cookie-parser": "^1.4.5",
         "cookie-signature": "^1.1.0",
         "cors": "^2.8.5",
+        "golog": "^0.3.1",
         "path-to-regexp": "^6.1.0",
         "raw-body": "^2.4.1",
         "stdout-stream": "^1.4.1",
@@ -51,7 +52,7 @@
     },
     "devDependencies": {
         "form-data": "^3.0.0",
-        "muhb": "^3.0.3",
+        "muhb": "^3.0.4",
         "toml": "^3.0.0"
     }
 }
