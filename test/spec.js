@@ -417,9 +417,9 @@ describe('Handlers', () => {
                     res.end();
                 });
 
-                get('/bar', function({ req, res }){
-                    res.badRequest(req.cookies.testa !== 'bar');
-                    res.badRequest(req.signedCookies.test !== 'foo');
+                get('/bar', function({ res, cookies, signedCookies }){
+                    res.badRequest(cookies.testa !== 'bar');
+                    res.badRequest(signedCookies.test !== 'foo');
                     res.end();
                 });
             }
@@ -443,6 +443,29 @@ describe('Handlers', () => {
         await app.start();
         let { assert } = await base.get('foo');
         assert.status.is(500);
+        await app.stop();
+    });
+
+    it('Should not read cookies with wrong signature', async function(){
+        let app = new Nodecaf({
+            conf: { port: 80, cookie: { secret: 'OH YEAH' } },
+            api({ get }){
+                get('/foo', function({ res }){
+                    res.cookie('test', 'foo', { signed: true, maxAge: 5000  });
+                    res.end();
+                });
+
+                get('/bar', function({ res, signedCookies }){
+                    res.badRequest(signedCookies.test !== 'foo');
+                    res.end();
+                });
+            }
+        });
+        await app.start();
+        let { cookies } = await base.get('foo');
+        cookies['test'] = cookies['test'].substring(0, cookies['test'].length - 1) + '1';
+        let { status } = await base.get('bar', { cookies });
+        assert.strictEqual(status, 400);
         await app.stop();
     });
 

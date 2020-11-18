@@ -41,7 +41,6 @@
         "confort": "^0.1.4",
         "content-type": "^1.0.4",
         "cookie": "^0.4.1",
-        "cookie-parser": "^1.4.5",
         "cookie-signature": "^1.1.0",
         "cors": "^2.8.5",
         "golog": "^0.3.1",
