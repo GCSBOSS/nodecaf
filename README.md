@@ -15,7 +15,6 @@ Using Nodecaf you'll get:
 - Function to [expose global objects](#expose-globals) to all routes (eg.:
   database connections).
 - Shortcut for [CORS Settings](#cors) on all routes.
-- [HTTPS capability](#https).
 - Functions to [describe your API](#api-description) making your code the main
   source of truth.
 - Functions to [filter request bodies](#filter-requests-by-mime-type) by mime-type.
@@ -130,7 +129,7 @@ and server configuration.
 
 Use this feature to manage:
 - external services data such as database credentials
-- Nodecaf settings such as SSL and logging
+- Nodecaf settings such as cors and logging
 - Your own server application settings for your users
 
 Suported config formats: **TOML**, **YAML**, **JSON**, **CSON**
@@ -352,20 +351,6 @@ cors = [ 'my://origin1', 'my://origin2' ]
 ```
 
 Setup the cors according to the [popular CORS Express middleware](https://github.com/expressjs/cors#configuration-options).
-
-### HTTPS
-
-In production it's generally desirable to have an HTTPS setup for both client to
-API and API to API communications. You can enable SSL for your server by adding
-a `ssl` key to your config, containing both the path for your key and cert.
-
-```toml
-[ssl]
-key = "/path/to/key.pem"
-cert = "/path/to/cert.pem"
-```
-
-When SSL is enabled the default server port becomes 443.
 
 ### Filter Requests by Mime-type
 

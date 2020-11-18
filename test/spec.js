@@ -674,35 +674,6 @@ describe('Regression', () => {
 });
 
 describe('Other Features', function(){
-    const https = require('https');
-
-    it('Should start HTTPS server when specified', async function(){
-        let app = new Nodecaf({
-            conf: {
-                ssl: {
-                    key: './test/res/key.pem',
-                    cert: './test/res/cert.pem'
-                }
-            },
-            api({ get }){
-                get('/foo', ({ res }) => res.end('bar') );
-            }
-        });
-        await app.start();
-
-        process.env['NODE_TLS_REJECT_UNAUTHORIZED'] = 0;
-        let res = await new Promise( resolve =>
-            https.get('https://localhost/foo', resolve) );
-
-        await new Promise( resolve =>
-            res.on('data', chunk => {
-                assert.strictEqual(chunk.toString(), 'bar');
-                resolve();
-            }) );
-
-        await app.stop();
-        process.env['NODE_TLS_REJECT_UNAUTHORIZED'] = 1;
-    });
 
     it('Should send permissive CORS headers when setup so [cors]', async () => {
         let app = new Nodecaf({
