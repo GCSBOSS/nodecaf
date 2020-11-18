@@ -316,6 +316,22 @@ describe('Handlers', () => {
         await app.stop();
     });
 
+    it('Should execute \'all\' handler on any path/method', async () => {
+        let app = new Nodecaf({
+            conf: { port: 80 },
+            api({ all }){
+                all(({ res, params }) => {
+                    res.badRequest(!params.path);
+                    res.end();
+                });
+            }
+        });
+        await app.start();
+        assert.strictEqual((await app.trigger('post', '/foo/bar')).status, 200);
+        assert.strictEqual((await app.trigger('get', '/foo/baz')).status, 200);
+        await app.stop();
+    });
+
     it('Should pass all present parameters to handler', async () => {
         let app = new Nodecaf({
             conf: { port: 80 },
