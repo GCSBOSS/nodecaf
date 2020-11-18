@@ -72,7 +72,7 @@ describe('Nodecaf', () => {
                     get('/foobar', ({ res }) => res.end());
                 }
             });
-            assert(!app._router.routes['/foobar']);
+            assert(!app._api);
         });
 
         it('Should store any settings sent', () => {
@@ -129,7 +129,7 @@ describe('Nodecaf', () => {
             let { assert } = await base.get('');
             assert.status.is(404);
             await app.stop();
-            app._api = function({ get }){
+            app._apiSpec = function({ get }){
                 get('/foobar', ({ res }) => res.end());
             };
             await app.start();
@@ -206,9 +206,86 @@ describe('Nodecaf', () => {
 
     });
 
+    describe('#trigger', () => {
+
+        it('Should trigger route without http server', async () => {
+            let app = new Nodecaf({
+                conf: { port: 80 },
+                api({ post }){
+                    post('/foo', ({ res }) => res.status(202).end('Test'));
+                    post('/nores', ({ res }) => res.status(204).end());
+                }
+            });
+            await app.start();
+            await app.trigger('post', '/nores');
+            let res = await app.trigger('post', '/foo');
+            assert.strictEqual(res.status, 202);
+            assert.strictEqual(res.body, 'Test');
+            await app.stop();
+        });
+
+        it('Should default to response status to 200', async () => {
+            let app = new Nodecaf({
+                conf: { port: 80 },
+                api({ post }){
+                    post('/foo', ({ res }) => {
+                        res.setHeader('X-Test', 'Foo');
+                        res.end();
+                    });
+                    post('/bar', ({ res }) => {
+                        res.getHeader('X-Test', 'Foo');
+                        res.end();
+                    });
+                }
+            });
+            await app.start();
+            let r = await app.trigger('post', '/bar');
+            assert.strictEqual(r.status, 200);
+            let res = await app.trigger('post', '/foo');
+            assert.strictEqual(res.headers['X-Test'], 'Foo');
+            await app.stop();
+        });
+
+    });
 });
 
 describe('Handlers', () => {
+
+    it('Should warn about next() after stack ended', async () => {
+        let app = new Nodecaf({
+            api({ post }){
+                post('/foobaz',
+                    ({ next }) => next(),
+                    ({ next, res }) => {
+                        next();
+                        res.end();
+                    }
+                );
+            }
+        });
+
+        await app.start();
+        let res = await app.trigger('post', '/foobaz');
+        assert.strictEqual(res.status, 200);
+        await app.stop();
+    });
+
+    it('Should not call next function when stack was aborted', done => {
+        let app = new Nodecaf({
+            api({ post }){
+                post('/unknown', ({ res, next }) => {
+                    res.error(500, 'test');
+                    done();
+                    next();
+                }, () => done());
+            }
+        });
+        (async function(){
+            await app.start();
+            await app.trigger('post', '/unknown');
+            await app.stop();
+        })();
+    });
 
     it('Should fail when receiving invalid route handlers', () => {
         new Nodecaf({
@@ -399,12 +476,10 @@ describe('Body Parsing', () => {
         let form = new FormData();
         form.append('foo', 'bar');
         form.append('foobar', fs.createReadStream('./test/res/file.txt'));
-        await new Promise(resolve =>
-            form.submit(LOCAL_HOST + '/bar/', (err, res) => {
-                assert(res.headers['x-test'] == 'file.txt');
-                resolve();
-            })
-        );
+        await new Promise(done => form.submit(LOCAL_HOST + '/bar/', (err, res) => {
+            assert(res.headers['x-test'] == 'file.txt');
+            done();
+        }));
 
         await app.stop();
     });
@@ -621,7 +696,7 @@ describe('Error Handling', () => {
                 });
                 post('/unknown', async ({ res }) => {
                     await fs.readdir('.', function(){
-                        res.error(new Error('errfoobar'));
+                        res.error({ a: 'b' });
                     });
                 });
                 post('/unknown/object', () => {
