@@ -643,7 +643,6 @@ describe('Logging', () => {
 });
 
 describe('Regression', () => {
-    const WebSocket = require('ws');
 
     it('Should handle errors even when error event has no listeners', async () => {
         let app = new Nodecaf({
@@ -659,34 +658,6 @@ describe('Regression', () => {
         await app.stop();
     });
 
-    it('Should not hang up connections when they have a query string', function(done){
-        let count = 0;
-        let app = new Nodecaf({
-            api({ ws }){
-                ws('/foo', {
-                    connect: () => count++,
-                    async message({ message }){
-                        assert.strictEqual('foobar', message);
-                        await app.stop();
-                        count++;
-                    },
-                    close(){
-                        assert.strictEqual(count, 2);
-                        done();
-                    }
-                });
-            }
-        });
-        (async function(){
-            await app.start();
-            const ws = new WebSocket('ws://localhost/foo?test=foobar');
-            ws.on('open', () => {
-                ws.pong();
-                ws.send('foobar');
-            });
-        })();
-    });
-
     it('Should not fail when attempting to close during startup', async () => {
         let app = new Nodecaf();
         let p = app.start();
@@ -699,79 +670,6 @@ describe('Regression', () => {
         let app = new Nodecaf();
         assert.strictEqual(app._name, 'nodecaf');
     });
-
-});
-
-describe('WebSocket', function(){
-
-    const WebSocket = require('ws');
-
-    it('Should accept websocket connections and messages', function(done){
-        let count = 0;
-        let app = new Nodecaf({
-            api({ ws }){
-                ws('/foo', {
-                    connect: () => count++,
-                    error: Function.prototype,
-                    async message({ message }){
-                        assert.strictEqual('foobar', message);
-                        await app.stop();
-                        count++;
-                    },
-                    close(){
-                        assert.strictEqual(count, 2);
-                        done();
-                    }
-                });
-            }
-        });
-        (async function(){
-            await app.start();
-            const ws = new WebSocket('ws://localhost/foo');
-            ws.on('open', () => {
-                ws.pong();
-                ws.send('foobar');
-            });
-        })();
-    });
-
-    it('Should reject connection to path that is not setup', function(done){
-        let app = new Nodecaf({
-            api: ({ ws }) => ws('/foo', {})
-        });
-        (async function(){
-            await app.start();
-            const ws = new WebSocket('ws://localhost/foobar');
-            ws.on('error', async () => {
-                await app.stop();
-                done()
-            });
-        })();
-    });
-
-    // it('Should properly handle client errors', function(done){
-    //     let app = new Nodecaf();
-    //     app.api(({ ws }) => {
-    //         ws('/foo', { error: done });
-    //     });
-    //     (async function(){
-    //         await app.start();
-    //         let ws = new WebSocket('ws://localhost/foo');
-    //         ws.destroy();
-    //     })();
-    // });
-
-    // it('Should not fail when client breaks connection during req body read', async () => {
-    //     let app = new Nodecaf();
-    //     app.api(function({ post }){
-    //         post('/foo', Function.prototype);
-    //     });
-    //     await app.start();
-    //     let req = require('http').request(LOCAL_HOST + '/foo', { method: 'POST' });
-    //     req.write(JSON.stringify([...Array(2048)].keys()));
-    //     req.abort();
-    //     await app.stop();
-    // });
 
 });
 

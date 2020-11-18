@@ -16,7 +16,6 @@ Using Nodecaf you'll get:
   database connections).
 - Shortcut for [CORS Settings](#cors) on all routes.
 - [HTTPS capability](#https).
-- Functions to define [Websocket Routes](#websocket-routes).
 - Functions to [describe your API](#api-description) making your code the main
   source of truth.
 - Functions to [filter request bodies](#filter-requests-by-mime-type) by mime-type.
@@ -214,11 +213,6 @@ table below:
 | server | info | The server has started |
 | server | info | The server has stopped |
 | server | info | The server configuration has been reloaded |
-| websocket | debug | A new websocket connection happened |
-| websocket | debug | A message was received |
-| websocket | debug | A websocket connection was closed |
-| websocket | debug | Rejected a websocket connection to invalid path |
-| websocket | error | An error happened with a websocket connection |
 
 Additionally, you can filter log entries by level and type with the following
 settings:
@@ -372,43 +366,6 @@ cert = "/path/to/cert.pem"
 ```
 
 When SSL is enabled the default server port becomes 443.
-
-## WebSocket Routes
-
-With nodecaf you can define paths to be accessible as WebSocket endpoints.
-
-In your api file use the `ws(path, events)` method with the folling arguments:
-
-1. `path`: where the websocket will be accessible
-2. `events`: object containing any of the following handlers: `connect`, `message`, `close`, `error`.
-
-```js
-module.exports = function({ post, get, del, head, patch, put, ws }){
-
-    // Regular api routes...
-
-    // Websocket routes
-
-    ws('/my-path-1', {
-        connect: ({ client }) => console.log('NEW CLIENT'),
-        message: ({ message, client }) => console.log('NEW MESSAGE'),
-        close: ({ client }) => console.log('BYE CLIENT'),
-        error: ({ err, client }) => console.log('I FEEL ODD')
-    });
-
-    ws('/my-path-2', {
-        connect: ({ client }) => console.log('NEW CLIENT 2'),
-        message: ({ message, client }) => console.log('NEW MESSAGE 2'),
-        close: ({ client }) => console.log('BYE CLIENT 2'),
-        error: ({ err, client }) => console.log('I FEEL ODD 2')
-    });
-
-};
-```
-
-All handlers are optional for each websocket endpoint.
-
-Besides the ones showing, the following handler args are present in all ws handlers: `client`, `req`, `flash`, `conf`, `log`, `headers`, `query` and exposed vars.
 
 ### Filter Requests by Mime-type
 
