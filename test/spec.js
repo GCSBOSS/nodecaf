@@ -33,8 +33,9 @@ describe('Nodecaf', () => {
 
         it('Should allow registering routes', async () => {
             let app = new Nodecaf({
+                conf: { port: 80 },
                 api({ post, del, patch }){
-                    post('/foo', ({res}) => res.status(500).end() );
+                    post('/foo', ({ res }) => res.status(500).end());
                     assert.strictEqual(typeof del, 'function');
                     assert.strictEqual(typeof patch, 'function');
                 }
@@ -48,6 +49,7 @@ describe('Nodecaf', () => {
         it('Should preserve flash vars across handlers in a route', async function(){
             this.timeout(4000);
             let app = new Nodecaf({
+                conf: { port: 80 },
                 api({ get }){
                     get('/bar',
                         ({ flash, next }) => { flash.foo = 'bar'; next(); },
@@ -91,7 +93,7 @@ describe('Nodecaf', () => {
     describe('#start', () => {
 
         it('Should start the http server on port 80', async () => {
-            let app = new Nodecaf();
+            let app = new Nodecaf({ conf: { port: 80 } });
             await app.start();
             let { assert } = await base.get('');
             assert.status.is(404);
@@ -122,7 +124,7 @@ describe('Nodecaf', () => {
         });
 
         it('Should rebuild the api when setup so [this.alwaysRebuildAPI]', async () => {
-            let app = new Nodecaf({ alwaysRebuildAPI: true });
+            let app = new Nodecaf({ conf: { port: 80 }, alwaysRebuildAPI: true });
             await app.start();
             let { assert } = await base.get('');
             assert.status.is(404);
@@ -141,7 +143,7 @@ describe('Nodecaf', () => {
     describe('#stop', () => {
 
         it('Should stop the http server', async function(){
-            let app = new Nodecaf();
+            let app = new Nodecaf({ conf: { port: 80 } });
             await app.start();
             await app.stop();
             this.timeout(3000);
@@ -169,7 +171,7 @@ describe('Nodecaf', () => {
 
         it('Should take down the sever and bring it back up', async function() {
             this.timeout(3000);
-            let app = new Nodecaf();
+            let app = new Nodecaf({ conf: { port: 80 } });
             await app.start();
             (await base.get('')).assert.status.is(404);
             await app.restart();
@@ -221,6 +223,7 @@ describe('Handlers', () => {
 
     it('Should pass all the required args to handler', async () => {
         let app = new Nodecaf({
+            conf: { port: 80 },
             api({ get }){
                 get('/foo', function(obj){
                     assert(obj.res && obj.req && obj.next && !obj.body
@@ -238,6 +241,7 @@ describe('Handlers', () => {
 
     it('Should pass all present parameters to handler', async () => {
         let app = new Nodecaf({
+            conf: { port: 80 },
             api({ get }){
                 get('/fo/:o', Function.prototype);
                 get('/foo/:bar', function({ params, res }){
@@ -253,6 +257,7 @@ describe('Handlers', () => {
 
     it('Should parse URL query string', async () => {
         let app = new Nodecaf({
+            conf: { port: 80 },
             api({ post }){
                 post('/foobar', ({ query, res, next }) => {
                     assert.strictEqual(query.foo, 'bar');
@@ -268,7 +273,7 @@ describe('Handlers', () => {
     });
 
     it('Should output a 404 when no route is found for a given path', async () => {
-        let app = new Nodecaf();
+        let app = new Nodecaf({ conf: { port: 80 } });
         await app.start();
         let { status } = await base.post('foobar');
         assert.strictEqual(status, 404);
@@ -277,6 +282,7 @@ describe('Handlers', () => {
 
     it('Should parse object as json response [res.json()]', async () => {
         let app = new Nodecaf({
+            conf: { port: 80 },
             api({ get }){
                 get('/foo', function({ res }){
                     res.json('{"hey":"ho"}');
@@ -291,6 +297,7 @@ describe('Handlers', () => {
     it('Should set multiple cookies properly', async function(){
 
         let app = new Nodecaf({
+            conf: { port: 80 },
             api({ get }){
                 get('/foo', function({ res }){
                     res.cookie('test', 'foo');
@@ -308,7 +315,7 @@ describe('Handlers', () => {
 
     it('Should set encrypted (signed) cookies', async function(){
         let app = new Nodecaf({
-            conf: { cookie: { secret: 'OH YEAH' } },
+            conf: { port: 80, cookie: { secret: 'OH YEAH' } },
             api({ get }){
 
                 get('/foo', function({ res }){
@@ -333,6 +340,7 @@ describe('Handlers', () => {
 
     it('Should fail when tring to sign cookies without a secret', async function(){
         let app = new Nodecaf({
+            conf: { port: 80 },
             api({ get }){
                 get('/foo', function({ res }){
                     res.cookie('test', 'foo', { signed: true });
@@ -347,6 +355,7 @@ describe('Handlers', () => {
 
     it('Should clear cookies', async function(){
         let app = new Nodecaf({
+            conf: { port: 80 },
             api({ get }){
 
                 get('/foo', function({ res }){
@@ -376,6 +385,7 @@ describe('Body Parsing', () => {
     it('Should expose file content sent as multipart/form-data', async () => {
         const FormData = require('form-data');
         let app = new Nodecaf({
+            conf: { port: 80 },
             api({ post }){
                 post('/bar', ({ body, res }) => {
                     assert(body.foobar.size > 10);
@@ -401,6 +411,7 @@ describe('Body Parsing', () => {
 
     it('Should parse JSON request body payloads', async () => {
         let app = new Nodecaf({
+            conf: { port: 80 },
             api({ post }){
                 post('/foobar', ({ body, res }) => {
                     assert.strictEqual(body.foo, 'bar');
@@ -418,6 +429,7 @@ describe('Body Parsing', () => {
 
     it('Should not send error when failed during body parsing', async () => {
         let app = new Nodecaf({
+            conf: { port: 80 },
             api({ post }){
                 post('/foobar', ({ body, res }) => {
                     assert(!body);
@@ -435,6 +447,7 @@ describe('Body Parsing', () => {
 
     it('Should parse Raw request body payloads', async () => {
         let app = new Nodecaf({
+            conf: { port: 80 },
             api({ post }){
                 post('/foobar', ({ body, res }) => {
                     assert.strictEqual(body, '{"foo":"bar"}');
@@ -454,6 +467,7 @@ describe('Body Parsing', () => {
 
     it('Should parse URLEncoded request body payloads', async () => {
         let app = new Nodecaf({
+            conf: { port: 80 },
             api({ post }){
                 post('/foobar', ({ body, res }) => {
                     assert.strictEqual(body.foo, 'bar');
@@ -473,6 +487,7 @@ describe('Body Parsing', () => {
 
     it('Should not parse request body when setup so', async () => {
         let app = new Nodecaf({
+            conf: { port: 80 },
             shouldParseBody: false,
             api({ post }){
                 post('/foobar', ({ body, res }) => {
@@ -497,6 +512,7 @@ describe('Assertions', () => {
 
     it('Should throw when condition evaluates to true', async () => {
         let app = new Nodecaf({
+            conf: { port: 80 },
             api({ get }){
                 get('/foo', function({ res }){
                     assert.throws( () => res.badRequest(true) );
@@ -516,6 +532,7 @@ describe('Assertions', () => {
 
     it('Should do nothing when condition evaluates to false', async () => {
         let app = new Nodecaf({
+            conf: { port: 80 },
             api({ get }){
                 get('/foo', function({ res }){
                     assert.doesNotThrow( () => res.badRequest(false) );
@@ -540,6 +557,7 @@ describe('Error Handling', () => {
 
     it('Should handle Error thrown sync on the route', async () => {
         let app = new Nodecaf({
+            conf: { port: 80 },
             api({ post }){
                 post('/unknown', () => {
                     throw new Error('othererr');
@@ -554,6 +572,7 @@ describe('Error Handling', () => {
 
     it('Should handle Error injected sync on the route', async () => {
         let app = new Nodecaf({
+            conf: { port: 80 },
             api({ post }){
                 post('/known', ({ res }) => {
                     throw res.error(404);
@@ -578,6 +597,7 @@ describe('Error Handling', () => {
 
     it('Should handle Rejection on async route', async () => {
         let app = new Nodecaf({
+            conf: { port: 80 },
             api({ post }){
                 post('/async', async () => {
                     await new Promise((y, n) => n());
@@ -592,6 +612,7 @@ describe('Error Handling', () => {
 
     it('Should handle Error injected ASYNC on the route', async () => {
         let app = new Nodecaf({
+            conf: { port: 80 },
             api({ post }){
                 post('/known', ({ res }) => {
                     fs.readdir('.', function(){
@@ -646,6 +667,7 @@ describe('Regression', () => {
 
     it('Should handle errors even when error event has no listeners', async () => {
         let app = new Nodecaf({
+            conf: { port: 80 },
             api({ post }){
                 post('/bar', () => {
                     throw new Error('errfoobar');
@@ -677,7 +699,7 @@ describe('Other Features', function(){
 
     it('Should send permissive CORS headers when setup so [cors]', async () => {
         let app = new Nodecaf({
-            conf: { cors: true },
+            conf: { cors: true, port: 80 },
             api({ get }){
                 get('/foobar', ({ res }) => res.end() );
             }
@@ -693,6 +715,7 @@ describe('Other Features', function(){
 
     it('Should store data to be accessible to all handlers [app.global]', async () => {
         let app = new Nodecaf({
+            conf: { port: 80 },
             api({ post }){
                 post('/bar', ({ foo, res }) => {
                     res.text(foo);
@@ -708,7 +731,7 @@ describe('Other Features', function(){
 
     it('Should delay server initialization by given milliseconds [conf.delay]', async function(){
         let app = new Nodecaf({
-            conf: { delay: 1500 },
+            conf: { delay: 1500, port: 80 },
             api({ get }){
                 get('/foobar', ({ res }) => res.end());
             }
@@ -727,6 +750,7 @@ describe('Other Features', function(){
 
     it('Should reject unwanted content-types for the given route', async () => {
         let app = new Nodecaf({
+            conf: { port: 80 },
             api({ post }){
                 let acc = this.accept([ 'urlencoded', 'text/html' ]);
                 post('/foo', acc, ({ res }) => res.end());
@@ -744,6 +768,7 @@ describe('Other Features', function(){
 
     it('Should accept wanted content-types for the given route', async () => {
         let app = new Nodecaf({
+            conf: { port: 80 },
             api({ post }){
                 let acc = this.accept('text/html');
                 post('/foo', acc, ({ res }) => res.end());
@@ -761,6 +786,7 @@ describe('Other Features', function(){
 
     it('Should accept requests without a body payload', async () => {
         let app = new Nodecaf({
+            conf: { port: 80 },
             api({ post }){
                 let acc = this.accept('text/html');
                 post('/foo', acc, ({ res }) => res.end());
