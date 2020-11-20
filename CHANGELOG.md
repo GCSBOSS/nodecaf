@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.11.0] - 2020-11-20
+
+### Added
+- constructor option to build a custom web server
+- `app.trigger()` method to call routes programatically bypassing HTTP layer
+- `all()` handler function to match all routes in a fall back style
+
+### Changed
+- http server to be optional
+- a few log types for
+- error hangling behavor to spit errors on respose body on DEV environment only
+
+### Removed
+- HTTPS/SSL configurations and feature
+- WS endpoints feature
+
 ## [v0.10.1] - 2020-08-10
 
 ### Added
