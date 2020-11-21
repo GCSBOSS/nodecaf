@@ -629,7 +629,7 @@ describe('Assertions', () => {
             conf: { port: 80 },
             api({ get }){
                 get('/foo', function({ res }){
-                    assert.throws( () => res.badRequest(true) );
+                    assert.throws( () => res.badRequest(true, Buffer.from('abc')) );
                     assert.throws( () => res.unauthorized(true) );
                     assert.throws( () => res.forbidden(true) );
                     assert.throws( () => res.notFound(true) );
@@ -738,8 +738,8 @@ describe('Error Handling', () => {
                         res.error({ a: 'b' });
                     });
                 });
-                post('/unknown/object', () => {
-                    throw 'resterr';
+                post('/unknown/object', ({ res }) => {
+                    res.error(Buffer.from('abc'));
                 });
             }
         });
