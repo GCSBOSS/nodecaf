@@ -492,6 +492,32 @@ describe('Handlers', () => {
         await app.stop();
     });
 
+    it('Should run a given function as if it was regularly in the pipeline', async function(){
+        function middle({ res, next }){
+            res.write('K');
+            next();
+        }
+
+        let app = new Nodecaf({
+            conf: { port: 80 },
+            api({ post }){
+                post('/foobar', async function before({ res, fork, next }){
+                    res.type('text');
+                    res.write('O');
+                    await fork(middle);
+                    next();
+                }, function after({ res }){
+                    res.end('!');
+                });
+            }
+        });
+        await app.start();
+        let { assert } = await base.post('foobar');
+        assert.status.is(200);
+        assert.body.exactly('OK!');
+        await app.stop();
+    });
+
 });
 
 describe('Body Parsing', () => {
@@ -629,7 +655,7 @@ describe('Assertions', () => {
             conf: { port: 80 },
             api({ get }){
                 get('/foo', function({ res }){
-                    assert.throws( () => res.badRequest(true) );
+                    assert.throws( () => res.badRequest(true, Buffer.from('abc')) );
                     assert.throws( () => res.unauthorized(true) );
                     assert.throws( () => res.forbidden(true) );
                     assert.throws( () => res.notFound(true) );
@@ -738,8 +764,8 @@ describe('Error Handling', () => {
                         res.error({ a: 'b' });
                     });
                 });
-                post('/unknown/object', () => {
-                    throw 'resterr';
+                post('/unknown/object', ({ res }) => {
+                    res.error(Buffer.from('abc'));
                 });
             }
         });
