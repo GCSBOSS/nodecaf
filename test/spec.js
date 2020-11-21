@@ -492,6 +492,32 @@ describe('Handlers', () => {
         await app.stop();
     });
 
+    it('Should run a given function as if it was regularly in the pipeline', async function(){
+        function middle({ res, next }){
+            res.write('K');
+            next();
+        }
+
+        let app = new Nodecaf({
+            conf: { port: 80 },
+            api({ post }){
+                post('/foobar', async function before({ res, fork, next }){
+                    res.type('text');
+                    res.write('O');
+                    await fork(middle);
+                    next();
+                }, function after({ res }){
+                    res.end('!');
+                });
+            }
+        });
+        await app.start();
+        let { assert } = await base.post('foobar');
+        assert.status.is(200);
+        assert.body.exactly('OK!');
+        await app.stop();
+    });
+
 });
 
 describe('Body Parsing', () => {
