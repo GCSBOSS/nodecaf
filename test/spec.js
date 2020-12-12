@@ -320,15 +320,12 @@ describe('Handlers', () => {
         let app = new Nodecaf({
             conf: { port: 80 },
             api({ all }){
-                all(({ res, params }) => {
-                    res.badRequest(!params.path);
-                    res.end();
-                });
+                all(({ res, params }) => res.end(params.path));
             }
         });
         await app.start();
-        assert.strictEqual((await app.trigger('post', '/foo/bar')).status, 200);
-        assert.strictEqual((await app.trigger('get', '/foo/baz')).status, 200);
+        assert.strictEqual((await app.trigger('post', '/foo/bar')).body, '/foo/bar');
+        assert.strictEqual((await app.trigger('get', '/')).body, '/');
         await app.stop();
     });
 
