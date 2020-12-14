@@ -61,6 +61,67 @@ module.exports = function({ post, get, del, head, patch, put }){
 
 5. In your app root directory run with: `nodecaf run .`
 
+
+## How to Run my App
+
+There are a few supported ways of running your app dependng on the type of
+environment you are targeting.
+
+### Running on development machine
+
+1. You should use the CLI (`npm i -P -g nodecaf-cli`)
+2. Run: `nodecaf run path/to/your/app`
+3. Optionally pass config files with `-c path/to/config`
+4. Optionally enable live reload with `-r`
+
+### Running on Docker for development
+
+- Build the auto-generated `Dockerfile`
+- Bind the port you are going to listen to
+- Create a bind mount to your config files
+- Reference your config files in the `command`
+- Create a bind mount to your app directory targeting `/app` inside the container
+- Run the container
+
+Or use this example compose configuration:
+
+```yml
+my-app:
+  build: ./my-app
+  command: -c /my-conf.toml
+  ports:
+    - 80:8080
+  volumes:
+    - ./my-conf.toml:/my-conf.toml
+    - ./my-app:/app
+  environment:
+    NODE_ENV: ''
+```
+
+### Running on Docker for production
+- Build and run the auto-generated `Dockerfile` in the same fashion as development
+- You should NOT setup a volume in production so you just use the source code baked in the image
+- Ensure all configuration files referenced in the `command` are accessible inside the container
+- Run the container
+
+### Running as a node module
+
+Your Nodecaf app is exported as a regular node module, so it can run as a dependency in another project
+
+```js
+let myApp = require('my-app');
+
+(async function(){
+
+    let app = myApp();
+    await app.start();
+
+    let res = await app.trigger('/');
+
+    await app.stop();
+})();
+```
+
 ## Reporting Bugs **or Vulnerabilities**
 If you have found any problems with Nodecaf, please:
 
