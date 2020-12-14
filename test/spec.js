@@ -830,6 +830,24 @@ describe('Regression', () => {
         assert.strictEqual(app._name, 'nodecaf');
     });
 
+    it('Should not modify the very object used as cookie options', async () => {
+        let cookieOpts = { maxAge: 68300000 };
+        let app = new Nodecaf({
+            conf: { port: 80 },
+            api({ get }){
+                get('/foo', function({ res }){
+                    res.cookie('test', 'foo', cookieOpts);
+                    res.cookie('testa', 'bar', cookieOpts);
+                    res.json(cookieOpts);
+                });
+            }
+        });
+        await app.start();
+        let { body } = await base.get('foo');
+        assert.strictEqual(JSON.parse(body).maxAge, 68300000);
+        await app.stop();
+    });
+
 });
 
 describe('Other Features', function(){
