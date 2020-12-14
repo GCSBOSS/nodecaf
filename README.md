@@ -23,11 +23,9 @@ Using Nodecaf you'll get:
 ## Get Started
 
 1. Install the cli utilities: `npm i -P -g nodecaf-cli`.
-2. Create or just go to your node project directory (you must have a
-   `package.json`).
-3. Add to your project with: `npm i -P nodecaf`.
-4. Create a skelleton project with: `nodecaf init`.
-5. Add your globals in `lib/main.js`
+2. Create a skelleton project with: `nodecaf init my-project`.
+3. Add your globals in `lib/main.js`
+
 ```js
 const Nodecaf = require('nodecaf');
 const api = require('./api');
@@ -46,11 +44,10 @@ module.exports = () => new Nodecaf({
     async shutdown({ conf, log, global }){
 
     }
-
 });
 ```
 
-6. Add your routes in `lib/api.js`
+4. Add your routes in `lib/api.js`
 
 ```js
 module.exports = function({ post, get, del, head, patch, put }){
@@ -62,7 +59,7 @@ module.exports = function({ post, get, del, head, patch, put }){
 };
 ```
 
-7. In your app root directory run with: `nodecaf run .`
+5. In your app root directory run with: `nodecaf run .`
 
 ## Reporting Bugs **or Vulnerabilities**
 If you have found any problems with Nodecaf, please:
