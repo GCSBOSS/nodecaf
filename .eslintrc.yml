@@ -17,7 +17,6 @@
       - multi
     no-alert: error
     no-else-return: error
-    no-eq-null: error
     no-eval: warn
     no-implicit-coercion: error
     no-implied-eval: error

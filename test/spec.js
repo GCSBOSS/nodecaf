@@ -848,6 +848,22 @@ describe('Regression', () => {
         await app.stop();
     });
 
+    it('Should NOT send reponse body when assertion has no message', async () => {
+        let app = new Nodecaf({
+            conf: { port: 80 },
+            api({ get }){
+                get('/foo', function({ res }){
+                    res.unauthorized(true);
+                });
+            }
+        });
+        await app.start();
+        let { headers, body } = await base.get('foo');
+        assert(!headers['content-type']);
+        assert.strictEqual(body.length, 0);
+        await app.stop();
+    });
+
 });
 
 describe('Other Features', function(){
