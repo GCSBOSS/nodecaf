@@ -83,6 +83,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `assertions` module from main export in favor of response object assertions
 - middleware `accept` setting
 
+## [v0.9.5] (hotfix) - 2021-01-13
+
+### Fixed
+- body request being logged to console every time
+
+## [v0.9.4] (hotfix) - 2020-11-09
+
+### Fixed
+- Add missing cookies support to WS handlers
+
 ## [v0.9.3] - 2020-08-07
 
 ### Security
