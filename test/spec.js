@@ -199,9 +199,12 @@ describe('Nodecaf', () => {
         });
 
         it('Should load form file when path is sent', () => {
+            const fs = require('fs');
+            fs.writeFileSync(__dirname + '/a.toml', 'key = "value"', 'utf-8');
             let app = new Nodecaf({ conf: { key: 'valueOld' } });
-            app.setup('test/res/conf.toml');
+            app.setup(__dirname + '/a.toml');
             assert.strictEqual(app.conf.key, 'value');
+            fs.unlink(__dirname + '/a.toml', Function.prototype);
         });
 
     });
@@ -535,11 +538,13 @@ describe('Body Parsing', () => {
         });
         await app.start();
 
+        fs.writeFileSync(__dirname + '/file.txt', 'filefoobar\r\n', 'utf-8');
         let form = new FormData();
         form.append('foo', 'bar');
-        form.append('foobar', fs.createReadStream('./test/res/file.txt'));
+        form.append('foobar', fs.createReadStream(__dirname + '/file.txt'));
         await new Promise(done => form.submit(LOCAL_HOST + '/bar/', (err, res) => {
             assert(res.headers['x-test'] == 'file.txt');
+            fs.unlink(__dirname + '/file.txt', Function.prototype);
             done();
         }));
 
