@@ -753,7 +753,7 @@ describe('Error Handling', () => {
             api({ post }){
                 post('/known', ({ res }) => {
                     fs.readdir('.', function(){
-                        res.error(404, 'errfoobar');
+                        res.error(404, true);
                     });
                 });
                 post('/unknown', async ({ res }) => {
