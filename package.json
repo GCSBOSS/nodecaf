@@ -44,8 +44,7 @@
         "cookie-signature": "^1.1.0",
         "cors": "^2.8.5",
         "golog": "^0.4.0",
-        "raw-body": "^2.4.1",
-        "stdout-stream": "^1.4.1"
+        "raw-body": "^2.4.1"
     },
     "devDependencies": {
         "form-data": "^3.0.0",
