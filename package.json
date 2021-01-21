@@ -29,6 +29,9 @@
     ],
     "author": "Guilherme C. Souza",
     "license": "MIT",
+    "files": [
+        "lib"
+    ],
     "bugs": {
         "url": "https://gitlab.com/GCSBOSS/nodecaf/issues"
     },
