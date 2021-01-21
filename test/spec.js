@@ -244,7 +244,7 @@ describe('Nodecaf', () => {
             await app.start();
             let r = await app.trigger('post', '/bar');
             assert.strictEqual(r.status, 200);
-            let res = await app.trigger('post', '/foo');
+            let res = await app.trigger('post', '/foo', { headers: { host: 'what.com' } });
             assert.strictEqual(res.headers['X-Test'], 'Foo');
             await app.stop();
         });
