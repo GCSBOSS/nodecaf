@@ -1,6 +1,6 @@
 {
     "name": "nodecaf",
-    "version": "0.11.3",
+    "version": "0.11.4",
     "description": "Nodecaf is a light framework for developing RESTful Apps in a quick and convenient manner.",
     "main": "lib/main.js",
     "scripts": {
@@ -16,8 +16,6 @@
         "routing",
         "logging",
         "config",
-        "ssl",
-        "https",
         "promises",
         "async",
         "await",
