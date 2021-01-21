@@ -37,7 +37,6 @@
     "homepage": "https://gitlab.com/GCSBOSS/nodecaf#README",
     "dependencies": {
         "busboy": "^0.3.1",
-        "compression": "^1.7.4",
         "confort": "^0.2.0",
         "content-type": "^1.0.4",
         "cookie": "^0.4.1",
