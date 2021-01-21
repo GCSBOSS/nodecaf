@@ -935,6 +935,20 @@ describe('Other Features', function(){
         await app.stop();
     });
 
+    it('Should not send CORS headers when setup so [cors]', async () => {
+        let app = new Nodecaf({
+            conf: { port: 80 },
+            api({ get }){
+                get('/foobar', ({ res }) => res.end() );
+            }
+        });
+        await app.start();
+        const { assert } = await base.get('foobar', { 'Origin': 'http://outsider.com' });
+        assert.status.is(200);
+        assert.headers.match('access-control-allow-origin', undefined);
+        await app.stop();
+    });
+
     it('Should store data to be accessible to all handlers [app.global]', async () => {
         let app = new Nodecaf({
             conf: { port: 80 },
