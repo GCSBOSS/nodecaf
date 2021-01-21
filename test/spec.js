@@ -244,12 +244,58 @@ describe('Nodecaf', () => {
             await app.start();
             let r = await app.trigger('post', '/bar');
             assert.strictEqual(r.status, 200);
-            let res = await app.trigger('post', '/foo');
+            let res = await app.trigger('post', '/foo', { headers: { host: 'what.com' } });
             assert.strictEqual(res.headers['X-Test'], 'Foo');
             await app.stop();
         });
 
     });
+
+    describe('#pre', () => {
+
+        it('Should run hook before any routes', async () => {
+            let c = 0;
+            let app = new Nodecaf({
+                api({ post, pre }){
+                    pre(
+                        ({ next }) => { c++; next() },
+                        ({ next }) => { c++; next() }
+                    );
+                    post('/foo', ({ res }) => res.end());
+                    post('/bar', ({ res }) => res.end());
+                }
+            });
+            await app.start();
+            await app.trigger('post', '/foo');
+            assert.strictEqual(c, 2);
+            await app.trigger('post', '/bar');
+            assert.strictEqual(c, 4);
+            await app.stop();
+        });
+
+    });
+
+    describe('#pos', () => {
+
+        it('Should run hook before any routes', async () => {
+            let c = {};
+            let app = new Nodecaf({
+                api({ post, pos }){
+                    pos(
+                        ({ next }) => { c++; next() },
+                        ({ res }) => { c++; res.end() }
+                    );
+                    post('/foo', ({ next }) => { c = 0; next() });
+                }
+            });
+            await app.start();
+            await app.trigger('post', '/foo');
+            assert.strictEqual(c, 2);
+            await app.stop();
+        });
+
+    });
+
 });
 
 describe('Handlers', () => {
@@ -886,6 +932,20 @@ describe('Other Features', function(){
         assert.headers.match('access-control-allow-origin', '*');
         const { assert: { headers } } = await base.options('foobar', { 'Origin': 'http://outsider.com' });
         headers.match('access-control-allow-methods', 'GET,HEAD,PUT,PATCH,POST,DELETE');
+        await app.stop();
+    });
+
+    it('Should not send CORS headers when setup so [cors]', async () => {
+        let app = new Nodecaf({
+            conf: { port: 80 },
+            api({ get }){
+                get('/foobar', ({ res }) => res.end() );
+            }
+        });
+        await app.start();
+        const { assert } = await base.get('foobar', { 'Origin': 'http://outsider.com' });
+        assert.status.is(200);
+        assert.headers.match('access-control-allow-origin', undefined);
         await app.stop();
     });
 
