@@ -268,10 +268,10 @@ table below:
 | crash | fatal | An error happened that crashed the server process |
 | request | debug | A request has arrived |
 | response | debug | A response has been sent |
+| app | debug | The application is starting up |
 | app | info | The application has started |
-| server | info | The server has started |
-| server | info | The server has stopped |
-| server | info | The server configuration has been reloaded |
+| app | info | The application has stopped |
+| app | info | The application configuration has been reloaded |
 
 Additionally, you can filter log entries by level and type with the following
 settings:
@@ -375,6 +375,7 @@ Along with `notFound`, the following assertions with similar behavior are provid
 | `notFound`     | 404 |
 | `conflict`     | 409 |
 | `gone`         | 410 |
+| `badType`      | 415 |
 
 ### Expose Globals
 

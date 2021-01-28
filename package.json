@@ -29,6 +29,9 @@
     ],
     "author": "Guilherme C. Souza",
     "license": "MIT",
+    "files": [
+        "lib"
+    ],
     "bugs": {
         "url": "https://gitlab.com/GCSBOSS/nodecaf/issues"
     },
@@ -40,8 +43,7 @@
         "cookie": "^0.4.1",
         "cookie-signature": "^1.1.0",
         "cors": "^2.8.5",
-        "golog": "^0.4.0",
-        "raw-body": "^2.4.1"
+        "golog": "^0.4.0"
     },
     "devDependencies": {
         "form-data": "^3.0.0",

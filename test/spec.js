@@ -103,7 +103,7 @@ describe('Nodecaf', () => {
         it('Should prevent starting a running server', async () => {
             let app = new Nodecaf();
             await app.start();
-            assert.strictEqual(await app.start(), false);
+            assert.strictEqual(await app.start(), 'running');
             await app.stop();
         });
 
@@ -246,6 +246,45 @@ describe('Nodecaf', () => {
             assert.strictEqual(r.status, 200);
             let res = await app.trigger('post', '/foo', { headers: { host: 'what.com' } });
             assert.strictEqual(res.headers['X-Test'], 'Foo');
+            await app.stop();
+        });
+
+        it('Should properly parse body inputs', async () => {
+            let app = new Nodecaf({
+                conf: { port: 80 },
+                api({ post }){
+                    post('/raw', ({ body, res }) => {
+                        assert.strictEqual(body, 12345);
+                        res.end();
+                    });
+
+                    post('/json', ({ body, res }) => {
+                        assert.strictEqual(body, 12345);
+                        res.end();
+                    });
+
+                    post('/text', ({ body, res }) => {
+                        assert.strictEqual(body, 12345);
+                        res.end();
+                    });
+
+                    post('/urlencoded', ({ body, res }) => {
+                        assert.strictEqual(body, 12345);
+                        res.end();
+                    });
+                }
+            });
+            await app.start();
+
+            let r1 = await app.trigger('post', '/raw', { body: 12345 });
+            assert.strictEqual(r1.status, 200);
+            let r2 = await app.trigger('post', '/json', { body: 12345, headers: { 'content-type': 'application/json' } });
+            assert.strictEqual(r2.status, 200);
+            let r3 = await app.trigger('post', '/text', { body: 12345, headers: { 'content-type': 'text/css' } });
+            assert.strictEqual(r3.status, 200);
+            let r4 = await app.trigger('post', '/urlencoded', { body: 12345, headers: { 'content-type': 'application/x-www-form-urlencoded' } });
+            assert.strictEqual(r4.status, 200);
+
             await app.stop();
         });
 
@@ -615,25 +654,42 @@ describe('Body Parsing', () => {
         await app.stop();
     });
 
-    it('Should not send error when failed during body parsing', async () => {
+    it('Should send 400 when failed to parse body', async () => {
         let app = new Nodecaf({
             conf: { port: 80 },
             api({ post }){
-                post('/foobar', ({ body, res }) => {
-                    assert(!body);
-                    res.end();
-                });
+                post('/foobar', Function.prototype);
             }
         });
         await app.start();
         let { assert: { status } } = await base.post(
             'foobar', { 'Content-Type': 'application/json' }, 'foobar}'
         );
+        status.is(400);
+        await app.stop();
+    });
+
+    it('Should parse text request body payloads', async () => {
+        let app = new Nodecaf({
+            conf: { port: 80 },
+            api({ post }){
+                post('/foobar', ({ body, res }) => {
+                    assert.strictEqual(body, '{"foo":"bar"}');
+                    res.end();
+                });
+            }
+        });
+        await app.start();
+        let { assert: { status } } = await base.post(
+            'foobar',
+            { 'Content-Type': 'text/css' },
+            JSON.stringify({foo: 'bar'})
+        );
         status.is(200);
         await app.stop();
     });
 
-    it('Should parse Raw request body payloads', async () => {
+    it('Should parse request body without content-type', async () => {
         let app = new Nodecaf({
             conf: { port: 80 },
             api({ post }){
@@ -648,6 +704,26 @@ describe('Body Parsing', () => {
             'foobar',
             { 'no-auto': true, 'Content-Length': 13 },
             JSON.stringify({foo: 'bar'})
+        );
+        status.is(200);
+        await app.stop();
+    });
+
+    it('Should not parse binary request body', async () => {
+        let app = new Nodecaf({
+            conf: { port: 80 },
+            api({ post }){
+                post('/foobar', ({ body, res }) => {
+                    assert(body instanceof Buffer);
+                    res.end();
+                });
+            }
+        });
+        await app.start();
+        let { assert: { status } } = await base.post(
+            'foobar',
+            { 'Content-type': 'application/octet-stream' },
+            'fobariummuch'
         );
         status.is(200);
         await app.stop();
@@ -679,7 +755,7 @@ describe('Body Parsing', () => {
             shouldParseBody: false,
             api({ post }){
                 post('/foobar', ({ body, res }) => {
-                    assert(!body);
+                    assert.strictEqual(body.constructor.name, 'RequestBody');
                     res.end();
                 });
             }
@@ -1029,11 +1105,7 @@ describe('Other Features', function(){
             }
         });
         await app.start();
-        let { status } = await base.post(
-            'foo',
-            { 'no-auto': true },
-            '{"foo":"bar"}'
-        );
+        let { status } = await base.post('foo');
         assert.strictEqual(status, 200);
         await app.stop();
     });
