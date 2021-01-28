@@ -375,6 +375,7 @@ Along with `notFound`, the following assertions with similar behavior are provid
 | `notFound`     | 404 |
 | `conflict`     | 409 |
 | `gone`         | 410 |
+| `badType`      | 415 |
 
 ### Expose Globals
 
