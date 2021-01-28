@@ -103,7 +103,7 @@ describe('Nodecaf', () => {
         it('Should prevent starting a running server', async () => {
             let app = new Nodecaf();
             await app.start();
-            assert.strictEqual(await app.start(), false);
+            assert.strictEqual(await app.start(), 'running');
             await app.stop();
         });
 
