@@ -43,10 +43,10 @@
         "cookie": "^0.4.1",
         "cookie-signature": "^1.1.0",
         "cors": "^2.8.5",
-        "golog": "^0.4.0"
+        "golog": "^0.4.1"
     },
     "devDependencies": {
-        "form-data": "^3.0.0",
+        "form-data": "^3.0.1",
         "muhb": "^3.0.4",
         "toml": "^3.0.0"
     }
