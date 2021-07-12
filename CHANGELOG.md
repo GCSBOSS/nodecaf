@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.11.9] - 2021-07-12
+
+### Added
+- `app.call(fn, ...args)` method to call function with app data in the args
+
+### Fixed
+- request exceptions not being properly caught
+
 ## [v0.11.8] - 2021-05-03
 
 ### Fixed
@@ -504,3 +512,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [v0.11.6]: https://gitlab.com/GCSBOSS/nodecaf/-/tags/v0.11.6
 [v0.11.7]: https://gitlab.com/GCSBOSS/nodecaf/-/tags/v0.11.7
 [v0.11.8]: https://gitlab.com/GCSBOSS/nodecaf/-/tags/v0.11.8
+[v0.11.9]: https://gitlab.com/GCSBOSS/nodecaf/-/tags/v0.11.9
