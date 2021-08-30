@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.11.11] - 2021-08-30
+
+### Fixed
+- bug making the app crash when request body parsing throws
+- request body being unnecessarily parsed for unknown routes
+
 ## [v0.11.10] - 2021-08-25
 
 ### Added
@@ -519,3 +525,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [v0.11.8]: https://gitlab.com/GCSBOSS/nodecaf/-/tags/v0.11.8
 [v0.11.9]: https://gitlab.com/GCSBOSS/nodecaf/-/tags/v0.11.9
 [v0.11.10]: https://gitlab.com/GCSBOSS/nodecaf/-/tags/v0.11.10
+[v0.11.11]: https://gitlab.com/GCSBOSS/nodecaf/-/tags/v0.11.11
