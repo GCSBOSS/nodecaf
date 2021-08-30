@@ -1009,6 +1009,28 @@ describe('Regression', () => {
         await app.stop();
     });
 
+    it('Should not crash on weird json body', done => {
+
+        (async function(){
+            const app = new Nodecaf({ conf: { port: 80 }, api({ post }){
+                post('/foobar', function({ res }){
+                    res.end();
+                });
+            } });
+            await app.start();
+            process.on('uncaughtException', done);
+            process.on('unhandledRejection', done);
+            const { status } = await base.post(
+                'foobar',
+                { 'Content-Type': 'application/json' },
+                '{"sdf:'
+            );
+            assert.strictEqual(status, 400);
+            await app.stop();
+            done();
+        })();
+    });
+
 });
 
 describe('Other Features', function(){
