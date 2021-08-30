@@ -607,6 +607,24 @@ describe('Handlers', () => {
 
 describe('Body Parsing', () => {
 
+    it('Should NOT parse body for unknown routes', async () => {
+        const app = new Nodecaf({
+            conf: { port: 80 },
+            api({ post }){
+                post('/foobar', ({ body, res }) => {
+                    assert.strictEqual(body.foo, 'bar');
+                    res.end();
+                });
+            }
+        });
+        await app.start();
+        const { assert: { status } } = await base.post(
+            'unknown', { 'Content-Type': 'application/json' }, "@#Rdf"
+        );
+        status.is(404);
+        await app.stop();
+    });
+
     const fs = require('fs');
 
     it('Should expose file content sent as multipart/form-data', async () => {
