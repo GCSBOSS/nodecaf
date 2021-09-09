@@ -347,16 +347,11 @@ describe('Nodecaf', () => {
 
             let app = new Nodecaf({
                 conf: { bar: 'baz' },
-                api({ post }){
-                    post('/foo', function({ res }){
-                        this.call(userFunc, 'foo');
-                        res.end();
-                    });
+                startup({ call }){
+                    call(userFunc, 'foo');
                 }
             });
             await app.start();
-            const { status } = await app.trigger('post', '/foo');
-            assert.strictEqual(status, 200);
             await app.stop();
         });
 
@@ -670,7 +665,7 @@ describe('Body Parsing', () => {
         });
         await app.start();
         const { assert: { status } } = await base.post(
-            'unknown', { 'Content-Type': 'application/json' }, "@#Rdf"
+            'unknown', { 'Content-Type': 'application/json' }, '@#Rdf'
         );
         status.is(404);
         await app.stop();

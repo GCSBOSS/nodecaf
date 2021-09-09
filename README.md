@@ -36,12 +36,12 @@ module.exports = () => new Nodecaf({
     api,
 
     // Perform your server initialization logic.
-    async startup({ conf, log, global }){
+    async startup({ conf, log, call }){
 
     },
 
     // Perform your server finalization logic.
-    async shutdown({ conf, log, global }){
+    async shutdown({ conf, log, call }){
 
     }
 });
@@ -159,7 +159,7 @@ the only argument of any route handler function. The code below shows all
 handler args exposed by Nodecaf:
 
 ```js
-function({ req, res, next, query, params, body, flash, conf, log, headers }){
+function({ req, res, next, query, params, body, flash, conf, log, headers, call }){
     // Do your stuff.
 }
 ```
@@ -177,6 +177,8 @@ Quick reference:
   [application configuration data](#settings-file).
 - `log`: A logger instance. Use it to [log events](#logging) of
   your application.
+- `call`: Calls any user function passing the handler args as the first argument.
+  Signature: `call(userFunc, ...extraArgs)`.
 - Also all keys of the [globally exposed object](#expose-globals) are available
   as handler args for all routes.
 
@@ -388,7 +390,7 @@ module.exports = () => new Nodecaf({
     startup({ global }){
         global.db = myDbConnection;
         global.libX = new LibXInstance();
-    }    
+    }
 });
 ```
 
