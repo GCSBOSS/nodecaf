@@ -335,6 +335,33 @@ describe('Nodecaf', () => {
 
     });
 
+    describe('#call', () => {
+
+        it('Should call any user func with route handler args', async () => {
+
+            function userFunc({ conf }, arg1){
+                assert.strictEqual(arg1, 'foo');
+                assert.strictEqual(conf.bar, 'baz');
+                assert(this instanceof Nodecaf);
+            }
+
+            let app = new Nodecaf({
+                conf: { bar: 'baz' },
+                api({ post }){
+                    post('/foo', function({ res }){
+                        this.call(userFunc, 'foo');
+                        res.end();
+                    });
+                }
+            });
+            await app.start();
+            const { status } = await app.trigger('post', '/foo');
+            assert.strictEqual(status, 200);
+            await app.stop();
+        });
+
+    });
+
 });
 
 describe('Handlers', () => {
