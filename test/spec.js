@@ -1031,6 +1031,24 @@ describe('Regression', () => {
         })();
     });
 
+    it('Should keep proper app state when errors happen at startup and shutdown', async () => {
+        let app = new Nodecaf({
+            startup(){
+                throw new Error('foo');
+            }
+        });
+        await assert.rejects(() => app.start(), /foo/);
+        await app.stop();
+
+        app = new Nodecaf({
+            shutdown(){
+                throw new Error('foo');
+            }
+        });
+        await app.start();
+        await assert.rejects(() => app.stop(), /foo/);
+    });
+
 });
 
 describe('Other Features', function(){
