@@ -1,3 +1,5 @@
+/* eslint-env mocha */
+
 const assert = require('assert');
 
 process.env.NODE_ENV = 'testing';
@@ -541,7 +543,7 @@ describe('Handlers', () => {
         await app.stop();
     });
 
-    it('Should fail when tring to sign cookies without a secret', async function(){
+    it('Should fail when trying to sign cookies without a secret', async function(){
         let app = new Nodecaf({
             conf: { port: 80 },
             api({ get }){
