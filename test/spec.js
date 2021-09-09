@@ -630,6 +630,30 @@ describe('Handlers', () => {
         await app.stop();
     });
 
+    it('Should call any user func with route handler args', async () => {
+
+        function userFunc({ req }, arg1){
+            assert.strictEqual(arg1, 'foo');
+            assert.strictEqual(req.path, '/foo');
+            assert(this instanceof Nodecaf);
+        }
+
+        let app = new Nodecaf({
+            conf: { bar: 'baz' },
+            api({ post }){
+                post('/foo', function({ call, res }){
+                    call(userFunc, 'foo');
+                    res.end();
+                });
+            }
+        });
+        await app.start();
+        const { status } = await app.trigger('post', '/foo');
+        assert.strictEqual(status, 200);
+        await app.stop();
+    });
+
+
 });
 
 describe('Body Parsing', () => {
