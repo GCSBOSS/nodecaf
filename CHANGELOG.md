@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.11.13] - 2021-09-09
+
+### Added
+- `call()` route handler to run any user function with handler args
+
+### Fixed
+- `app.call()` allowing `startup` and `shutdown` to call without explicit `this`
+
 ## [v0.11.12] - 2021-09-08
 
 ### Fixed
