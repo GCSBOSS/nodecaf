@@ -1,6 +1,6 @@
 stages:
   - test
-  - deploy
+  - publish
 
 include:
   - template: Dependency-Scanning.gitlab-ci.yml
@@ -11,6 +11,8 @@ include:
 code_quality:
   artifacts:
     paths: [gl-code-quality-report.json]
+  rules:
+    - if: '$CI_COMMIT_TAG == null'
 
 sast:
   variables:
@@ -29,19 +31,21 @@ lint-js:
 # Performs unit testing.
 unit-test:
   coverage: '/Statements\s*:\s*(\d+(?:\.\d+)?\%)/'
-  image: registry.gitlab.com/gcsboss/docker-mocha-nyc:0.1.0-alpine
+  image: node:14-alpine
   stage: test
   artifacts:
     paths: [coverage]
   tags:
     - docker
   script:
+    - npm i -g mocha
+    - npm i -g nyc
     - npm i .
     - npm run-script coverage
 
 # Publish package to NPM.
 publish:
-  stage: deploy
+  stage: publish
   image: node
   tags:
     - docker
