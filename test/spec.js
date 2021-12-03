@@ -1082,7 +1082,6 @@ describe('Regression', () => {
             }
         });
         await assert.rejects(() => app.start(), /foo/);
-        await app.stop();
 
         app = new Nodecaf({
             shutdown(){
