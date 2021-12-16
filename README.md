@@ -1,6 +1,6 @@
 # [Nodecaf](https://gitlab.com/GCSBOSS/nodecaf)
 
-> Docs for version v0.11.x.
+> Docs for version v0.12.x.
 
 Nodecaf is a light framework for developing RESTful Apps in a quick and convenient manner.
 Using Nodecaf you'll get:
@@ -30,6 +30,9 @@ const Nodecaf = require('nodecaf');
 const api = require('./api');
 
 module.exports = () => new Nodecaf({
+
+    // Optionally bind to a given port
+    conf: { port: 80 },
 
     // Load your routes and API definitions.
     api,
