@@ -1106,7 +1106,6 @@ describe('Regression', () => {
         });
         await app.start();
         let { body } = await base.get('foo/123/abc');
-        console.log(body);
         assert.strictEqual(body, 'largest');
         await app.stop();
     });

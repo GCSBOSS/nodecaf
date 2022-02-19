@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.12.3] - 2022-02-19
+
+### Fixed
+- route matcher erroneously matching paths partially (eg. `'/foo/:id'` matching `/foo/123/bar`)
+- write method mishandling buffer concatenation
+
 ## [v0.12.2] - 2021-12-16
 
 ### Fixed
@@ -572,3 +578,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [v0.12.0]: https://gitlab.com/GCSBOSS/nodecaf/-/tags/v0.12.0
 [v0.12.1]: https://gitlab.com/GCSBOSS/nodecaf/-/tags/v0.12.1
 [v0.12.2]: https://gitlab.com/GCSBOSS/nodecaf/-/tags/v0.12.2
+[v0.12.3]: https://gitlab.com/GCSBOSS/nodecaf/-/tags/v0.12.3
