@@ -1092,6 +1092,25 @@ describe('Regression', () => {
         await assert.rejects(() => app.stop(), /foo/);
     });
 
+    it('Should properly route paths with multiple segments', async function(){
+        let app = new Nodecaf({
+            conf: { port: 80 },
+            api({ get }){
+                get('/foo/:id', function({ res }){
+                    res.text('shortest');
+                });
+                get('/foo/:id/abc', function({ res }){
+                    res.text('largest');
+                });
+            }
+        });
+        await app.start();
+        let { body } = await base.get('foo/123/abc');
+        console.log(body);
+        assert.strictEqual(body, 'largest');
+        await app.stop();
+    });
+
 });
 
 describe('Other Features', function(){
