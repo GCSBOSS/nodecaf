@@ -30,9 +30,7 @@
     no-void: error
     no-with: error
     require-await: error
-    no-unused-vars:
-      - warn
-      - vars: local
+    no-unused-vars: warn
     no-use-before-define:
       - error
       - functions: false
