@@ -653,7 +653,6 @@ describe('Handlers', () => {
         await app.stop();
     });
 
-
 });
 
 describe('Body Parsing', () => {
