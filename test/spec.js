@@ -634,9 +634,9 @@ describe('Handlers', () => {
 
     it('Should call any user func with route handler args', async () => {
 
-        function userFunc({ req }, arg1){
+        function userFunc({ path }, arg1){
             assert.strictEqual(arg1, 'foo');
-            assert.strictEqual(req.path, '/foo');
+            assert.strictEqual(path, '/foo');
             assert(this instanceof Nodecaf);
         }
 
