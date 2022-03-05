@@ -431,16 +431,18 @@ describe('Handlers', () => {
         await app.stop();
     });
 
-    it('Should execute \'all\' handler on any path/method', async () => {
+    it('Should execute \'all\' handler on any non-matched route', async () => {
         let app = new Nodecaf({
             conf: { port: 80 },
-            api({ all }){
-                all(({ res, params }) => res.end(params.path));
+            api({ post, all }){
+                // All should be only run when non-matching regardless of order it was defined
+                all(({ res, path }) => res.end(path));
+                post('/foo/:bar', ({ res }) => res.end('foo'));
             }
         });
         await app.start();
-        assert.strictEqual((await app.trigger('post', '/foo/bar')).body, '/foo/bar');
-        assert.strictEqual((await app.trigger('get', '/')).body, '/');
+        assert.strictEqual((await app.trigger('post', '/foo/bar')).body, 'foo');
+        assert.strictEqual((await app.trigger('get', '/abc')).body, '/abc');
         await app.stop();
     });
 

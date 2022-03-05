@@ -52,12 +52,15 @@ module.exports = () => new Nodecaf({
 4. Add your routes in `lib/api.js`
 
 ```js
-module.exports = function({ post, get, del, head, patch, put }){
+module.exports = function({ post, get, del, head, patch, put, all }){
 
     // Define routes and a list of middleware functions (async or regular no matter).
     get('/foo/:f/bar/:b', Foo.read, Bar.read);
     post('/foo/:f/bar', Foo.read, Bar.write);
     // ...
+
+    // This route runs whenever there is no other path match
+    all(Foo.atLast)
 };
 ```
 
