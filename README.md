@@ -169,8 +169,8 @@ function({ req, res, next, query, params, body, flash, conf, log, headers, call 
 Quick reference:
 
 - `req`, `res`, `next`: The good old parameters used regularly in middleware-like frameworks.
-- `query`, `parameters`, `body`, `headers`: Shortcuts to the homonymous properties of `req`.
-  They contain respectively the query string, the URL parameters, and the request
+- `method`, `path`, `query`, `parameters`, `body`, `headers`: Shortcuts to the homonymous properties of `req`.
+  They contain respectively the HTTP method, request URL path, query string, the URL parameters, and the request
   body data.
 - `flash`: Is an object where you can store arbitrary values. Keys inserted in this
   object are preserved for the lifetime of a request and can be accessed in all
