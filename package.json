@@ -3,6 +3,7 @@
     "version": "0.12.4",
     "description": "Nodecaf is a light framework for developing RESTful Apps in a quick and convenient manner.",
     "main": "lib/main.js",
+    "types": "./lib/main.d.ts",
     "scripts": {
         "test": "mocha -b --no-diff test/*.js",
         "coverage": "nyc -r html -r text-summary mocha -b --no-diff --no-warnings test/*.js"
