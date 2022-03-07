@@ -146,19 +146,6 @@ declare namespace Nodecaf {
         patch: (path: string, handler: RouteHandler) => void,
         get: (path: string, handler: RouteHandler) => void,
         del: (path: string, handler: RouteHandler) => void,
-
-        /**
-         * Set a function to be run before all route handler
-         * @deprecated This method is going to be removed on v0.13.0.
-         */
-        pre: (handler: RouteHandler) => void,
-
-        /**
-         * Set a function to be run after all route handlers
-         * @deprecated This method is going to be removed on v0.13.0.
-         */
-        pos: (handler: RouteHandler) => void,
-
         all: (handler: RouteHandler) => void
     }
 

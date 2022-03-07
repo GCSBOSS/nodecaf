@@ -270,51 +270,6 @@ describe('Nodecaf', () => {
 
     });
 
-    describe('#pre', () => {
-
-        it('Should run hook before any routes', async () => {
-            let c = 0;
-            let app = new Nodecaf({
-                api({ post, pre }){
-                    pre(
-                        ({ next }) => { c++; next() },
-                        ({ next }) => { c++; next() }
-                    );
-                    post('/foo', ({ res }) => res.end());
-                    post('/bar', ({ res }) => res.end());
-                }
-            });
-            await app.start();
-            await app.trigger('post', '/foo');
-            assert.strictEqual(c, 2);
-            await app.trigger('post', '/bar');
-            assert.strictEqual(c, 4);
-            await app.stop();
-        });
-
-    });
-
-    describe('#pos', () => {
-
-        it('Should run hook before any routes', async () => {
-            let c = {};
-            let app = new Nodecaf({
-                api({ post, pos }){
-                    pos(
-                        ({ next }) => { c++; next() },
-                        ({ res }) => { c++; res.end() }
-                    );
-                    post('/foo', ({ next }) => { c = 0; next() });
-                }
-            });
-            await app.start();
-            await app.trigger('post', '/foo');
-            assert.strictEqual(c, 2);
-            await app.stop();
-        });
-
-    });
-
     describe('#call', () => {
 
         it('Should call any user func with route handler args', async () => {
