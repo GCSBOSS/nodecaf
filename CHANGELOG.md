@@ -5,6 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.12.5] - 2022-03-07
+
+### Added
+- request `method` and `path` to route handler args
+- type definitions of the public interface
+
+### Fixed
+- route defined with `all` to never run when there is another match
+
+### Deprecated
+- passing multiple functions to routes
+- `pos()` and `pre()` hooks
+- `fork()` handler method
+- `req` handler arg
+- `flash` handler arg object
+- `next()` handler method
+- `alwaysRebuildAPI` app option
+
 ## [v0.12.4] - 2022-03-02
 
 ### Fixed
@@ -588,3 +606,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [v0.12.2]: https://gitlab.com/GCSBOSS/nodecaf/-/tags/v0.12.2
 [v0.12.3]: https://gitlab.com/GCSBOSS/nodecaf/-/tags/v0.12.3
 [v0.12.4]: https://gitlab.com/GCSBOSS/nodecaf/-/tags/v0.12.4
+[v0.12.5]: https://gitlab.com/GCSBOSS/nodecaf/-/tags/v0.12.5
