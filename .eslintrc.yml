@@ -3,6 +3,7 @@
     node: true
     es2020: true
   rules:
+    prefer-const: warn
     no-undef: error
     no-dupe-args: error
     no-dupe-keys: error
