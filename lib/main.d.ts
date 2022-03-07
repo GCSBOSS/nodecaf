@@ -111,7 +111,10 @@ declare namespace Nodecaf {
         method: 'POST' | 'DELETE' | 'PATCH' | 'PUT' | 'GET',
         /** Response object used to compose a response to the client. */
         res: Response,
-        /** Object containing some request info */
+        /**
+         * Object containing some request info
+         * @deprecated This property is going to be removed on v0.13.0.
+         */
         req: {
             method: string,
             path: string,
@@ -120,7 +123,10 @@ declare namespace Nodecaf {
         },
         /** Call `fn` with the request handler args as the first parameter and spreading `args`. */
         call: <T>(fn: (input: RouteHandlerArgs, ...args: unknown[]) => T, ...args: unknown[]) => T
-        /** Run an express middleware `fn` and returns a `Promise` resolving when `next` is called, or rejecting in case of exceptions */
+        /**
+         * Run an express middleware `fn` and returns a `Promise` resolving when `next` is called, or rejecting in case of exceptions
+         * @deprecated This property is going to be removed on v0.13.0.
+         */
         fork: (fn: RouteHandler) => Promise<void>,
         /** The current app configuration. */
         conf: ConfObject,
@@ -130,9 +136,15 @@ declare namespace Nodecaf {
         signedCookies: Record<string, string>,
         /** Object containing params parsed from URL segments as key-values. */
         params: Record<string, string>,
-        /** Run next function in the handler chain */
+        /**
+         * Run next function in the handler chain
+         * @deprecated This method is going to be removed on v0.13.0.
+         */
         next: <T>(fn: (input: RouteHandlerArgs, ...args: unknown[]) => T, ...args: unknown[]) => T,
-        /** Object where you can store values to be persisted across the middleware chain */
+        /**
+         * Object where you can store values to be persisted across the middleware chain
+         * @deprecated This property is going to be removed on v0.13.0.
+         */
         flash: Record<string, string>
     } & Record<string, unknown>;
 
@@ -144,11 +156,19 @@ declare namespace Nodecaf {
         patch: (path: string, handler: RouteHandler) => void,
         get: (path: string, handler: RouteHandler) => void,
         del: (path: string, handler: RouteHandler) => void,
-        /** Set a function to be run before all route handler */
+
+        /**
+         * Set a function to be run before all route handler
+         * @deprecated This method is going to be removed on v0.13.0.
+         */
         pre: (handler: RouteHandler) => void,
-        /** Set a function to be run after all route handlers */
+
+        /**
+         * Set a function to be run after all route handlers
+         * @deprecated This method is going to be removed on v0.13.0.
+         */
         pos: (handler: RouteHandler) => void,
-        /** Set a handler o be run when there are no matching routes */
+
         all: (handler: RouteHandler) => void
     }
 
@@ -169,7 +189,10 @@ declare namespace Nodecaf {
         autoParseBody?: boolean,
         /** A function tthat returns a custom HTTP server to be used by the app */
         server?: (args: Nodecaf) => Server,
-        /** When set change api building to happen on every `app.start()` */
+        /**
+         * When set change api building to happen on every `app.start()`
+         * @deprecated This option is going to be removed on v0.13.0.
+         */
         alwaysRebuildAPI: boolean
     }
 }
