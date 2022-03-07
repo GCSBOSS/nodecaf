@@ -113,11 +113,6 @@ declare namespace Nodecaf {
         res: Response,
         /** Call `fn` with the request handler args as the first parameter and spreading `args`. */
         call: <T>(fn: (input: RouteHandlerArgs, ...args: unknown[]) => T, ...args: unknown[]) => T
-        /**
-         * Run an express middleware `fn` and returns a `Promise` resolving when `next` is called, or rejecting in case of exceptions
-         * @deprecated This property is going to be removed on v0.13.0.
-         */
-        fork: (fn: RouteHandler) => Promise<void>,
         /** The current app configuration. */
         conf: ConfObject,
         /** Object containing the request unsigned cookies as key-values. */
@@ -125,17 +120,7 @@ declare namespace Nodecaf {
         /** Object containing the request signed cookies as key-values. */
         signedCookies: Record<string, string>,
         /** Object containing params parsed from URL segments as key-values. */
-        params: Record<string, string>,
-        /**
-         * Run next function in the handler chain
-         * @deprecated This method is going to be removed on v0.13.0.
-         */
-        next: <T>(fn: (input: RouteHandlerArgs, ...args: unknown[]) => T, ...args: unknown[]) => T,
-        /**
-         * Object where you can store values to be persisted across the middleware chain
-         * @deprecated This property is going to be removed on v0.13.0.
-         */
-        flash: Record<string, string>
+        params: Record<string, string>
     } & Record<string, unknown>;
 
     type RouteHandler = (this: Nodecaf, input: RouteHandlerArgs) => Promise<void> | void

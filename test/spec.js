@@ -48,25 +48,6 @@ describe('Nodecaf', () => {
             await app.stop();
         });
 
-        it('Should preserve flash vars across handlers in a route', async function(){
-            this.timeout(4000);
-            let app = new Nodecaf({
-                conf: { port: 80 },
-                api({ get }){
-                    get('/bar',
-                        ({ flash, next }) => { flash.foo = 'bar'; next(); },
-                        ({ flash, res }) => {
-                            res.type('text/plain');
-                            res.end(flash.foo);
-                        });
-                }
-            });
-            await app.start();
-            let { assert: { body } } = await base.get('bar');
-            body.exactly('bar');
-            await app.stop();
-        });
-
         it('Should store any settings sent', () => {
             let app = new Nodecaf({ conf: { key: 'value' } });
             assert.strictEqual(app.conf.key, 'value');
@@ -296,47 +277,10 @@ describe('Nodecaf', () => {
 
 describe('Handlers', () => {
 
-    it('Should warn about next() after stack ended', async () => {
-        let app = new Nodecaf({
-            api({ post }){
-                post('/foobaz',
-                    ({ next }) => next(),
-                    ({ next, res }) => {
-                        next();
-                        res.end();
-                    }
-                );
-            }
-        });
-
-        await app.start();
-        let res = await app.trigger('post', '/foobaz');
-        assert.strictEqual(res.status, 200);
-        await app.stop();
-    });
-
-    it('Should not call next function when stack was aborted', done => {
-        let app = new Nodecaf({
-            api({ post }){
-                post('/unknown', ({ res, next }) => {
-                    res.error(500, 'test');
-                    done();
-                    next();
-                }, () => done());
-            }
-        });
-        (async function(){
-            await app.start();
-            await app.trigger('post', '/unknown');
-            await app.stop();
-        })();
-    });
-
     it('Should fail when receiving invalid route handlers', () => {
         new Nodecaf({
             api({ post }){
                 assert.throws(() => post('/foobar', undefined), TypeError);
-                assert.throws(() => post('/foobar'), /empty/);
                 post('/foobaz', Function.prototype);
                 assert.throws(() => post('/foobaz', Function.prototype), /already/);
             }
@@ -348,9 +292,8 @@ describe('Handlers', () => {
             conf: { port: 80 },
             api({ get }){
                 get('/foo', function(obj){
-                    assert(obj.res && obj.method && obj.path && obj.next
-                        && obj.body && obj.params && obj.query && obj.flash
-                        && obj.conf && obj.log);
+                    assert(obj.res && obj.method && obj.path && obj.body
+                        && obj.params && obj.query && obj.conf && obj.log);
                     assert(this instanceof Nodecaf);
                     obj.res.end();
                 });
@@ -396,10 +339,9 @@ describe('Handlers', () => {
         let app = new Nodecaf({
             conf: { port: 80 },
             api({ post }){
-                post('/foobar', ({ query, res, next }) => {
+                post('/foobar', ({ query, res }) => {
                     assert.strictEqual(query.foo, 'bar');
                     res.end();
-                    next();
                 });
             }
         });
@@ -533,32 +475,6 @@ describe('Handlers', () => {
         let { cookies } = await base.get('foo');
         let { headers } = await base.get('bar', { cookies });
         assert(headers['set-cookie'][0].indexOf('Expire') > -1);
-        await app.stop();
-    });
-
-    it('Should run a given function as if it was regularly in the pipeline', async function(){
-        function middle({ res, next }){
-            res.write('K');
-            next();
-        }
-
-        let app = new Nodecaf({
-            conf: { port: 80 },
-            api({ post }){
-                post('/foobar', async function before({ res, fork, next }){
-                    res.type('text');
-                    res.write('O');
-                    await fork(middle);
-                    next();
-                }, function after({ res }){
-                    res.end('!');
-                });
-            }
-        });
-        await app.start();
-        let { assert } = await base.post('foobar');
-        assert.status.is(200);
-        assert.body.exactly('OK!');
         await app.stop();
     });
 

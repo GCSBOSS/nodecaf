@@ -154,8 +154,7 @@ so we can collaborate effectively.
   analisys, so expect to be boarded on your MRs.
 
 ## Manual
-Formerly based on Express, Nodecaf preserves the same interface for defining routes
-through middleware chains. Check out how to use all the awesome goodies Nodecaf introduces.
+Formerly based on Express, Nodecaf has a simpler approach to defining routes, offloading much of the complexity to the already existing code partitioning idioms (i.e. functions). Check out how to use all the awesome goodies Nodecaf introduces.
 
 ### Handler Args
 
@@ -164,19 +163,16 @@ the only argument of any route handler function. The code below shows all
 handler args exposed by Nodecaf:
 
 ```js
-function({ method, path, res, next, query, params, body, flash, conf, log, headers, call }){
+function({ method, path, res, query, params, body, conf, log, headers, call }){
     // Do your stuff.
 }
 ```
 
 Quick reference:
 
-- `res`, `next`: The good old parameters used regularly in middleware-like frameworks.
+- `res`: An object containing the functions to send a response to the client.
 - `path`, `method`, `query`, `params`, `body`, `headers`: Properties of the request.
   They contain respectively the requested path, HTTP method, query string, the URL parameters, and the request body data.
-- `flash`: Is an object where you can store arbitrary values. Keys inserted in this
-  object are preserved for the lifetime of a request and can be accessed in all
-  handlers of a route chain.
 - `conf`: This object contains the entire
   [application configuration data](#settings-file).
 - `log`: A logger instance. Use it to [log events](#logging) of
@@ -270,7 +266,6 @@ table below:
 |-------|-------|-------|
 | error after headers sent | warn | An error happened inside a route after the headers were already sent |
 | route | error | An error happened inside a route and was not caught |
-| route | warn | next() used after stack has ended |
 | crash | fatal | An error happened that crashed the server process |
 | request | debug | A request has arrived |
 | response | debug | A response has been sent |
@@ -301,16 +296,14 @@ gracefully handled by the same routine the deals with regular functions. You wil
 be able to avoid callback hell without creating bogus adapters for your promises.
 
 ```js
-get('/my/thing',
-    function({ res, next }){
-        res.send('My regular function works!');
-        next();
-    },
-    async function({ res }){
-        await myAsyncThing();
-        res.end('My async function works too!');s
-    }
-);
+get('/my/thing', function({ res }){
+    res.end('My regular function works!');
+});
+
+get('/my/other/thing', async function({ res }){
+    await myAsyncThing();
+    res.end('My async function works too!');s
+});
 ```
 
 ### Error Handling
@@ -324,8 +317,7 @@ post('/my/thing', function(){
 });
 ```
 
-To support the callback error pattern, use the `res.error()` function arg. This
-function will stop the middleware chain from being executed any further.
+To support the callback error pattern, use the `res.error()` function arg.
 
 ```js
 const fs = require('fs');
