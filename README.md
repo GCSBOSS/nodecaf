@@ -164,17 +164,16 @@ the only argument of any route handler function. The code below shows all
 handler args exposed by Nodecaf:
 
 ```js
-function({ req, res, next, query, params, body, flash, conf, log, headers, call }){
+function({ method, path, res, next, query, params, body, flash, conf, log, headers, call }){
     // Do your stuff.
 }
 ```
 
 Quick reference:
 
-- `req`, `res`, `next`: The good old parameters used regularly in middleware-like frameworks.
-- `method`, `path`, `query`, `parameters`, `body`, `headers`: Shortcuts to the homonymous properties of `req`.
-  They contain respectively the HTTP method, request URL path, query string, the URL parameters, and the request
-  body data.
+- `res`, `next`: The good old parameters used regularly in middleware-like frameworks.
+- `path`, `method`, `query`, `params`, `body`, `headers`: Properties of the request.
+  They contain respectively the requested path, HTTP method, query string, the URL parameters, and the request body data.
 - `flash`: Is an object where you can store arbitrary values. Keys inserted in this
   object are preserved for the lifetime of a request and can be accessed in all
   handlers of a route chain.

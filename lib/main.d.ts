@@ -111,16 +111,6 @@ declare namespace Nodecaf {
         method: 'POST' | 'DELETE' | 'PATCH' | 'PUT' | 'GET',
         /** Response object used to compose a response to the client. */
         res: Response,
-        /**
-         * Object containing some request info
-         * @deprecated This property is going to be removed on v0.13.0.
-         */
-        req: {
-            method: string,
-            path: string,
-            'user-agent'?: string,
-            host?: string
-        },
         /** Call `fn` with the request handler args as the first parameter and spreading `args`. */
         call: <T>(fn: (input: RouteHandlerArgs, ...args: unknown[]) => T, ...args: unknown[]) => T
         /**

@@ -418,8 +418,8 @@ describe('Handlers', () => {
             conf: { port: 80 },
             api({ get }){
                 get('/foo', function(obj){
-                    assert(obj.res && obj.req && obj.next && obj.body
-                        && obj.params && obj.query && obj.flash
+                    assert(obj.res && obj.method && obj.path && obj.next
+                        && obj.body && obj.params && obj.query && obj.flash
                         && obj.conf && obj.log);
                     assert(this instanceof Nodecaf);
                     obj.res.end();
