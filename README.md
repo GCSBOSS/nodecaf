@@ -474,4 +474,3 @@ to set the
 | `opts.name` | String | Manually set application name used in various places | `package.json`s |
 | `opts.version` | String | Manually set application version | `package.json`s |
 | `opts.shouldParseBody` | Boolean | Wether supported request body types should be parsed | `true` |
-| `opts.alwaysRebuildAPI` | Boolean | Wether the API should be rebuilt dynamically for every start or setup operation | `false` |

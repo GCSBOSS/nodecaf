@@ -67,16 +67,6 @@ describe('Nodecaf', () => {
             await app.stop();
         });
 
-        it('Should NOT bulid the API right away if setup so [opts.alwaysRebuildAPI]', () => {
-            let app = new Nodecaf({
-                alwaysRebuildAPI: true,
-                api({ get }){
-                    get('/foobar', ({ res }) => res.end());
-                }
-            });
-            assert(!app._api);
-        });
-
         it('Should store any settings sent', () => {
             let app = new Nodecaf({ conf: { key: 'value' } });
             assert.strictEqual(app.conf.key, 'value');
@@ -122,21 +112,6 @@ describe('Nodecaf', () => {
             let app = new Nodecaf({ startup: () => done = true });
             await app.start();
             assert(done);
-            await app.stop();
-        });
-
-        it('Should rebuild the api when setup so [this.alwaysRebuildAPI]', async () => {
-            let app = new Nodecaf({ conf: { port: 80 }, alwaysRebuildAPI: true });
-            await app.start();
-            let { assert } = await base.get('');
-            assert.status.is(404);
-            await app.stop();
-            app._apiSpec = function({ get }){
-                get('/foobar', ({ res }) => res.end());
-            };
-            await app.start();
-            let { assert: { status } } = await base.get('foobar');
-            status.is(200);
             await app.stop();
         });
 

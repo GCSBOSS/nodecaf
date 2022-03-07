@@ -178,12 +178,7 @@ declare namespace Nodecaf {
         /** whether request bodies should be parsed for known mime-types (json, text, urlencoded) */
         autoParseBody?: boolean,
         /** A function tthat returns a custom HTTP server to be used by the app */
-        server?: (args: Nodecaf) => Server,
-        /**
-         * When set change api building to happen on every `app.start()`
-         * @deprecated This option is going to be removed on v0.13.0.
-         */
-        alwaysRebuildAPI: boolean
+        server?: (args: Nodecaf) => Server
     }
 }
 
