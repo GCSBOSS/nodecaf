@@ -7,8 +7,8 @@ process.env.NODE_ENV = 'testing';
 // Address for the tests' local servers to listen.
 const LOCAL_HOST = 'http://localhost:80'
 
-const { get, context, request } = require('muhb');
-const base = context(LOCAL_HOST);
+const { get, request } = require('muhb');
+const muhb = require('muhb');
 
 const Nodecaf = require('../lib/main');
 
@@ -43,8 +43,8 @@ describe('Nodecaf', () => {
                 }
             });
             await app.start();
-            const { assert: { status } } = await base.post('foo');
-            status.is(500);
+            const { status } = await muhb.post(LOCAL_HOST + '/foo');
+            assert.strictEqual(status, 500);
             await app.stop();
         });
 
@@ -68,8 +68,8 @@ describe('Nodecaf', () => {
         it('Should start the http server on port 80', async () => {
             const app = new Nodecaf({ conf: { port: 80 } });
             await app.start();
-            const { assert } = await base.get('');
-            assert.status.is(404);
+            const { status } = await muhb.get(LOCAL_HOST + '/');
+            assert.strictEqual(status, 404);
             await app.stop();
         });
 
@@ -83,8 +83,8 @@ describe('Nodecaf', () => {
         it('Should start the http server on port sent', async () => {
             const app = new Nodecaf({ conf: { port: 8765 } });
             await app.start();
-            const { assert } = await get('http://127.0.0.1:8765/');
-            assert.status.is(404);
+            const { status } = await get('http://127.0.0.1:8765/');
+            assert.strictEqual(status, 404);
             await app.stop();
         });
 
@@ -105,7 +105,7 @@ describe('Nodecaf', () => {
             await app.start();
             await app.stop();
             this.timeout(3000);
-            await assert.rejects(base.get(''));
+            await assert.rejects(muhb.get(LOCAL_HOST + '/'));
         });
 
         it('Should trigger after stop event', async () => {
@@ -131,9 +131,11 @@ describe('Nodecaf', () => {
             this.timeout(3000);
             const app = new Nodecaf({ conf: { port: 80 } });
             await app.start();
-            (await base.get('')).assert.status.is(404);
+            const r1 = await muhb.get(LOCAL_HOST + '/');
+            assert.strictEqual(r1.status, 404);
             await app.restart();
-            (await base.get('')).assert.status.is(404);
+            const r2 = await muhb.get(LOCAL_HOST + '/');
+            assert.strictEqual(r2.status, 404);
             await app.stop();
         });
 
@@ -201,7 +203,8 @@ describe('Nodecaf', () => {
             await app.start();
             const r = await app.trigger('post', '/bar');
             assert.strictEqual(r.status, 200);
-            const res = await app.trigger('post', '/foo', { headers: { host: 'what.com' } });
+            const res = await app.trigger('post', '/foo',
+                { headers: { host: 'what.com' } });
             assert.strictEqual(res.headers['X-Test'], 'Foo');
             await app.stop();
         });
@@ -239,11 +242,16 @@ describe('Nodecaf', () => {
 
             const r1 = await app.trigger('post', '/raw', { body: 12345 });
             assert.strictEqual(r1.status, 200);
-            const r2 = await app.trigger('post', '/json', { body: 12345, headers: { 'content-type': 'application/json' } });
+            const r2 = await app.trigger('post', '/json',
+                { body: 12345, headers: { 'content-type': 'application/json' } });
             assert.strictEqual(r2.status, 200);
-            const r3 = await app.trigger('post', '/text', { body: 12345, headers: { 'content-type': 'text/css' } });
+            const r3 = await app.trigger('post', '/text',
+                { body: 12345, headers: { 'content-type': 'text/css' } });
             assert.strictEqual(r3.status, 200);
-            const r4 = await app.trigger('post', '/urlencoded', { body: 12345, headers: { 'content-type': 'application/x-www-form-urlencoded' } });
+            const r4 = await app.trigger('post', '/urlencoded', {
+                body: 12345,
+                headers: { 'content-type': 'application/x-www-form-urlencoded' }
+            });
             assert.strictEqual(r4.status, 200);
 
             await app.stop();
@@ -300,7 +308,8 @@ describe('Handlers', () => {
             }
         });
         await app.start();
-        (await base.get('foo')).assert.status.is(200);
+        const { status } = await muhb.get(LOCAL_HOST + '/foo');
+        assert.strictEqual(status, 200);
         await app.stop();
     });
 
@@ -331,7 +340,8 @@ describe('Handlers', () => {
             }
         });
         await app.start();
-        (await base.get('foo/test')).assert.status.is(200);
+        const { status }  = await muhb.get(LOCAL_HOST + '/foo/test');
+        assert.strictEqual(status, 200);
         await app.stop();
     });
 
@@ -346,7 +356,7 @@ describe('Handlers', () => {
             }
         });
         await app.start();
-        const { status } = await base.post('foobar?foo=bar');
+        const { status } = await muhb.post(LOCAL_HOST + '/foobar?foo=bar');
         assert.strictEqual(status, 200);
         await app.stop();
     });
@@ -354,7 +364,7 @@ describe('Handlers', () => {
     it('Should output a 404 when no route is found for a given path', async () => {
         const app = new Nodecaf({ conf: { port: 80 } });
         await app.start();
-        const { status } = await base.post('foobar');
+        const { status } = await muhb.post(LOCAL_HOST + '/foobar');
         assert.strictEqual(status, 404);
         await app.stop();
     });
@@ -369,7 +379,8 @@ describe('Handlers', () => {
             }
         });
         await app.start();
-        (await base.get('foo')).assert.headers.match('content-type', 'application/json');
+        const { headers } = await muhb.get(LOCAL_HOST + '/foo');
+        assert.strictEqual(headers['content-type'], 'application/json');
         await app.stop();
     });
 
@@ -387,7 +398,7 @@ describe('Handlers', () => {
             }
         });
         await app.start();
-        const { headers } = await base.get('foo');
+        const { headers } = await muhb.get(LOCAL_HOST + '/foo');
         assert.strictEqual(headers['set-cookie'][1], 'testa=bar; Path=/');
         await app.stop();
     });
@@ -411,8 +422,8 @@ describe('Handlers', () => {
             }
         });
         await app.start();
-        const { cookies } = await base.get('foo');
-        const { status } = await base.get('bar', { cookies });
+        const { cookies } = await muhb.get(LOCAL_HOST + '/foo');
+        const { status } = await muhb.get(LOCAL_HOST + '/bar', { cookies });
         assert.strictEqual(status, 200);
         await app.stop();
     });
@@ -427,8 +438,8 @@ describe('Handlers', () => {
             }
         });
         await app.start();
-        const { assert } = await base.get('foo');
-        assert.status.is(500);
+        const { status } = await muhb.get(LOCAL_HOST + '/foo');
+        assert.strictEqual(status, 500);
         await app.stop();
     });
 
@@ -448,9 +459,9 @@ describe('Handlers', () => {
             }
         });
         await app.start();
-        const { cookies } = await base.get('foo');
+        const { cookies } = await muhb.get(LOCAL_HOST + '/foo');
         cookies['test'] = cookies['test'].substring(0, cookies['test'].length - 1) + '1';
-        const { status } = await base.get('bar', { cookies });
+        const { status } = await muhb.get(LOCAL_HOST + '/bar', { cookies });
         assert.strictEqual(status, 400);
         await app.stop();
     });
@@ -472,8 +483,8 @@ describe('Handlers', () => {
             }
         });
         await app.start();
-        const { cookies } = await base.get('foo');
-        const { headers } = await base.get('bar', { cookies });
+        const { cookies } = await muhb.get(LOCAL_HOST + '/foo');
+        const { headers } = await muhb.get(LOCAL_HOST + '/bar', { cookies });
         assert(headers['set-cookie'][0].indexOf('Expire') > -1);
         await app.stop();
     });
@@ -516,10 +527,9 @@ describe('Body Parsing', () => {
             }
         });
         await app.start();
-        const { assert: { status } } = await base.post(
-            'unknown', { 'Content-Type': 'application/json' }, '@#Rdf'
-        );
-        status.is(404);
+        const { status } = await muhb.post(LOCAL_HOST + '/unknown',
+            { 'Content-Type': 'application/json' }, '@#Rdf');
+        assert.strictEqual(status, 404);
         await app.stop();
     });
 
@@ -535,10 +545,9 @@ describe('Body Parsing', () => {
             }
         });
         await app.start();
-        const { assert: { status } } = await base.post(
-            'foobar', { 'Content-Type': 'application/json' }, { foo: 'bar' }
-        );
-        status.is(200);
+        const { status } = await muhb.post(LOCAL_HOST + '/foobar',
+            { 'Content-Type': 'application/json' }, { foo: 'bar' });
+        assert.strictEqual(status, 200);
         await app.stop();
     });
 
@@ -551,10 +560,9 @@ describe('Body Parsing', () => {
             }
         });
         await app.start();
-        const { assert: { status } } = await base.post(
-            'foobar', { 'Content-Type': 'application/json' }, 'foobar}'
-        );
-        status.is(400);
+        const { status } = await muhb.post(LOCAL_HOST + '/foobar',
+            { 'Content-Type': 'application/json' }, 'foobar}');
+        assert.strictEqual(status, 400);
         await app.stop();
     });
 
@@ -570,12 +578,11 @@ describe('Body Parsing', () => {
             }
         });
         await app.start();
-        const { assert: { status } } = await base.post(
-            'foobar',
+        const { status } = await muhb.post(LOCAL_HOST + '/foobar',
             { 'Content-Type': 'text/css' },
             JSON.stringify({foo: 'bar'})
         );
-        status.is(200);
+        assert.strictEqual(status, 200);
         await app.stop();
     });
 
@@ -591,12 +598,11 @@ describe('Body Parsing', () => {
             }
         });
         await app.start();
-        const { assert: { status } } = await base.post(
-            'foobar',
+        const { status } = await muhb.post(LOCAL_HOST + '/foobar',
             { 'no-auto': true, 'Content-Length': 13 },
             JSON.stringify({foo: 'bar'})
         );
-        status.is(200);
+        assert.strictEqual(status, 200);
         await app.stop();
     });
 
@@ -612,12 +618,11 @@ describe('Body Parsing', () => {
             }
         });
         await app.start();
-        const { assert: { status } } = await base.post(
-            'foobar',
-            { 'Content-type': 'application/octet-stream' },
+        const { status } = await muhb.post(LOCAL_HOST + '/foobar',
+            { 'Content-Type': 'application/octet-stream' },
             'fobariummuch'
         );
-        status.is(200);
+        assert.strictEqual(status, 200);
         await app.stop();
     });
 
@@ -633,12 +638,11 @@ describe('Body Parsing', () => {
             }
         });
         await app.start();
-        const { assert: { status } } = await base.post(
-            'foobar',
+        const { status } = await muhb.post(LOCAL_HOST + '/foobar',
             { 'Content-Type': 'application/x-www-form-urlencoded' },
             'foo=bar'
         );
-        status.is(200);
+        assert.strictEqual(status, 200);
         await app.stop();
     });
 
@@ -653,12 +657,11 @@ describe('Body Parsing', () => {
             }
         });
         await app.start();
-        const { assert: { status } } = await base.post(
-            'foobar',
+        const { status } = await muhb.post(LOCAL_HOST + '/foobar',
             { 'Content-Type': 'application/x-www-form-urlencoded' },
             'foo=bar'
         );
-        status.is(200);
+        assert.strictEqual(status, 200);
         await app.stop();
     });
 
@@ -682,7 +685,7 @@ describe('Assertions', () => {
             }
         });
         await app.start();
-        await base.get('foo');
+        await muhb.get(LOCAL_HOST + '/foo');
         await app.stop();
     });
 
@@ -702,7 +705,7 @@ describe('Assertions', () => {
             }
         });
         await app.start();
-        await base.get('foo');
+        await muhb.get(LOCAL_HOST + '/foo');
         await app.stop();
     });
 
@@ -721,7 +724,7 @@ describe('Error Handling', () => {
             }
         });
         await app.start();
-        const { status: status } = await base.post('unknown');
+        const { status: status } = await muhb.post(LOCAL_HOST + '/unknown');
         assert.strictEqual(status, 500);
         await app.stop();
     });
@@ -742,11 +745,11 @@ describe('Error Handling', () => {
             }
         });
         await app.start();
-        const { status } = await base.post('known');
+        const { status } = await muhb.post(LOCAL_HOST + '/known');
         assert.strictEqual(status, 404);
-        const { status: s2 } = await base.post('unknown');
+        const { status: s2 } = await muhb.post(LOCAL_HOST + '/unknown');
         assert.strictEqual(s2, 500);
-        const { status: s3 } = await base.post('serverfault');
+        const { status: s3 } = await muhb.post(LOCAL_HOST + '/serverfault');
         assert.strictEqual(s3, 501);
         await app.stop();
     });
@@ -761,8 +764,8 @@ describe('Error Handling', () => {
             }
         });
         await app.start();
-        const { assert } = await base.post('async');
-        assert.status.is(500);
+        const { status } = await muhb.post(LOCAL_HOST + '/async');
+        assert.strictEqual(status, 500);
         await app.stop();
     });
 
@@ -786,11 +789,11 @@ describe('Error Handling', () => {
             }
         });
         await app.start();
-        const { status } = await base.post('known');
+        const { status } = await muhb.post(LOCAL_HOST + '/known');
         assert.strictEqual(status, 404);
-        const { status: s2 } = await base.post('unknown');
+        const { status: s2 } = await muhb.post(LOCAL_HOST + '/unknown');
         assert.strictEqual(s2, 500);
-        const { status: s3 } = await base.post('unknown/object');
+        const { status: s3 } = await muhb.post(LOCAL_HOST + '/unknown/object');
         assert.strictEqual(s3, 500);
         await app.stop();
     });
@@ -831,7 +834,7 @@ describe('Regression', () => {
             }
         });
         await app.start();
-        const { status } = await base.post('bar');
+        const { status } = await muhb.post(LOCAL_HOST + '/bar');
         assert.strictEqual(status, 500);
         await app.stop();
     });
@@ -875,7 +878,7 @@ describe('Regression', () => {
             }
         });
         await app.start();
-        const { body } = await base.get('foo');
+        const { body } = await muhb.get(LOCAL_HOST + '/foo');
         assert.strictEqual(JSON.parse(body).maxAge, 68300000);
         await app.stop();
     });
@@ -890,7 +893,7 @@ describe('Regression', () => {
             }
         });
         await app.start();
-        const { headers, body } = await base.get('foo');
+        const { headers, body } = await muhb.get(LOCAL_HOST + '/foo');
         assert(!headers['content-type']);
         assert.strictEqual(body.length, 0);
         await app.stop();
@@ -911,8 +914,7 @@ describe('Regression', () => {
             await app.start();
             process.on('uncaughtException', done);
             process.on('unhandledRejection', done);
-            const { status } = await base.post(
-                'foobar',
+            const { status } = await muhb.post(LOCAL_HOST + '/foobar',
                 { 'Content-Type': 'application/json' },
                 '{"sdf:'
             );
@@ -952,7 +954,7 @@ describe('Regression', () => {
             }
         });
         await app.start();
-        const { body } = await base.get('foo/123/abc');
+        const { body } = await muhb.get(LOCAL_HOST + '/foo/123/abc');
         assert.strictEqual(body, 'largest');
         await app.stop();
     });
@@ -969,11 +971,17 @@ describe('Other Features', function(){
             }
         });
         await app.start();
-        const { assert } = await base.get('foobar', { 'Origin': 'http://outsider.com' });
-        assert.status.is(200);
-        assert.headers.match('access-control-allow-origin', '*');
-        const { assert: { headers } } = await base.options('foobar', { 'Origin': 'http://outsider.com' });
-        headers.match('access-control-allow-methods', 'GET,HEAD,PUT,PATCH,POST,DELETE');
+
+        const { status, headers } = await muhb.get(LOCAL_HOST + '/foobar',
+            { 'Origin': 'http://outsider.com' });
+        assert.strictEqual(status, 200);
+        assert.strictEqual(headers['access-control-allow-origin'], '*');
+
+        const r = await muhb.options(LOCAL_HOST + '/foobar',
+            { 'Origin': 'http://outsider.com' });
+        assert.strictEqual(r.headers['access-control-allow-methods'],
+            'GET,HEAD,PUT,PATCH,POST,DELETE');
+
         await app.stop();
     });
 
@@ -985,9 +993,10 @@ describe('Other Features', function(){
             }
         });
         await app.start();
-        const { assert } = await base.get('foobar', { 'Origin': 'http://outsider.com' });
-        assert.status.is(200);
-        assert.headers.match('access-control-allow-origin', undefined);
+        const { status, headers } = await muhb.get(LOCAL_HOST + '/foobar',
+            { 'Origin': 'http://outsider.com' });
+        assert.strictEqual(status, 200);
+        assert.strictEqual(headers['access-control-allow-origin'], undefined);
         await app.stop();
     });
 
@@ -1002,8 +1011,8 @@ describe('Other Features', function(){
         });
         await app.start();
         app.global.foo = 'foobar';
-        const { assert: { body } } = await base.post('bar');
-        body.exactly('foobar');
+        const { body } = await muhb.post(LOCAL_HOST + '/bar');
+        assert.strictEqual(body, 'foobar');
         await app.stop();
     });
 
@@ -1021,8 +1030,8 @@ describe('Other Features', function(){
             method: 'GET', timeout: 200
         }));
         await ps;
-        const { assert: ensure } = await base.get('foobar');
-        ensure.status.is(200);
+        const { status } = await muhb.get(LOCAL_HOST + '/foobar');
+        assert.strictEqual(status, 200);
         await app.stop();
     });
 

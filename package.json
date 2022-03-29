@@ -46,7 +46,7 @@
         "golog": "^0.5.0"
     },
     "devDependencies": {
-        "muhb": "^3.0.6",
+        "muhb": "^3.1.0",
         "toml": "^3.0.0"
     }
 }
