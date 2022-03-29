@@ -318,7 +318,7 @@ describe('Handlers', () => {
             conf: { port: 80 },
             api({ get }){
                 get('/foo', function(obj){
-                    assert(obj.res && obj.method && obj.path && obj.body
+                    assert(obj.res && obj.method && obj.path && obj.body && obj.ip
                         && obj.params && obj.query && obj.conf && obj.log);
                     assert(this instanceof Nodecaf);
                     obj.res.end();
@@ -351,7 +351,7 @@ describe('Handlers', () => {
             conf: { port: 80 },
             api({ get }){
                 get('/fo/:o', Function.prototype);
-                get('/foo/:bar', function({ params, res }){
+                get('/foo/:bar', function({ params, res, ip }){
                     res.badRequest(params.bar !== 'test');
                     res.end();
                 });

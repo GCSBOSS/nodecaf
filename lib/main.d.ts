@@ -121,6 +121,8 @@ declare namespace Nodecaf {
         signedCookies: Record<string, string>,
         /** Object containing params parsed from URL segments as key-values. */
         params: Record<string, string>
+        /** The remote address of the client performing the request. Standard proxy headers are considered .*/
+        ip: string
     } & Record<string, unknown>;
 
     type RouteHandler = (this: Nodecaf, input: RouteHandlerArgs) => Promise<void> | void
