@@ -9,6 +9,7 @@ const LOCAL_HOST = 'http://localhost:80'
 
 const { get, request } = require('muhb');
 const muhb = require('muhb');
+const { Readable } = require('stream');
 
 const Nodecaf = require('../lib/main');
 
@@ -183,7 +184,7 @@ describe('Nodecaf', () => {
             await app.trigger('post', '/nores');
             const res = await app.trigger('post', '/foo');
             assert.strictEqual(res.status, 202);
-            assert.strictEqual(res.body, 'Test');
+            assert.strictEqual(res.body.toString(), 'Test');
             await app.stop();
         });
 
@@ -201,10 +202,10 @@ describe('Nodecaf', () => {
                 }
             });
             await app.start();
-            const r = await app.trigger('post', '/bar');
+            const r = await app.trigger('post', '/bar', { body: Buffer.from('abc') });
             assert.strictEqual(r.status, 200);
             const res = await app.trigger('post', '/foo',
-                { headers: { host: 'what.com' } });
+                { headers: { host: 'what.com' }, body: { foo: 'bar' } });
             assert.strictEqual(res.headers['X-Test'], 'Foo');
             await app.stop();
         });
@@ -215,7 +216,7 @@ describe('Nodecaf', () => {
                 api({ post }){
                     post('/raw', async ({ body, res }) => {
                         const input = await body.raw();
-                        assert.strictEqual(input, 12345);
+                        assert.strictEqual(input.toString(), '12345');
                         res.end();
                     });
 
@@ -227,13 +228,13 @@ describe('Nodecaf', () => {
 
                     post('/text', async ({ body, res }) => {
                         const input = await body.text();
-                        assert.strictEqual(input, 12345);
+                        assert.strictEqual(input, '12345');
                         res.end();
                     });
 
                     post('/urlencoded', async ({ body, res }) => {
                         const input = await body.urlencoded();
-                        assert.strictEqual(input, 12345);
+                        assert.strictEqual(input['12345'], '');
                         res.end();
                     });
                 }
@@ -254,6 +255,23 @@ describe('Nodecaf', () => {
             });
             assert.strictEqual(r4.status, 200);
 
+            await app.stop();
+        });
+
+        it('Should allow streaming data in', async () => {
+            const app = new Nodecaf({
+                conf: { port: 80 },
+                api({ post }){
+                    post('/stream', ({ body, res }) => {
+                        body.stream.on('end', () => res.status(201).end());
+                        body.stream.resume();
+                    });
+                }
+            });
+            await app.start();
+            const body = Readable.from('foobar');
+            const r = await app.trigger('post', '/stream', { body });
+            assert.strictEqual(r.status, 201);
             await app.stop();
         });
 
@@ -323,8 +341,8 @@ describe('Handlers', () => {
             }
         });
         await app.start();
-        assert.strictEqual((await app.trigger('post', '/foo/bar')).body, 'foo');
-        assert.strictEqual((await app.trigger('get', '/abc')).body, '/abc');
+        assert.strictEqual((await app.trigger('post', '/foo/bar')).body.toString(), 'foo');
+        assert.strictEqual((await app.trigger('get', '/abc')).body.toString(), '/abc');
         await app.stop();
     });
 
@@ -734,7 +752,7 @@ describe('Error Handling', () => {
             conf: { port: 80 },
             api({ post }){
                 post('/known', ({ res }) => {
-                    throw res.error(404);
+                    throw res.error(404, 'abc %s', 'def');
                 });
                 post('/unknown', ({ res }) => {
                     throw res.error(new Error('errfoobar'));

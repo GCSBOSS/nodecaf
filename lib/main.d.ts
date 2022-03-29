@@ -88,12 +88,12 @@ declare namespace Nodecaf {
     }
 
     class RequestBody {
-        req: Request
+        stream: Request
         raw(): Promise<Buffer | unknown>
         text(): Promise<string>
         urlencoded(): Promise<Record<string, string>>
         json(): Promise<unknown>
-        parse(): Promise<Buffer | string | Record<string, string> | unknown>
+        parse(): Promise<unknown>
     }
 
     type RouteHandlerArgs = {
@@ -149,7 +149,7 @@ declare namespace Nodecaf {
         conf?: Nodecaf.ConfObject | string,
         /** whether request bodies should be parsed for known mime-types (json, text, urlencoded) */
         autoParseBody?: boolean,
-        /** A function tthat returns a custom HTTP server to be used by the app */
+        /** A function that returns a custom HTTP server to be used by the app */
         server?: (args: Nodecaf) => Server
     }
 }
