@@ -592,7 +592,7 @@ describe('Body Parsing', () => {
             autoParseBody: true,
             api({ post }){
                 post('/foobar', ({ body, res }) => {
-                    assert.strictEqual(body, '{"foo":"bar"}');
+                    assert.strictEqual(body.toString(), '{"foo":"bar"}');
                     res.end();
                 });
             }
