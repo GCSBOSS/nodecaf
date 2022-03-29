@@ -319,7 +319,7 @@ describe('Handlers', () => {
             api({ get }){
                 get('/foo', function(obj){
                     assert(obj.res && obj.method && obj.path && obj.body && obj.ip
-                        && obj.params && obj.query && obj.conf && obj.log);
+                        && obj.params && obj.query && obj.conf && obj.log && obj.keep);
                     assert(this instanceof Nodecaf);
                     obj.res.end();
                 });
@@ -527,6 +527,31 @@ describe('Handlers', () => {
         await app.start();
         const { status } = await app.trigger('post', '/foo');
         assert.strictEqual(status, 200);
+        await app.stop();
+    });
+
+    it('Should keep any user defined value for the lifetime of the request', async () => {
+
+        function userFunc({ myVal, res }){
+            res.badRequest(!myVal);
+        }
+
+        const app = new Nodecaf({
+            conf: { bar: 'baz' },
+            autoParseBody: true,
+            api({ post }){
+                post('/foo', function({ keep, call, res, body }){
+                    body == 'bar' && keep('myVal', true);
+                    call(userFunc);
+                    res.end();
+                });
+            }
+        });
+        await app.start();
+        const { status } = await app.trigger('post', '/foo', { body: 'bar' });
+        assert.strictEqual(status, 200);
+        const r = await app.trigger('post', '/foo', { body: 'foo' });
+        assert.strictEqual(r.status, 400);
         await app.stop();
     });
 
