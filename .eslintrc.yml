@@ -4,6 +4,7 @@
     es2021: true
   rules:
     prefer-const: warn
+    no-var: warn
     no-undef:
       - error
       - typeof: true
