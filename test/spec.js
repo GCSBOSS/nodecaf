@@ -351,7 +351,7 @@ describe('Handlers', () => {
             conf: { port: 80 },
             api({ get }){
                 get('/fo/:o', Function.prototype);
-                get('/foo/:bar', function({ params, res, ip }){
+                get('/foo/:bar', function({ params, res }){
                     res.badRequest(params.bar !== 'test');
                     res.end();
                 });
@@ -605,6 +605,7 @@ describe('Body Parsing', () => {
         await app.start();
         const { status } = await muhb.post(LOCAL_HOST + '/foobar',
             { 'Content-Type': 'application/json' }, 'foobar}');
+
         assert.strictEqual(status, 400);
         await app.stop();
     });
@@ -705,6 +706,25 @@ describe('Body Parsing', () => {
             'foo=bar'
         );
         assert.strictEqual(status, 200);
+        await app.stop();
+    });
+
+    it('Should catch body issues even when called explicitly', async () => {
+        const app = new Nodecaf({
+            conf: { port: 80 },
+            api({ post }){
+                post('/foobar', async ({ body, res }) => {
+                    const b = await body.parse();
+                    assert.strictEqual(b.foo, 'bar');
+                    res.end();
+                });
+            }
+        });
+        await app.start();
+        const { status, body } = await muhb.post(LOCAL_HOST + '/foobar',
+            { 'Content-Type': 'application/json' }, '{sdfs');
+        assert.strictEqual(status, 400);
+        assert.strictEqual(body, 'Invalid format');
         await app.stop();
     });
 
