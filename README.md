@@ -273,6 +273,7 @@ table below:
 | app | info | The application has started |
 | app | info | The application has stopped |
 | app | info | The application configuration has been reloaded |
+| event | warn | Called `res.end()` after response was already finished |
 
 Additionally, you can filter log entries by level and type with the following
 settings:
