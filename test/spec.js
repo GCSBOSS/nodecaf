@@ -7,7 +7,6 @@ process.env.NODE_ENV = 'testing';
 // Address for the tests' local servers to listen.
 const LOCAL_HOST = 'http://localhost:80'
 
-const { get, request, post } = require('muhb');
 const muhb = require('muhb');
 const { Readable } = require('stream');
 
@@ -84,7 +83,7 @@ describe('Nodecaf', () => {
         it('Should start the http server on port sent', async () => {
             const app = new Nodecaf({ conf: { port: 8765 } });
             await app.start();
-            const { status } = await get('http://127.0.0.1:8765/');
+            const { status } = await muhb.get('http://127.0.0.1:8765/');
             assert.strictEqual(status, 404);
             await app.stop();
         });
@@ -1116,10 +1115,7 @@ describe('Other Features', function(){
         });
         const ps = app.start();
         await new Promise(done => setTimeout(done, 400));
-        await assert.rejects(request({
-            url: 'http://localhost:80/foobar',
-            method: 'GET', timeout: 200
-        }));
+        await assert.rejects(muhb.get(LOCAL_HOST + '/foobar', { timeout: 200 }));
         await ps;
         const { status } = await muhb.get(LOCAL_HOST + '/foobar');
         assert.strictEqual(status, 200);
