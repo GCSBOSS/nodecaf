@@ -1,9 +1,13 @@
 ---
   env:
     node: true
-    es2020: true
+    es2021: true
   rules:
-    no-undef: error
+    prefer-const: warn
+    no-var: warn
+    no-undef:
+      - error
+      - typeof: true
     no-dupe-args: error
     no-dupe-keys: error
     no-duplicate-case: error

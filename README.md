@@ -15,6 +15,7 @@ Using Nodecaf you'll get:
 - Function to [expose global objects](#expose-globals) to all routes (eg.:
   database connections).
 - Shortcut for [CORS Settings](#cors) on all routes.
+- Helper to [handle WebSocket](#handling-websocket) connections.
 - Functions to [describe your API](#api-description) making your code the main
   source of truth.
 - Helpful [command line interface](https://gitlab.com/GCSBOSS/nodecaf-cli).
@@ -154,8 +155,7 @@ so we can collaborate effectively.
   analisys, so expect to be boarded on your MRs.
 
 ## Manual
-Formerly based on Express, Nodecaf preserves the same interface for defining routes
-through middleware chains. Check out how to use all the awesome goodies Nodecaf introduces.
+Formerly based on Express, Nodecaf has a simpler approach to defining routes, offloading much of the complexity to the already existing code partitioning idioms (i.e. functions). Check out how to use all the awesome goodies Nodecaf introduces.
 
 ### Handler Args
 
@@ -164,20 +164,16 @@ the only argument of any route handler function. The code below shows all
 handler args exposed by Nodecaf:
 
 ```js
-function({ req, res, next, query, params, body, flash, conf, log, headers, call }){
+function({ method, path, res, query, params, body, conf, log, headers, call, websocket }){
     // Do your stuff.
 }
 ```
 
 Quick reference:
 
-- `req`, `res`, `next`: The good old parameters used regularly in middleware-like frameworks.
-- `method`, `path`, `query`, `parameters`, `body`, `headers`: Shortcuts to the homonymous properties of `req`.
-  They contain respectively the HTTP method, request URL path, query string, the URL parameters, and the request
-  body data.
-- `flash`: Is an object where you can store arbitrary values. Keys inserted in this
-  object are preserved for the lifetime of a request and can be accessed in all
-  handlers of a route chain.
+- `res`: An object containing the functions to send a response to the client.
+- `path`, `method`, `query`, `params`, `body`, `headers`: Properties of the request.
+  They contain respectively the requested path, HTTP method, query string, the URL parameters, and the request body data.
 - `conf`: This object contains the entire
   [application configuration data](#settings-file).
 - `log`: A logger instance. Use it to [log events](#logging) of
@@ -271,7 +267,6 @@ table below:
 |-------|-------|-------|
 | error after headers sent | warn | An error happened inside a route after the headers were already sent |
 | route | error | An error happened inside a route and was not caught |
-| route | warn | next() used after stack has ended |
 | crash | fatal | An error happened that crashed the server process |
 | request | debug | A request has arrived |
 | response | debug | A response has been sent |
@@ -279,6 +274,7 @@ table below:
 | app | info | The application has started |
 | app | info | The application has stopped |
 | app | info | The application configuration has been reloaded |
+| event | warn | Called `res.end()` after response was already finished |
 
 Additionally, you can filter log entries by level and type with the following
 settings:
@@ -302,16 +298,14 @@ gracefully handled by the same routine the deals with regular functions. You wil
 be able to avoid callback hell without creating bogus adapters for your promises.
 
 ```js
-get('/my/thing',
-    function({ res, next }){
-        res.send('My regular function works!');
-        next();
-    },
-    async function({ res }){
-        await myAsyncThing();
-        res.end('My async function works too!');s
-    }
-);
+get('/my/thing', function({ res }){
+    res.end('My regular function works!');
+});
+
+get('/my/other/thing', async function({ res }){
+    await myAsyncThing();
+    res.end('My async function works too!');s
+});
 ```
 
 ### Error Handling
@@ -325,8 +319,7 @@ post('/my/thing', function(){
 });
 ```
 
-To support the callback error pattern, use the `res.error()` function arg. This
-function will stop the middleware chain from being executed any further.
+To support the callback error pattern, use the `res.error()` function arg.
 
 ```js
 const fs = require('fs');
@@ -420,6 +413,23 @@ cors = [ 'my://origin1', 'my://origin2' ]
 
 Setup the cors according to the [popular CORS Express middleware](https://github.com/expressjs/cors#configuration-options).
 
+### Handling Websocket
+
+Use the `websocket` handler argument to expect a Websocket upgrade.
+
+```js
+get('/my/ws/endpoint', async ({ websocket }) => {
+
+    // Wait till ws connection is open
+    const ws = await websocket();
+
+    ws.on('message', m => {
+        ws.send('Hello World!');
+        ws.close();
+    });
+})
+```
+
 ### API Description
 
 Nodecaf allows you to descibe your api and it's functionality, effectively turning
@@ -475,4 +485,3 @@ to set the
 | `opts.name` | String | Manually set application name used in various places | `package.json`s |
 | `opts.version` | String | Manually set application version | `package.json`s |
 | `opts.shouldParseBody` | Boolean | Wether supported request body types should be parsed | `true` |
-| `opts.alwaysRebuildAPI` | Boolean | Wether the API should be rebuilt dynamically for every start or setup operation | `false` |

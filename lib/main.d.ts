@@ -1,4 +1,5 @@
 import { Server } from 'http';
+import WebSocket from 'ws';
 
 declare namespace Nodecaf {
 
@@ -88,12 +89,12 @@ declare namespace Nodecaf {
     }
 
     class RequestBody {
-        req: Request
+        stream: Request
         raw(): Promise<Buffer | unknown>
         text(): Promise<string>
         urlencoded(): Promise<Record<string, string>>
         json(): Promise<unknown>
-        parse(): Promise<Buffer | string | Record<string, string> | unknown>
+        parse(): Promise<unknown>
     }
 
     type RouteHandlerArgs = {
@@ -111,23 +112,8 @@ declare namespace Nodecaf {
         method: 'POST' | 'DELETE' | 'PATCH' | 'PUT' | 'GET',
         /** Response object used to compose a response to the client. */
         res: Response,
-        /**
-         * Object containing some request info
-         * @deprecated This property is going to be removed on v0.13.0.
-         */
-        req: {
-            method: string,
-            path: string,
-            'user-agent'?: string,
-            host?: string
-        },
         /** Call `fn` with the request handler args as the first parameter and spreading `args`. */
         call: <T>(fn: (input: RouteHandlerArgs, ...args: unknown[]) => T, ...args: unknown[]) => T
-        /**
-         * Run an express middleware `fn` and returns a `Promise` resolving when `next` is called, or rejecting in case of exceptions
-         * @deprecated This property is going to be removed on v0.13.0.
-         */
-        fork: (fn: RouteHandler) => Promise<void>,
         /** The current app configuration. */
         conf: ConfObject,
         /** Object containing the request unsigned cookies as key-values. */
@@ -135,17 +121,13 @@ declare namespace Nodecaf {
         /** Object containing the request signed cookies as key-values. */
         signedCookies: Record<string, string>,
         /** Object containing params parsed from URL segments as key-values. */
-        params: Record<string, string>,
-        /**
-         * Run next function in the handler chain
-         * @deprecated This method is going to be removed on v0.13.0.
-         */
-        next: <T>(fn: (input: RouteHandlerArgs, ...args: unknown[]) => T, ...args: unknown[]) => T,
-        /**
-         * Object where you can store values to be persisted across the middleware chain
-         * @deprecated This property is going to be removed on v0.13.0.
-         */
-        flash: Record<string, string>
+        params: Record<string, string>
+        /** The remote address of the client performing the request. Standard proxy headers are considered. */
+        ip: string,
+        /** Store `value` under the name `key` in the handler args for the lifetime of the request. */
+        keep: (key: string, value: unknown) => void,
+        /** Accept WebSocket connection on upgrade. Only available when `opts.websocket` is set. */
+        websocket: () => Promise<WebSocket.WebSocket>
     } & Record<string, unknown>;
 
     type RouteHandler = (this: Nodecaf, input: RouteHandlerArgs) => Promise<void> | void
@@ -156,23 +138,21 @@ declare namespace Nodecaf {
         patch: (path: string, handler: RouteHandler) => void,
         get: (path: string, handler: RouteHandler) => void,
         del: (path: string, handler: RouteHandler) => void,
-
-        /**
-         * Set a function to be run before all route handler
-         * @deprecated This method is going to be removed on v0.13.0.
-         */
-        pre: (handler: RouteHandler) => void,
-
-        /**
-         * Set a function to be run after all route handlers
-         * @deprecated This method is going to be removed on v0.13.0.
-         */
-        pos: (handler: RouteHandler) => void,
-
         all: (handler: RouteHandler) => void
     }
 
+    type Route = {
+        /** Endpoint HTTP method */
+        method: string,
+        /** Endpoint path starting with slash (e.g `/foo/:bar`) */
+        path: string,
+        /** Function to be called when endpoint is triggered */
+        handler: RouteHandlerArgs
+    };
+
     type AppOpts = {
+        /** An array with your api endpoints */
+        routes: Route[],
         /** A function to build your api endpoints */
         api?: (this: Nodecaf, methods: Nodecaf.EndpointBuilders) => void,
         /** A function to run whenever the app is starting */
@@ -185,16 +165,14 @@ declare namespace Nodecaf {
         version?: string,
         /** Default config object or file path */
         conf?: Nodecaf.ConfObject | string,
-        /** whether request bodies should be parsed for known mime-types (json, text, urlencoded) */
+        /** Whether request bodies should be parsed for known mime-types (json, text, urlencoded). Defaults to `false`. */
         autoParseBody?: boolean,
-        /** A function tthat returns a custom HTTP server to be used by the app */
+        /** A function that returns a custom HTTP server to be used by the app */
         server?: (args: Nodecaf) => Server,
-        /**
-         * When set change api building to happen on every `app.start()`
-         * @deprecated This option is going to be removed on v0.13.0.
-         */
-        alwaysRebuildAPI: boolean
+        /** Whether to handle websocket upgrade requests. Defaults to `false`. */
+        websocket?: boolean
     }
+
 }
 
 /**
@@ -216,6 +194,19 @@ declare namespace Nodecaf {
  * ```
  */
 declare class Nodecaf {
+
+    /** Define a POST endpoint to `path` that when triggered will run the `handler` function */
+    static post: (path: string, handler: Nodecaf.RouteHandler) => Nodecaf.Route
+    /** Define a PUT endpoint to `path` that when triggered will run the `handler` function */
+    static put: (path: string, handler: Nodecaf.RouteHandler) => Nodecaf.Route
+    /** Define a PATCH endpoint to `path` that when triggered will run the `handler` function */
+    static patch: (path: string, handler: Nodecaf.RouteHandler) => Nodecaf.Route
+    /** Define a GET endpoint to `path` that when triggered will run the `handler` function */
+    static get: (path: string, handler: Nodecaf.RouteHandler) => Nodecaf.Route
+    /** Define a DELETE endpoint to `path` that when triggered will run the `handler` function */
+    static del: (path: string, handler: Nodecaf.RouteHandler) => Nodecaf.Route
+    /** Define a fallback `handler` function to be triggered when there are no matching routes */
+    static all: (handler: Nodecaf.RouteHandler) => Nodecaf.Route
 
     /** A user controlled object whose properties wil be spread in route handler args. */
     global: Record<string, unknown>
