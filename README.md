@@ -1,24 +1,26 @@
 # [Nodecaf](https://gitlab.com/GCSBOSS/nodecaf)
 
-> Docs for version v0.12.x.
+> Docs for version v0.13.x
 
 Nodecaf is a light framework for developing RESTful Apps in a quick and convenient manner.
-Using Nodecaf you'll get:
-- Familiar middleware style routes declaration
-- Useful [handler arguments](#handlers-args).
-- Built-in [settings file support](#settings-file) with layering.
-- [Logging functions](#logging).
-- Seamless support for [async functions as route handlers](#async-handlers).
+
+## Highlights
+- URL path pattern routing
+- Each route accepts a single function as an argument ([see why](#simple-routing))
+- Useful [handler arguments](#handlers-args)
+- Optional automatic body parsing for popular formats
+- Support for [Settings files](#settings-file) or objects with straightforward layering
+- [Stdout logging](#logging)
+- Seamless support for [async functions as route handlers](#async-handlers)
 - [Uncaught exceptions](#error-handling) in routes always produce proper REST
-  responses.
-- Built-in [assertions for readable RESTful error handling](#rest-assertions).
-- Function to [expose global objects](#expose-globals) to all routes (eg.:
-  database connections).
-- Shortcut for [CORS Settings](#cors) on all routes.
+  responses
+- [Assertions for readable RESTful error handling](#rest-assertions)
+- Facility for [exposing global objects](#expose-globals) to all routes (eg.:
+  database connections)
+- [CORS Settings](#cors)
+- Allow calling all endpoints programmatically with complete feature parity (awesome for unit testing)
 - Helper to [handle WebSocket](#handling-websocket) connections.
-- Functions to [describe your API](#api-description) making your code the main
-  source of truth.
-- Helpful [command line interface](https://gitlab.com/GCSBOSS/nodecaf-cli).
+- Helpful [command line interface](https://gitlab.com/GCSBOSS/nodecaf-cli)
 
 ## Get Started
 
@@ -55,9 +57,9 @@ module.exports = () => new Nodecaf({
 ```js
 module.exports = function({ post, get, del, head, patch, put, all }){
 
-    // Define routes and a list of middleware functions (async or regular no matter).
-    get('/foo/:f/bar/:b', Foo.read, Bar.read);
-    post('/foo/:f/bar', Foo.read, Bar.write);
+    // Define routes with their handler functions (async or regular no matter).
+    get('/foo/:f/bar/:b', FooBar.read);
+    post('/foo/:f/bar', FooBar.write);
     // ...
 
     // This route runs whenever there is no other path match
@@ -292,10 +294,9 @@ log = false
 
 ### Async Handlers
 
-Nodecaf brings the useful feature of accepting async functions as route handlers
-with zero configuration. All rejections/error within your async handler will be
-gracefully handled by the same routine the deals with regular functions. You will
-be able to avoid callback hell without creating bogus adapters for your promises.
+Nodecaf accepts async functions as well as regular functions as route handlers.
+All rejections/error within your async handler will be gracefully handled.
+You will be able to avoid callback hell without creating bogus adapters for your promises.
 
 ```js
 get('/my/thing', function({ res }){
@@ -429,51 +430,6 @@ get('/my/ws/endpoint', async ({ websocket }) => {
     });
 })
 ```
-
-### API Description
-
-Nodecaf allows you to descibe your api and it's functionality, effectively turning
-your code in the single source of truth. The described API can later be used to
-[generate](https://gitlab.com/GCSBOSS/nodecaf-cli#open-api-support) an
-[Open API](https://www.openapis.org/) compatible
-document.
-
-In `lib/api.js` describe your API as whole through the `info` parameter:
-
-```js
-module.exports = function({ get, info }){
-
-    info({
-        description: 'My awesome API that foos the bars and bazes the bahs'
-    });
-
-    get('/my/thing/:id', function(){
-        // ...
-    });
-}
-```
-
-The `info` funciton expects an object argument on the OpenAPI
-[Info Object](https://github.com/OAI/OpenAPI-Specification/blob/master/versions/3.0.2.md#infoObject)
-format. If not defined the `title` and `version` keys will default to your server's.
-
-Describe your API endpoints by chaining a `desc` method to each route definition.
-
-```js
-module.exports = function({ get }){
-
-    get('/my/thing/:id', function(){
-        // ...
-    }).desc('Retrieves a thing from the database\n' +
-        `Searches the database for the thing with the given :id. Returns a
-        NotFound error in case no thing is found.`);
-}
-```
-
-The `desc` method takes a single string argument and uses it's first line (before `\n`)
-to set the
-[Operation object](https://github.com/OAI/OpenAPI-Specification/blob/master/versions/3.0.2.md#operationObject)'s
-`summary` property and the rest of the text to set the `description` (CommonMark).
 
 ### Other Settings
 

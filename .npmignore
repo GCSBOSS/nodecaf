@@ -1,0 +1,4 @@
+test/
+.gitlab-ci.yml
+coverage/
+.nyc_output/

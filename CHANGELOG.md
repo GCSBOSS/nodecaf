@@ -5,6 +5,30 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.13.0] - 2022-03-29
+
+### Added
+- `keep()` handler method to store a variable in handler args for the lifetime of the request
+- client `ip` address to handler args
+- warning when `res.end()` is called more than once
+- `websocket()` handler method to work with ws upgrades
+- `opts.routes` as an experimental alternative way to define routes
+
+### Changed
+- `body.req` to `body.stream`
+- `app.trigger()` to be completely isomorphic with calls coming from http requests
+- body parsing to timeout after 4 seconds if no bytes were received
+
+### Removed
+- `fork()`, `flash`, `next()` & middleware-style chaining in favor of single handler and `call()`
+- `pre()` and `pos()` in favor of using `call()`
+- `opts.alwaysRebuildAPI` in favor of using `opts.conf` and variadic routes
+- `req` from handler args in favor of `method` and `path`
+
+### Fixed
+- request without a `content-type` header defaulting to parse body as text
+- body parsing to properly handle errors both on manual and automatic
+
 ## [v0.12.5] - 2022-03-07
 
 ### Added
@@ -607,3 +631,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [v0.12.3]: https://gitlab.com/GCSBOSS/nodecaf/-/tags/v0.12.3
 [v0.12.4]: https://gitlab.com/GCSBOSS/nodecaf/-/tags/v0.12.4
 [v0.12.5]: https://gitlab.com/GCSBOSS/nodecaf/-/tags/v0.12.5
+[v0.13.0]: https://gitlab.com/GCSBOSS/nodecaf/-/tags/v0.13.0
