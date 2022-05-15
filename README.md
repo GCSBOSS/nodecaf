@@ -15,6 +15,7 @@ Using Nodecaf you'll get:
 - Function to [expose global objects](#expose-globals) to all routes (eg.:
   database connections).
 - Shortcut for [CORS Settings](#cors) on all routes.
+- Helper to [handle WebSocket](#handling-websocket) connections.
 - Functions to [describe your API](#api-description) making your code the main
   source of truth.
 - Helpful [command line interface](https://gitlab.com/GCSBOSS/nodecaf-cli).
@@ -163,7 +164,7 @@ the only argument of any route handler function. The code below shows all
 handler args exposed by Nodecaf:
 
 ```js
-function({ method, path, res, query, params, body, conf, log, headers, call }){
+function({ method, path, res, query, params, body, conf, log, headers, call, websocket }){
     // Do your stuff.
 }
 ```
@@ -411,6 +412,23 @@ cors = [ 'my://origin1', 'my://origin2' ]
 ```
 
 Setup the cors according to the [popular CORS Express middleware](https://github.com/expressjs/cors#configuration-options).
+
+### Handling Websocket
+
+Use the `websocket` handler argument to expect a Websocket upgrade.
+
+```js
+get('/my/ws/endpoint', async ({ websocket }) => {
+
+    // Wait till ws connection is open
+    const ws = await websocket();
+
+    ws.on('message', m => {
+        ws.send('Hello World!');
+        ws.close();
+    });
+})
+```
 
 ### API Description
 

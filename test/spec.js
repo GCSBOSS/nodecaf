@@ -7,7 +7,7 @@ process.env.NODE_ENV = 'testing';
 // Address for the tests' local servers to listen.
 const LOCAL_HOST = 'http://localhost:80'
 
-const { get, request } = require('muhb');
+const { get, request, post } = require('muhb');
 const muhb = require('muhb');
 const { Readable } = require('stream');
 
@@ -553,6 +553,33 @@ describe('Handlers', () => {
         const r = await app.trigger('post', '/foo', { body: 'foo' });
         assert.strictEqual(r.status, 400);
         await app.stop();
+    });
+
+    it('Should handle websocket upgrade requests [opts.websocket]', async function(){
+
+        const { WebSocket } = require('ws');
+        let done;
+        const app = new Nodecaf({
+            conf: { port: 80 },
+            websocket: true,
+            api({ get }){
+                get('/bar', async ({ websocket }) => {
+                    const ws = await websocket();
+                    ws.on('message', m => {
+                        assert.strictEqual(m.toString(), 'foobar');
+                        done = true;
+                        ws.close();
+                    });
+                })
+            }
+        });
+
+        await app.start();
+        const ws = new WebSocket('ws://localhost:80/bar');
+        await new Promise(done => ws.onopen = done);
+        ws.send('foobar');
+        await app.stop();
+        assert(done);
     });
 
 });

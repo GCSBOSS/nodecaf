@@ -1,4 +1,5 @@
 import { Server } from 'http';
+import WebSocket from 'ws';
 
 declare namespace Nodecaf {
 
@@ -121,10 +122,12 @@ declare namespace Nodecaf {
         signedCookies: Record<string, string>,
         /** Object containing params parsed from URL segments as key-values. */
         params: Record<string, string>
-        /** The remote address of the client performing the request. Standard proxy headers are considered.*/
+        /** The remote address of the client performing the request. Standard proxy headers are considered. */
         ip: string,
-        /** Store `value` under the name `key` in the handler args for the lifetime of the request.*/
-        keep: (key: string, value: unknown) => void
+        /** Store `value` under the name `key` in the handler args for the lifetime of the request. */
+        keep: (key: string, value: unknown) => void,
+        /** Accept WebSocket connection on upgrade. Only available when `opts.websocket` is set. */
+        websocket: () => Promise<WebSocket.WebSocket>
     } & Record<string, unknown>;
 
     type RouteHandler = (this: Nodecaf, input: RouteHandlerArgs) => Promise<void> | void
@@ -151,10 +154,12 @@ declare namespace Nodecaf {
         version?: string,
         /** Default config object or file path */
         conf?: Nodecaf.ConfObject | string,
-        /** whether request bodies should be parsed for known mime-types (json, text, urlencoded) */
+        /** Whether request bodies should be parsed for known mime-types (json, text, urlencoded). Defaults to `false`. */
         autoParseBody?: boolean,
         /** A function that returns a custom HTTP server to be used by the app */
-        server?: (args: Nodecaf) => Server
+        server?: (args: Nodecaf) => Server,
+        /** Whether to handle websocket upgrade requests. Defaults to `false`. */
+        websocket?: boolean
     }
 }
 
