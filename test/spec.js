@@ -314,16 +314,17 @@ describe('Handlers', () => {
     });
 
     it('Should pass all the required args to handler', async () => {
+
+        const route = Nodecaf.get('/foo', function(obj){
+            assert(obj.res && obj.method && obj.path && obj.body && obj.ip
+                && obj.params && obj.query && obj.conf && obj.log && obj.keep);
+            assert(this instanceof Nodecaf);
+            obj.res.end();
+        });
+
         const app = new Nodecaf({
             conf: { port: 80 },
-            api({ get }){
-                get('/foo', function(obj){
-                    assert(obj.res && obj.method && obj.path && obj.body && obj.ip
-                        && obj.params && obj.query && obj.conf && obj.log && obj.keep);
-                    assert(this instanceof Nodecaf);
-                    obj.res.end();
-                });
-            }
+            routes: [ route ]
         });
         await app.start();
         const { status } = await muhb.get(LOCAL_HOST + '/foo');

@@ -141,7 +141,18 @@ declare namespace Nodecaf {
         all: (handler: RouteHandler) => void
     }
 
+    type Route = {
+        /** Endpoint HTTP method */
+        method: string,
+        /** Endpoint path starting with slash (e.g `/foo/:bar`) */
+        path: string,
+        /** Function to be called when endpoint is triggered */
+        handler: RouteHandlerArgs
+    };
+
     type AppOpts = {
+        /** An array with your api endpoints */
+        routes: Route[],
         /** A function to build your api endpoints */
         api?: (this: Nodecaf, methods: Nodecaf.EndpointBuilders) => void,
         /** A function to run whenever the app is starting */
@@ -161,6 +172,7 @@ declare namespace Nodecaf {
         /** Whether to handle websocket upgrade requests. Defaults to `false`. */
         websocket?: boolean
     }
+
 }
 
 /**
@@ -182,6 +194,19 @@ declare namespace Nodecaf {
  * ```
  */
 declare class Nodecaf {
+
+    /** Define a POST endpoint to `path` that when triggered will run the `handler` function */
+    static post: (path: string, handler: Nodecaf.RouteHandler) => Nodecaf.Route
+    /** Define a PUT endpoint to `path` that when triggered will run the `handler` function */
+    static put: (path: string, handler: Nodecaf.RouteHandler) => Nodecaf.Route
+    /** Define a PATCH endpoint to `path` that when triggered will run the `handler` function */
+    static patch: (path: string, handler: Nodecaf.RouteHandler) => Nodecaf.Route
+    /** Define a GET endpoint to `path` that when triggered will run the `handler` function */
+    static get: (path: string, handler: Nodecaf.RouteHandler) => Nodecaf.Route
+    /** Define a DELETE endpoint to `path` that when triggered will run the `handler` function */
+    static del: (path: string, handler: Nodecaf.RouteHandler) => Nodecaf.Route
+    /** Define a fallback `handler` function to be triggered when there are no matching routes */
+    static all: (handler: Nodecaf.RouteHandler) => Nodecaf.Route
 
     /** A user controlled object whose properties wil be spread in route handler args. */
     global: Record<string, unknown>
