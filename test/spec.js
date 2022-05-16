@@ -603,6 +603,23 @@ describe('Body Parsing', () => {
         await app.stop();
     });
 
+    it('Should NOT try parsing body when none is sent', async () => {
+        const app = new Nodecaf({
+            conf: { port: 80 },
+            autoParseBody: true,
+            api({ post }){
+                post('/foobar', ({ body, res }) => {
+                    assert.strictEqual(body, undefined);
+                    res.end();
+                });
+            }
+        });
+        await app.start();
+        const { status } = await muhb.post(LOCAL_HOST + '/foobar');
+        assert.strictEqual(status, 200);
+        await app.stop();
+    });
+
     it('Should parse JSON request body payloads', async () => {
         const app = new Nodecaf({
             conf: { port: 80 },
