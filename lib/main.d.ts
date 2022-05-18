@@ -1,5 +1,5 @@
-import { Server } from 'http';
-import WebSocket from 'ws';
+import { Server } from 'http'
+import WebSocket from 'ws'
 
 declare namespace Nodecaf {
 
@@ -18,6 +18,13 @@ declare namespace Nodecaf {
         /** Creates an HTTP server that will be managed on the given port. */
         port?: number
     } & Record<string, unknown>
+
+    type RunOptions = {
+        /** Single or array of Conf object or file path */
+        conf: ConfObject | string | (ConfObject | string)[],
+        /** Path to the nodecaf module to be run */
+        path: string
+    }
 
     class Logger {
         debug(...args: unknown[]): void
@@ -128,7 +135,7 @@ declare namespace Nodecaf {
         keep: (key: string, value: unknown) => void,
         /** Accept WebSocket connection on upgrade. Only available when `opts.websocket` is set. */
         websocket: () => Promise<WebSocket.WebSocket>
-    } & Record<string, unknown>;
+    } & Record<string, unknown>
 
     type RouteHandler = (this: Nodecaf, input: RouteHandlerArgs) => Promise<void> | void
 
@@ -148,7 +155,7 @@ declare namespace Nodecaf {
         path: string,
         /** Function to be called when endpoint is triggered */
         handler: RouteHandlerArgs
-    };
+    }
 
     type AppOpts = {
         /** An array with your api endpoints */
@@ -196,17 +203,20 @@ declare namespace Nodecaf {
 declare class Nodecaf {
 
     /** Define a POST endpoint to `path` that when triggered will run the `handler` function */
-    static post: (path: string, handler: Nodecaf.RouteHandler) => Nodecaf.Route
+    static post(path: string, handler: Nodecaf.RouteHandler): Nodecaf.Route
     /** Define a PUT endpoint to `path` that when triggered will run the `handler` function */
-    static put: (path: string, handler: Nodecaf.RouteHandler) => Nodecaf.Route
+    static put(path: string, handler: Nodecaf.RouteHandler): Nodecaf.Route
     /** Define a PATCH endpoint to `path` that when triggered will run the `handler` function */
-    static patch: (path: string, handler: Nodecaf.RouteHandler) => Nodecaf.Route
+    static patch(path: string, handler: Nodecaf.RouteHandler): Nodecaf.Route
     /** Define a GET endpoint to `path` that when triggered will run the `handler` function */
-    static get: (path: string, handler: Nodecaf.RouteHandler) => Nodecaf.Route
+    static get(path: string, handler: Nodecaf.RouteHandler): Nodecaf.Route
     /** Define a DELETE endpoint to `path` that when triggered will run the `handler` function */
-    static del: (path: string, handler: Nodecaf.RouteHandler) => Nodecaf.Route
+    static del(path: string, handler: Nodecaf.RouteHandler): Nodecaf.Route
     /** Define a fallback `handler` function to be triggered when there are no matching routes */
-    static all: (handler: Nodecaf.RouteHandler) => Nodecaf.Route
+    static all(handler: Nodecaf.RouteHandler): Nodecaf.Route
+
+    /** Run a given nodecaf app handling uncaught errors and node process signals */
+    static run(opts: Nodecaf.RunOptions): void
 
     /** A user controlled object whose properties wil be spread in route handler args. */
     global: Record<string, unknown>

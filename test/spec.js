@@ -1140,3 +1140,45 @@ describe('Other Features', function(){
     });
 
 });
+
+describe('run()', () => {
+    const path = require('path');
+    const { run } = require('../lib/main');
+
+    const appPath = path.resolve(__dirname + '/res');
+    const bAppPath = path.resolve(__dirname + '/res/lib/bad-index');
+
+    it('Should fail with bad init path', () => {
+        assert.throws(() => run());
+        assert.throws(() => run({ path: true }));
+    });
+
+    it('Should fail when init returns other than App', () => {
+        assert.throws(() => run({ path: bAppPath }), /Cannot find module/);
+    });
+
+    it('Should run the given app server', async () => {
+        const app = await run({ path: appPath });
+        const { body } = await app.trigger('get', '/bar');
+        assert.strictEqual(body, 'foo');
+        await app.stop();
+    });
+
+    it('Should inject the given conf object', async () => {
+        const app = await run({ path: appPath, conf: { key: 'value' } });
+        const { body } = await app.trigger('get', '/bar');
+        assert.strictEqual(body, 'value');
+        await app.stop();
+    });
+
+    it('Should inject multiple conf objects', async () => {
+        const app = await run({
+            path: appPath,
+            conf: [ { key: 'value' }, './package.json' ]
+        });
+        const { body } = await app.trigger('get', '/bar');
+        assert.strictEqual(body, 'nodecaf');
+        await app.stop();
+    });
+
+});
