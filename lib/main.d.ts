@@ -160,7 +160,10 @@ declare namespace Nodecaf {
     type AppOpts = {
         /** An array with your api endpoints */
         routes: Route[],
-        /** A function to build your api endpoints */
+        /**
+         * A function to build your api endpoints
+         * @deprecated This option will be removed on `v0.14.0`. Use `routes` instead.
+         **/
         api?: (this: Nodecaf, methods: Nodecaf.EndpointBuilders) => void,
         /** A function to run whenever the app is starting */
         startup?: (args: Nodecaf) => void,

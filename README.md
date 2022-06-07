@@ -30,15 +30,15 @@ Nodecaf is a light framework for developing RESTful Apps in a quick and convenie
 
 ```js
 const Nodecaf = require('nodecaf');
-const api = require('./api');
+const routes = require('./routes');
 
 module.exports = () => new Nodecaf({
 
     // Optionally bind to a given port
     conf: { port: 80 },
 
-    // Load your routes and API definitions.
-    api,
+    // Load your routes.
+    routes,
 
     // Perform your server initialization logic.
     async startup({ conf, log, call }){
@@ -52,23 +52,24 @@ module.exports = () => new Nodecaf({
 });
 ```
 
-4. Add your routes in `lib/api.js`
+4. Add your routes in `lib/routes.js`
 
 ```js
-module.exports = function({ post, get, del, head, patch, put, all }){
+const { post, get, del, head, patch, put, all } = require('nodecaf');
+
+module.exports = [
 
     // Define routes with their handler functions (async or regular no matter).
-    get('/foo/:f/bar/:b', FooBar.read);
-    post('/foo/:f/bar', FooBar.write);
+    get('/foo/:f/bar/:b', FooBar.read),
+    post('/foo/:f/bar', FooBar.write),
     // ...
 
     // This route runs whenever there is no other path match
     all(Foo.atLast)
-};
+];
 ```
 
 5. In your app root directory run with: `nodecaf run .`
-
 
 ## How to Run my App
 
@@ -208,7 +209,7 @@ all route handlers as follows:
 ```js
 post('/foo', function({ conf }){
     console.log(conf.key); //=> 'value'
-});
+})
 ```
 
 Config data can also be passed as an object to the app constructor in `lib/main.js`:
@@ -301,12 +302,12 @@ You will be able to avoid callback hell without creating bogus adapters for your
 ```js
 get('/my/thing', function({ res }){
     res.end('My regular function works!');
-});
+})
 
 get('/my/other/thing', async function({ res }){
     await myAsyncThing();
     res.end('My async function works too!');s
-});
+})
 ```
 
 ### Error Handling
@@ -317,7 +318,7 @@ automatically converted into a harmless RESTful 500.
 ```js
 post('/my/thing', function(){
     throw new Error('Should respond with a 500');
-});
+})
 ```
 
 To support the callback error pattern, use the `res.error()` function arg.
@@ -331,7 +332,7 @@ post('/my/thing', function({ res }){
             return res.error(err);
         res.end(contents);
     });
-});
+})
 ```
 
 To use other HTTP status codes you can send an integer in the first parameter of
@@ -345,7 +346,7 @@ post('/my/thing', function({ error }){
     catch(e){
         error(404, 'Optional message for the response');
     }
-});
+})
 ```
 
 ### REST Assertions
@@ -360,7 +361,7 @@ get('/my/thing/:id', function({ params, db, res }){
     res.notFound(!thing, 'thing not found');
 
     doStuff();
-});
+})
 ```
 
 If the record is not found, the `res.notfound()` call will stop the route execution right
@@ -398,7 +399,7 @@ Then in all routes you can:
 ```js
 get('/my/thing', function({ db, libX }){
     // use your global stuff
-});
+})
 ```
 
 ### CORS
