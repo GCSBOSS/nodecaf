@@ -257,7 +257,7 @@ declare class Nodecaf {
      * Apply configuration from an object or reading from a config file in one
      * of the supported formats (JSON, TOML, YAML).
      */
-    setup(conf: Record<string, unknown> | string): void
+    setup(...conf: Record<string, unknown> | string): void
 
     /**
      * Trigger an app endpoint with given input data. Returns a `Promise`
