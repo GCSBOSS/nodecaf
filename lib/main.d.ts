@@ -273,6 +273,12 @@ declare class Nodecaf {
         headers: Record<string, string>,
         body: unknown
     }>
+
+    /**
+     * Run the app handling uncaught errors and node process signals.
+     */
+    run(opts: Nodecaf.RunOptions): Promise<Nodecaf>
+
 }
 
 export = Nodecaf
