@@ -421,6 +421,23 @@ describe('Handlers', () => {
         await app.stop();
     });
 
+    it('Should stream bytes to client', async () => {
+        const app = new Nodecaf({
+            conf: { port: 80 },
+            api({ get }){
+                get('/foo', function({ res }){
+                    const s = require('fs').createReadStream('./package.json');
+                    s.pipe(res);
+                });
+            }
+        });
+        await app.start();
+        const { body } = await muhb.get(LOCAL_HOST + '/foo');
+        const o = JSON.parse(body.toString());
+        assert.strictEqual(o.name, 'nodecaf');
+        await app.stop();
+    });
+
     it('Should parse object as json response [res.json()]', async () => {
         const app = new Nodecaf({
             conf: { port: 80 },

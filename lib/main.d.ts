@@ -1,4 +1,4 @@
-import { Server } from 'http'
+import { Server, ServerResponse } from 'http'
 import WebSocket from 'ws'
 
 declare namespace Nodecaf {
@@ -46,7 +46,7 @@ declare namespace Nodecaf {
         sameSite?:  "Strict" | "Lax" | "None"
     }
 
-    class Response {
+    class Response extends ServerResponse {
 
         /** In case `cond` is falsy, throws HTTP error with `status` and `message` as body printf-formated with `args` */
         assert(status: number, cond: boolean, message?: string, ...args: unknown[]): this
