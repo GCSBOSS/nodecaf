@@ -49,10 +49,8 @@ declare namespace Nodecaf {
     } & Record<string, unknown>
 
     type RunOptions = {
-        /** Single or array of Conf object or file path */
+        /** Single or array of Conf object or file path to be applied to the app */
         conf: ConfObject | string | (ConfObject | string)[],
-        /** Path to the nodecaf module to be run */
-        path: string
     }
 
     class Logger {
@@ -241,12 +239,6 @@ declare class Nodecaf {
     static del(path: string, handler: Nodecaf.RouteHandler): Nodecaf.Route
     /** Define a fallback `handler` function to be triggered when there are no matching routes */
     static all(handler: Nodecaf.RouteHandler): Nodecaf.Route
-
-    /**
-     * Run a given nodecaf app handling uncaught errors and node process signals
-     * @deprecated This function will be dropped on `v0.14.0`. Use `app.run()` instead.
-     */
-    static run(opts: Nodecaf.RunOptions): void
 
     /**
      * Creates a new instance of an app in standby.
