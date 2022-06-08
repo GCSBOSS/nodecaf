@@ -218,7 +218,10 @@ declare class Nodecaf {
     /** Define a fallback `handler` function to be triggered when there are no matching routes */
     static all(handler: Nodecaf.RouteHandler): Nodecaf.Route
 
-    /** Run a given nodecaf app handling uncaught errors and node process signals */
+    /**
+     * Run a given nodecaf app handling uncaught errors and node process signals
+     * @deprecated This function will be dropped on `v0.14.0`. Use `app.run()` instead.
+     */
     static run(opts: Nodecaf.RunOptions): void
 
     /** A user controlled object whose properties wil be spread in route handler args. */
