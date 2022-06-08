@@ -96,7 +96,6 @@ declare namespace Nodecaf {
     }
 
     class RequestBody {
-        stream: Request
         raw(): Promise<Buffer | unknown>
         text(): Promise<string>
         urlencoded(): Promise<Record<string, string>>
