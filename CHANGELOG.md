@@ -5,6 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.13.2] - 2022-06-08
+
+### Added
+- `app.run()` to start and setup, handle process signals and log crashes
+- missing `del` route builder to main export
+
+### Removed
+- wrong field from request body type definition
+- accidental non-standard http methods from main export
+
+### Deprecated
+- `Nodecaf.run()` in favor of `app.run()`
+
+### Changed
+- `body` handler to inherit the native `IncomingMessage` stream behavior
+- `res` handler to inherit the native `ServerResponse` stream behavior
+- `app.setup()` to accept multiple spread conf objects/paths
+
 ## [v0.13.1] - 2022-06-07
 
 ### Added
@@ -645,3 +663,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [v0.12.5]: https://gitlab.com/GCSBOSS/nodecaf/-/tags/v0.12.5
 [v0.13.0]: https://gitlab.com/GCSBOSS/nodecaf/-/tags/v0.13.0
 [v0.13.1]: https://gitlab.com/GCSBOSS/nodecaf/-/tags/v0.13.1
+[v0.13.2]: https://gitlab.com/GCSBOSS/nodecaf/-/tags/v0.13.2
