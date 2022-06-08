@@ -1,4 +1,4 @@
-import { Server, ServerResponse } from 'http'
+import { Server, ServerResponse, IncomingMessage } from 'http'
 import WebSocket from 'ws'
 
 declare namespace Nodecaf {
@@ -95,7 +95,7 @@ declare namespace Nodecaf {
         clearCookie(name: string, opts?: CookieOpts): this
     }
 
-    class RequestBody {
+    class RequestBody extends IncomingMessage {
         raw(): Promise<Buffer | unknown>
         text(): Promise<string>
         urlencoded(): Promise<Record<string, string>>

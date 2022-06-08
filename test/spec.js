@@ -262,8 +262,8 @@ describe('Nodecaf', () => {
                 conf: { port: 80 },
                 api({ post }){
                     post('/stream', ({ body, res }) => {
-                        body.stream.on('end', () => res.status(201).end());
-                        body.stream.resume();
+                        body.on('end', () => res.status(201).end());
+                        body.resume();
                     });
                 }
             });
@@ -790,7 +790,7 @@ describe('Body Parsing', () => {
             conf: { port: 80 },
             api({ post }){
                 post('/foobar', ({ body, res }) => {
-                    assert.strictEqual(body.constructor.name, 'RequestBody');
+                    assert.strictEqual(body.constructor.name, 'IncomingMessage');
                     res.end();
                 });
             }
