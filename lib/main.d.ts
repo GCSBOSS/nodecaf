@@ -73,11 +73,11 @@ declare namespace Nodecaf {
         /** Append `chunk` to the response stream. */
         write(chunk: string | Buffer): this
         /** Finishes the request. If set, append `body` to the response stream. */
-        end(body?: string | Buffer): this
+        end(body?: string | Buffer): void
         /** Respond with a json body and finishes the request. */
-        json(data: unknown): this
+        json(data: unknown): void
         /** Respond with a text body and finishes the request. */
-        text(data: number | boolean | string): this
+        text(data: number | boolean | string): void
 
         /** Set a request header. */
         set(k: string, v: string): this
