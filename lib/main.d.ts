@@ -165,9 +165,9 @@ declare namespace Nodecaf {
          **/
         api?: (this: Nodecaf, methods: Nodecaf.EndpointBuilders) => void,
         /** A function to run whenever the app is starting */
-        startup?: (args: Nodecaf) => Promise<void>,
+        startup?: (args: Nodecaf) => Promise<void> | void,
         /** A function to run whenever the app is stopping */
-        shutdown?: (args: Nodecaf) => Promise<void>,
+        shutdown?: (args: Nodecaf) => Promise<void> | void,
         /** App name, mainly used in log entries */
         name?: string,
         /** App version, mainly used in log entries */
