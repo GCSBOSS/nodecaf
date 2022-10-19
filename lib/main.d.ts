@@ -265,7 +265,7 @@ declare class Nodecaf {
      * Trigger an app endpoint with given input data. Returns a `Promise`
      * resolving to the normalized response data.
      */
-    trigger(method: string, path: string, input: {
+    trigger(method: string, path: string, input?: {
         body?: BodyInit,
         headers?: Record<string, string>,
         query?: Record<string, string>,
