@@ -153,7 +153,7 @@ declare namespace Nodecaf {
         /** Endpoint path starting with slash (e.g `/foo/:bar`) */
         path: string,
         /** Function to be called when endpoint is triggered */
-        handler: RouteHandlerArgs
+        handler: RouteHandler
     }
 
     type AppOpts = {
@@ -165,9 +165,9 @@ declare namespace Nodecaf {
          **/
         api?: (this: Nodecaf, methods: Nodecaf.EndpointBuilders) => void,
         /** A function to run whenever the app is starting */
-        startup?: (args: Nodecaf) => void,
+        startup?: (args: Nodecaf) => Promise<void>,
         /** A function to run whenever the app is stopping */
-        shutdown?: (args: Nodecaf) => void,
+        shutdown?: (args: Nodecaf) => Promise<void>,
         /** App name, mainly used in log entries */
         name?: string,
         /** App version, mainly used in log entries */
@@ -253,13 +253,13 @@ declare class Nodecaf {
      * Restart a running app, applying configuration if sent. The returned
      * `Promise` is resolved once the app is fully started up.
      */
-    restart(conf: Record<string, unknown> | string): Promise<void>
+    restart(conf: Nodecaf.ConfObject | string): Promise<void>
 
     /**
      * Apply configuration from an object or reading from a config file in one
      * of the supported formats (JSON, TOML, YAML).
      */
-    setup(...conf: Record<string, unknown> | string): void
+    setup(...conf: (Nodecaf.ConfObject | string)[]): void
 
     /**
      * Trigger an app endpoint with given input data. Returns a `Promise`
