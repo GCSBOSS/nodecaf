@@ -823,6 +823,35 @@ describe('Body Parsing', () => {
         await app.stop();
     });
 
+    it('Should allow reading chunked body as if it were a complete body, for unorthodox usages', async function(){
+
+        const app = new Nodecaf({
+            conf: { port: 80 },
+            routes: [
+                Nodecaf.post('/chunked', async ({ body, res }) => {
+                    const input = await body.raw();
+                    const str = input.toString();
+                    assert.strictEqual(str, '12345');
+                    res.status(201).end();
+                })
+            ]
+        });
+
+        await app.start();
+        const req = muhb.post(LOCAL_HOST + '/chunked', {
+            stream: true, 'Transfer-Encoding': 'chunked' });
+
+        req.write('123');
+        await new Promise(done => setTimeout(done, 500));
+        req.write('45');
+        await new Promise(done => setTimeout(done, 500));
+        req.end();
+
+        const { status } = await req;
+        assert.strictEqual(status, 201);
+        await app.stop();
+    });
+
 });
 
 describe('Assertions', () => {
