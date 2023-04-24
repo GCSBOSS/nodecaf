@@ -633,6 +633,33 @@ describe('Handlers', () => {
         assert(done);
     });
 
+    it('Should handle websocket upgrade requests even on \'all\' handler [opts.websocket]', async function(){
+
+        const { WebSocket } = require('ws');
+        let done;
+        const app = new Nodecaf({
+            conf: { port: 80 },
+            websocket: true,
+            api({ all }){
+                all(async ({ websocket }) => {
+                    const ws = await websocket();
+                    ws.on('message', m => {
+                        assert.strictEqual(m.toString(), 'foobar');
+                        done = true;
+                        ws.close();
+                    });
+                })
+            }
+        });
+
+        await app.start();
+        const ws = new WebSocket('ws://localhost:80/bar');
+        await new Promise(done => ws.onopen = done);
+        ws.send('foobar');
+        await app.stop();
+        assert(done);
+    });
+
 });
 
 describe('Body Parsing', () => {
