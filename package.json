@@ -41,7 +41,6 @@
         "confort": "^0.2.1",
         "cookie": "^0.5.0",
         "cookie-signature": "^1.1.0",
-        "cors": "^2.8.5",
         "golog": "^0.5.0",
         "ws": "^8.7.0"
     },
