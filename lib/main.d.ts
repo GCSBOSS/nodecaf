@@ -37,6 +37,9 @@ declare namespace Nodecaf {
     type CookieOpts = {
         expires?: Date,
         maxAge?: number,
+        /**
+         * @deprecated Setting `signed` cookies is deprecated. This option will be dropped on `v0.14.0`. Cookie signing must be done manually instead. 
+         */
         signed?: boolean,
         path?: string,
         domain?: string
@@ -122,9 +125,12 @@ declare namespace Nodecaf {
         call: <T>(fn: (input: RouteHandlerArgs, ...args: unknown[]) => T, ...args: unknown[]) => T
         /** The current app configuration. */
         conf: ConfObject,
-        /** Object containing the request unsigned cookies as key-values. */
+        /** Object containing the request cookies as key-values. */
         cookies: Record<string, string>,
-        /** Object containing the request signed cookies as key-values. */
+        /** 
+         * Object containing the request signed cookies as key-values. 
+         * @deprecated `signedCookies` is deprecated. This option will be dropped on `v0.14.0`. Signed cookies must be handled manually instead.
+         **/
         signedCookies: Record<string, string>,
         /** Object containing params parsed from URL segments as key-values. */
         params: Record<string, string>
