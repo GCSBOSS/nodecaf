@@ -481,68 +481,6 @@ describe('Handlers', () => {
         await app.stop();
     });
 
-    it('Should set encrypted (signed) cookies', async function(){
-        const app = new Nodecaf({
-            conf: { port: 80, cookie: { secret: 'OH YEAH' } },
-            routes: [
-                Nodecaf.get('/foo', function({ res }){
-                    res.cookie('test', 'foo', { signed: true, maxAge: 5000  });
-                    res.cookie('testa', 'bar');
-                    res.end();
-                }),
-
-                Nodecaf.get('/bar', function({ res, cookies, signedCookies }){
-                    res.badRequest(cookies.testa !== 'bar');
-                    res.badRequest(signedCookies.test !== 'foo');
-                    res.end();
-                })
-            ]
-        });
-        await app.start();
-        const { cookies } = await muhb.get(LOCAL_HOST + '/foo');
-        const { status } = await muhb.get(LOCAL_HOST + '/bar', { cookies });
-        assert.strictEqual(status, 200);
-        await app.stop();
-    });
-
-    it('Should fail when trying to sign cookies without a secret', async function(){
-        const app = new Nodecaf({
-            conf: { port: 80 },
-            routes: [
-                Nodecaf.get('/foo', function({ res }){
-                    res.cookie('test', 'foo', { signed: true });
-                })
-            ]
-        });
-        await app.start();
-        const { status } = await muhb.get(LOCAL_HOST + '/foo');
-        assert.strictEqual(status, 500);
-        await app.stop();
-    });
-
-    it('Should not read cookies with wrong signature', async function(){
-        const app = new Nodecaf({
-            conf: { port: 80, cookie: { secret: 'OH YEAH' } },
-            routes: [
-                Nodecaf.get('/foo', function({ res }){
-                    res.cookie('test', 'foo', { signed: true, maxAge: 5000  });
-                    res.end();
-                }),
-
-                Nodecaf.get('/bar', function({ res, signedCookies }){
-                    res.badRequest(signedCookies.test !== 'foo');
-                    res.end();
-                })
-            ]
-        });
-        await app.start();
-        const { cookies } = await muhb.get(LOCAL_HOST + '/foo');
-        cookies['test'] = cookies['test'].substring(0, cookies['test'].length - 1) + '1';
-        const { status } = await muhb.get(LOCAL_HOST + '/bar', { cookies });
-        assert.strictEqual(status, 400);
-        await app.stop();
-    });
-
     it('Should clear cookies', async function(){
         const app = new Nodecaf({
             conf: { port: 80 },
