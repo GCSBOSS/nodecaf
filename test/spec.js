@@ -468,7 +468,7 @@ describe('Handlers', () => {
         });
         await app.start();
         const { headers } = await muhb.get(LOCAL_HOST + '/foo');
-        assert.strictEqual(headers['set-cookie'][1], 'testa=bar; Path=/');
+        assert.strictEqual(headers['set-cookie'][1], 'testa=bar');
         await app.stop();
     });
 

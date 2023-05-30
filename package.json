@@ -39,7 +39,6 @@
     "homepage": "https://gitlab.com/GCSBOSS/nodecaf#README",
     "dependencies": {
         "confort": "^0.2.1",
-        "cookie": "^0.5.0",
         "cookie-signature": "^1.1.0",
         "golog": "^0.5.0",
         "ws": "^8.7.0"
