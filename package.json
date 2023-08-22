@@ -1,6 +1,6 @@
 {
     "name": "nodecaf",
-    "version": "0.13.2",
+    "version": "0.13.3",
     "description": "Nodecaf is a light framework for developing RESTful Apps in a quick and convenient manner.",
     "main": "lib/main.js",
     "types": "./lib/main.d.ts",
@@ -44,7 +44,7 @@
         "ws": "^8.7.0"
     },
     "devDependencies": {
-        "muhb": "^3.1.1",
+        "muhb": "^3.1.2",
         "toml": "^3.0.0"
     }
 }
