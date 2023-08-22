@@ -397,6 +397,22 @@ describe('Handlers', () => {
         await app.stop();
     });
 
+    it('Should properly handle URI encoded params', async () => {
+        const app = new Nodecaf({
+            conf: { port: 80 },
+            routes: [
+                Nodecaf.get('/foo/:bar', function({ params, res }){
+                    res.badRequest(params.bar !== 'abc:def');
+                    res.end();
+                })
+            ]
+        });
+        await app.start();
+        const { status }  = await muhb.get(LOCAL_HOST + '/foo/abc%3Adef');
+        assert.strictEqual(status, 200);
+        await app.stop();
+    });
+
     it('Should parse URL query string', async () => {
         const app = new Nodecaf({
             conf: { port: 80 },
