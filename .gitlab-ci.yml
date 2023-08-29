@@ -51,9 +51,30 @@ publish:
   only:
     - tags
     - triggers
-  except:
-    variables:
-      - $CI_COMMIT_TAG =~ /beta/
   script:
     - npm set //registry.npmjs.org/:_authToken $NPM_TOKEN
     - npm publish
+
+build:
+  image: docker:latest
+  stage: publish
+  services:
+    - docker:dind
+  tags:
+    - docker
+  only:
+    - tags
+    - triggers
+  script:
+    - TAG=${CI_COMMIT_TAG:1}
+    # - MAJ=$(echo "$TAG" | cut -d. -f1)
+    - MIN=$(echo "$TAG" | cut -d. -f1,2)
+    - docker build --pull 
+      -t "gcsboss/$CI_PROJECT_NAME:$MIN" 
+      -t "gcsboss/$CI_PROJECT_NAME:$TAG"
+      -t "gcsboss/$CI_PROJECT_NAME" 
+      .
+    - docker login -u "$DOCKER_HUB_USER" -p "$DOCKER_HUB_PASSWORD"
+    - docker push "gcsboss/$CI_PROJECT_NAME:$MIN"
+    - docker push "gcsboss/$CI_PROJECT_NAME:$TAG"
+    - docker push "gcsboss/$CI_PROJECT_NAME"
