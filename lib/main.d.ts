@@ -122,7 +122,7 @@ declare namespace Nodecaf {
         /** Response object used to compose a response to the client. */
         res: Response,
         /** Call `fn` with the request handler args as the first parameter and spreading `args`. */
-        call: <T>(fn: (input: RouteHandlerArgs, ...args: unknown[]) => T, ...args: unknown[]) => T
+        call: <Y, Z>(fn: (input: RouteHandlerArgs, ...args: Y[]) => Z, ...args: Y[]) => Z
         /** The current app configuration. */
         conf: ConfObject,
         /** Object containing the request cookies as key-values. */

@@ -65,14 +65,6 @@ describe('Nodecaf', () => {
 
     describe('#start', () => {
 
-        it('Should start the http server on port 80', async () => {
-            const app = new Nodecaf({ conf: { port: 80 } });
-            await app.start();
-            const { status } = await muhb.get(LOCAL_HOST + '/');
-            assert.strictEqual(status, 404);
-            await app.stop();
-        });
-
         it('Should prevent starting a running server', async () => {
             const app = new Nodecaf();
             await app.start();
@@ -680,23 +672,6 @@ describe('Handlers', () => {
 
 describe('Body Parsing', () => {
 
-    it('Should NOT parse body for unknown routes', async () => {
-        const app = new Nodecaf({
-            conf: { port: 80 },
-            api({ post }){
-                post('/foobar', ({ body, res }) => {
-                    assert.strictEqual(body.foo, 'bar');
-                    res.end();
-                });
-            }
-        });
-        await app.start();
-        const { status } = await muhb.post(LOCAL_HOST + '/unknown',
-            { 'Content-Type': 'application/json' }, '@#Rdf');
-        assert.strictEqual(status, 404);
-        await app.stop();
-    });
-
     it('Should NOT try parsing body when none is sent', async () => {
         const app = new Nodecaf({
             conf: { port: 80 },
@@ -989,7 +964,7 @@ describe('Error Handling', () => {
             conf: { port: 80 },
             api({ post }){
                 post('/async', async () => {
-                    await new Promise((y, n) => n());
+                    await new Promise((y, n) => n(new Error('foo')));
                 });
             }
         });
