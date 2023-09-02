@@ -3,6 +3,23 @@ import WebSocket from 'ws'
 
 declare namespace Nodecaf {
 
+    type DropFirst<T extends unknown[]> = T extends [unknown, ...infer U] ? U : never
+
+    type GlobalHandlerArgs = {
+	    /** A user controlled object whose properties wil be spread in route handler args. */
+	    global: Record<string, unknown>
+        /** A logging utility to output JSON lines to stdout. */
+        log: Logger
+        /** Call `fn` with the request handler args as the first parameter and spreading `args`. */
+        call: <B extends GenericHandler>(fn: B, ...args: DropFirst<Parameters<B>>) => ReturnType<B>
+        /** The current app configuration. */
+        conf: ConfObject
+    }
+
+    type StandardGlobalHandler = (this: Nodecaf, input: GlobalHandlerArgs) => Promise<void> | void
+
+    type GenericHandler = ((this: Nodecaf, input: GlobalHandlerArgs, ...args: any[]) => any)
+
     type ConfObject = {
         /** Controls logging output. */
         log?: {
@@ -38,7 +55,7 @@ declare namespace Nodecaf {
         expires?: Date,
         maxAge?: number,
         /**
-         * @deprecated Setting `signed` cookies is deprecated. This option will be dropped on `v0.14.0`. Cookie signing must be done manually instead. 
+         * @deprecated Setting `signed` cookies is deprecated. This option will be dropped on `v0.14.0`. Cookie signing must be done manually instead.
          */
         signed?: boolean,
         path?: string,
@@ -127,8 +144,8 @@ declare namespace Nodecaf {
         conf: ConfObject,
         /** Object containing the request cookies as key-values. */
         cookies: Record<string, string>,
-        /** 
-         * Object containing the request signed cookies as key-values. 
+        /**
+         * Object containing the request signed cookies as key-values.
          * @deprecated `signedCookies` is deprecated. This option will be dropped on `v0.14.0`. Signed cookies must be handled manually instead.
          **/
         signedCookies: Record<string, string>,
@@ -171,9 +188,9 @@ declare namespace Nodecaf {
          **/
         api?: (this: Nodecaf, methods: Nodecaf.EndpointBuilders) => void,
         /** A function to run whenever the app is starting */
-        startup?: (args: Nodecaf) => Promise<void> | void,
+        startup?: StandardGlobalHandler,
         /** A function to run whenever the app is stopping */
-        shutdown?: (args: Nodecaf) => Promise<void> | void,
+        shutdown?: StandardGlobalHandler,
         /** App name, mainly used in log entries */
         name?: string,
         /** App version, mainly used in log entries */
@@ -228,15 +245,6 @@ declare class Nodecaf {
      * @deprecated This function will be dropped on `v0.14.0`. Use `app.run()` instead.
      */
     static run(opts: Nodecaf.RunOptions): void
-
-    /** A user controlled object whose properties wil be spread in route handler args. */
-    global: Record<string, unknown>
-    /** The current app configuration. */
-    conf: Nodecaf.ConfObject
-    /** A logging utility to output JSON lines to stdout. */
-    log: Nodecaf.Logger
-    /** Call `fn` with the app global args as the first parameter and spreading `args`. */
-    call: <T>(fn: (app: Nodecaf, ...args: unknown[]) => T, ...args: unknown[]) => T
 
     /**
      * Creates a new instance of an app in standby.
