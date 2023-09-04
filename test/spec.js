@@ -914,6 +914,21 @@ describe('Assertions', () => {
         await app.stop();
     });
 
+    it('Should interpolate %s variables in assertion message', async () => {
+        const app = new Nodecaf({
+            conf: { port: 80 },
+            api({ get }){
+                get('/foo', function({ res }){
+                    res.badRequest(true, '%sfoo%sbaz%%s', 1, 'bar', 2);
+                });
+            }
+        });
+        await app.start();
+        const { body } = await muhb.get(LOCAL_HOST + '/foo');
+        assert.strictEqual(body, '1foobarbaz%s 2');
+        await app.stop();
+    });
+
 });
 
 describe('Error Handling', () => {
