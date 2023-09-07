@@ -902,10 +902,12 @@ describe('Body Parsing', () => {
     it('Should abort route when client conneciton is reset while reading req body', async () => {
 
         let abortedRouted = true;
+        let startedRoute = false;
         const app = new Nodecaf({
             conf: { port: 80 },
             routes: [
                 Nodecaf.post('/tto', async ({ body }) => {
+                    startedRoute = true;
                     await body.text();
                     abortedRouted = false;
                 })
@@ -926,6 +928,7 @@ describe('Body Parsing', () => {
 
         await app.stop();
         assert(abortedRouted);
+        assert(startedRoute);
     });
 
 });
