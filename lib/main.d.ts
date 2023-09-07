@@ -199,6 +199,8 @@ declare namespace Nodecaf {
         conf?: Nodecaf.ConfObject | string,
         /** Whether request bodies should be parsed for known mime-types (json, text, urlencoded). Defaults to `false`. */
         autoParseBody?: boolean,
+        /** Timeout in milliseconds for non-chunked req bodies to be read to completion. Defaults to 3000 */
+        reqBodyTimeout?: number,
         /** A function that returns a custom HTTP server to be used by the app */
         server?: (args: Nodecaf) => Server,
         /** Whether to handle websocket upgrade requests. Defaults to `false`. */

@@ -870,6 +870,35 @@ describe('Body Parsing', () => {
         await app.stop();
     });
 
+    it('Should respond 408 when body takes too long to finish', async () => {
+
+        const app = new Nodecaf({
+            conf: { port: 80 },
+            reqBodyTimeout: 600,
+            routes: [
+                Nodecaf.post('/tto', async ({ body }) => {
+                    await body.text();
+                })
+            ]
+        });
+
+        await app.start();
+
+        const req = muhb.post(LOCAL_HOST + '/tto', {
+            'Content-Type': 'text/plain',
+            stream: true
+        });
+
+        req.write('abc');
+
+        await new Promise(resolve => setTimeout(resolve, 700));
+
+        const { status } = await req;
+
+        assert.strictEqual(status, 408);
+        await app.stop();
+    });
+
 });
 
 describe('Assertions', () => {

@@ -441,4 +441,5 @@ get('/my/ws/endpoint', async ({ websocket }) => {
 | `app.conf.cookie.secret` | String | A secure random string to be used for signing cookies | none |
 | `opts.name` | String | Manually set application name used in various places | `package.json`s |
 | `opts.version` | String | Manually set application version | `package.json`s |
-| `opts.shouldParseBody` | Boolean | Wether supported request body types should be parsed | `true` |
+| `opts.shouldParseBody` | Boolean | Whether supported request body types should be parsed | `true` |
+| `opts.reqBodyTimeout` | Number | Timeout in milliseconds for non-chunked req bodies to be read to completion | `3000` |
