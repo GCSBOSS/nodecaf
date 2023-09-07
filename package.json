@@ -6,6 +6,7 @@
     "types": "./lib/main.d.ts",
     "scripts": {
         "test": "mocha -b --no-diff test/*.js",
+        "lint": "eslint lib/*.js",
         "coverage": "nyc -r html -r text-summary mocha -b --no-diff --no-warnings test/*.js"
     },
     "repository": {
