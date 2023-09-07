@@ -899,6 +899,35 @@ describe('Body Parsing', () => {
         await app.stop();
     });
 
+    it('Should abort route when client conneciton is reset while reading req body', async () => {
+
+        let abortedRouted = true;
+        const app = new Nodecaf({
+            conf: { port: 80 },
+            routes: [
+                Nodecaf.post('/tto', async ({ body }) => {
+                    await body.text();
+                    abortedRouted = false;
+                })
+            ]
+        });
+
+        await app.start();
+
+        const req = muhb.post(LOCAL_HOST + '/tto', {
+            'Content-Type': 'text/plain',
+            stream: true
+        });
+
+        req.write('abc');
+        req.on('error', Function.prototype);
+        await new Promise(resolve => setTimeout(resolve, 300));
+        req.destroy();
+
+        await app.stop();
+        assert(abortedRouted);
+    });
+
 });
 
 describe('Assertions', () => {
