@@ -32,6 +32,7 @@ lint-js:
 unit-test:
   coverage: '/Statements\s*:\s*(\d+(?:\.\d+)?\%)/'
   image: node:16-alpine
+  timeout: one minute
   stage: test
   artifacts:
     paths: [coverage]
@@ -69,10 +70,10 @@ build:
     - TAG=${CI_COMMIT_TAG:1}
     # - MAJ=$(echo "$TAG" | cut -d. -f1)
     - MIN=$(echo "$TAG" | cut -d. -f1,2)
-    - docker build --pull 
-      -t "gcsboss/$CI_PROJECT_NAME:$MIN" 
+    - docker build --pull
+      -t "gcsboss/$CI_PROJECT_NAME:$MIN"
       -t "gcsboss/$CI_PROJECT_NAME:$TAG"
-      -t "gcsboss/$CI_PROJECT_NAME" 
+      -t "gcsboss/$CI_PROJECT_NAME"
       .
     - docker login -u "$DOCKER_HUB_USER" -p "$DOCKER_HUB_PASSWORD"
     - docker push "gcsboss/$CI_PROJECT_NAME:$MIN"
