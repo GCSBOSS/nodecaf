@@ -18,6 +18,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `app.stop()` to preserve globals so callbacks trying to access them don't fail
 - path param processing to accept and decode uri escape characters
 
+## [v0.12.6] - 2023-09-11
+
+### Added
+- `app.run()` to start and setup, handle process signals and log crashes
+
+## [v0.11.14] - 2023-09-11
+
+### Added
+- `app.run()` to start and setup, handle process signals and log crashes via cli
+
 ## [v0.13.2] - 2022-06-08
 
 ### Added
@@ -668,12 +678,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [v0.11.10]: https://gitlab.com/GCSBOSS/nodecaf/-/tags/v0.11.10
 [v0.11.11]: https://gitlab.com/GCSBOSS/nodecaf/-/tags/v0.11.11
 [v0.11.12]: https://gitlab.com/GCSBOSS/nodecaf/-/tags/v0.11.12
+[v0.11.13]: https://gitlab.com/GCSBOSS/nodecaf/-/tags/v0.11.13
+[v0.11.14]: https://gitlab.com/GCSBOSS/nodecaf/-/tags/v0.11.14
 [v0.12.0]: https://gitlab.com/GCSBOSS/nodecaf/-/tags/v0.12.0
 [v0.12.1]: https://gitlab.com/GCSBOSS/nodecaf/-/tags/v0.12.1
 [v0.12.2]: https://gitlab.com/GCSBOSS/nodecaf/-/tags/v0.12.2
 [v0.12.3]: https://gitlab.com/GCSBOSS/nodecaf/-/tags/v0.12.3
 [v0.12.4]: https://gitlab.com/GCSBOSS/nodecaf/-/tags/v0.12.4
 [v0.12.5]: https://gitlab.com/GCSBOSS/nodecaf/-/tags/v0.12.5
+[v0.12.6]: https://gitlab.com/GCSBOSS/nodecaf/-/tags/v0.12.6
 [v0.13.0]: https://gitlab.com/GCSBOSS/nodecaf/-/tags/v0.13.0
 [v0.13.1]: https://gitlab.com/GCSBOSS/nodecaf/-/tags/v0.13.1
 [v0.13.2]: https://gitlab.com/GCSBOSS/nodecaf/-/tags/v0.13.2
