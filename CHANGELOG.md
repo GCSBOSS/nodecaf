@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.11.14] - 2023-09-11
+
+### Added
+- `app.run()` to start and setup, handle process signals and log crashes via cli
+
 ## [v0.11.13] - 2021-09-09
 
 ### Added
@@ -541,3 +546,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [v0.11.10]: https://gitlab.com/GCSBOSS/nodecaf/-/tags/v0.11.10
 [v0.11.11]: https://gitlab.com/GCSBOSS/nodecaf/-/tags/v0.11.11
 [v0.11.12]: https://gitlab.com/GCSBOSS/nodecaf/-/tags/v0.11.12
+[v0.11.13]: https://gitlab.com/GCSBOSS/nodecaf/-/tags/v0.11.13
+[v0.11.14]: https://gitlab.com/GCSBOSS/nodecaf/-/tags/v0.11.14
