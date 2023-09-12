@@ -362,6 +362,46 @@ describe('Nodecaf', () => {
 
     });
 
+    describe('#run', () => {
+
+        it('Should run the given app server', async () => {
+            const app = await new Nodecaf({
+                api({ get }){
+                    get('/bar', ({ res }) => res.text('foo'))
+                }
+            }).run();
+            const { body } = await app.trigger('get', '/bar');
+            assert.strictEqual(body, 'foo');
+            await app.stop();
+        });
+
+        it('Should inject the given conf object', async () => {
+            const app = await new Nodecaf({
+                api({ get }){
+                    get('/bar', ({ res, conf }) => res.text(conf.key))
+                }
+            }).run({ conf: { key: 'value' } });
+
+            const { body } = await app.trigger('get', '/bar');
+            assert.strictEqual(body, 'value');
+            await app.stop();
+        });
+
+        it('Should inject multiple conf objects', async () => {
+            const app = await new Nodecaf({
+                api({ get }){
+                    get('/bar', ({ res, conf }) => res.text(conf.name))
+                }
+            }).run({ conf: [ { key: 'value' }, './package.json' ] });
+
+            const { body } = await app.trigger('get', '/bar');
+            assert.strictEqual(body, 'nodecaf');
+            await app.stop();
+        });
+
+    });
+
+
 });
 
 describe('Handlers', () => {
