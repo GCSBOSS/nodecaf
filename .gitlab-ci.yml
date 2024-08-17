@@ -95,3 +95,26 @@ build:
     - docker push "gcsboss/$CI_PROJECT_NAME:$MIN"
     - docker push "gcsboss/$CI_PROJECT_NAME:$TAG"
     - docker push "gcsboss/$CI_PROJECT_NAME"
+
+build-node22:
+  image: docker:latest
+  stage: publish
+  services:
+    - docker:dind
+  tags:
+    - docker
+  only:
+    - tags
+    - triggers
+  script:
+    - TAG=${CI_COMMIT_TAG:1}
+    - MIN=$(echo "$TAG" | cut -d. -f1,2)
+    - docker build --pull -f Dockerfile-node22
+      -t "gcsboss/$CI_PROJECT_NAME:$MIN-node22"
+      -t "gcsboss/$CI_PROJECT_NAME:$TAG-node22"
+      -t "gcsboss/$CI_PROJECT_NAME:node22"
+      .
+    - docker login -u "$DOCKER_HUB_USER" -p "$DOCKER_HUB_PASSWORD"
+    - docker push "gcsboss/$CI_PROJECT_NAME:$MIN-node22"
+    - docker push "gcsboss/$CI_PROJECT_NAME:$TAG-node22"
+    - docker push "gcsboss/$CI_PROJECT_NAME:node22"
