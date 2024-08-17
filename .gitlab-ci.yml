@@ -20,11 +20,11 @@ sast:
 
 # Lint js files.
 lint-js:
- image: node
- stage: test
- script:
-   - npm install -g eslint
-   - eslint --ignore-pattern "**/*.min.js" $CI_PROJECT_DIR
+  image: node:22
+  stage: test
+  script:
+    - npm i -D
+    - npm run lint
 
 # Performs unit testing.
 unit-test:

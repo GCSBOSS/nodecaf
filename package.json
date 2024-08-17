@@ -6,7 +6,7 @@
     "types": "./lib/main.d.ts",
     "scripts": {
         "test": "mocha -b --no-diff test/*.js",
-        "lint": "eslint lib/*.js",
+        "lint": "npx eslint lib",
         "coverage": "nyc -r html -r text-summary mocha -b --no-diff --no-warnings test/*.js"
     },
     "repository": {
@@ -45,6 +45,9 @@
         "ws": "^8.7.0"
     },
     "devDependencies": {
+        "eslint": "^9.9.0",
+        "eslint-plugin-mocha": "^10.5.0",
+        "globals": "^15.9.0",
         "muhb": "^3.1.2",
         "toml": "^3.0.0"
     }
