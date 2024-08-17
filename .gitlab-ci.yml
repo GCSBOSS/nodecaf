@@ -22,8 +22,6 @@ sast:
 lint-js:
  image: node
  stage: test
- tags:
-   - docker
  script:
    - npm install -g eslint
    - eslint --ignore-pattern "**/*.min.js" $CI_PROJECT_DIR
@@ -36,8 +34,6 @@ unit-test:
   stage: test
   artifacts:
     paths: [coverage]
-  tags:
-    - docker
   script:
     - npm i -g mocha nyc
     - npm ci .
@@ -47,8 +43,6 @@ unit-test:
 publish:
   stage: publish
   image: node
-  tags:
-    - docker
   only:
     - tags
     - triggers
@@ -61,8 +55,6 @@ build:
   stage: publish
   services:
     - docker:dind
-  tags:
-    - docker
   only:
     - tags
     - triggers
