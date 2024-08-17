@@ -39,6 +39,30 @@ unit-test:
     - npm ci .
     - npm run coverage
 
+compat-test-node-18:
+  image: node:18-alpine
+  timeout: one minute
+  stage: test
+  script:
+    - npm ci .
+    - npm t
+
+compat-test-node-20:
+  image: node:20-alpine
+  timeout: one minute
+  stage: test
+  script:
+    - npm ci .
+    - npm t
+
+compat-test-node-22:
+  image: node:22-alpine
+  timeout: one minute
+  stage: test
+  script:
+    - npm ci .
+    - npm t
+
 # Publish package to NPM.
 publish:
   stage: publish
