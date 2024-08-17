@@ -889,13 +889,13 @@ describe('Body Parsing', () => {
             stream: true
         });
 
-        req.write('abc');
-
-        await new Promise(resolve => setTimeout(resolve, 700));
-
         const { status } = await req;
 
+        req.end();
+        req.destroy();
+
         assert.strictEqual(status, 408);
+
         await app.stop();
     });
 

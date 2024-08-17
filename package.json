@@ -5,7 +5,8 @@
     "main": "lib/main.js",
     "types": "./lib/main.d.ts",
     "scripts": {
-        "test": "mocha -b --no-diff test/*.js",
+        "test": "npx mocha -b --no-diff test/spec.js",
+        "test-docker": "node test/docker.js",
         "lint": "npx eslint lib",
         "coverage": "nyc -r html -r text-summary mocha -b --no-diff --no-warnings test/*.js"
     },
@@ -48,7 +49,8 @@
         "eslint": "^9.9.0",
         "eslint-plugin-mocha": "^10.5.0",
         "globals": "^15.9.0",
-        "muhb": "^3.1.2",
+        "mocha": "^10.7.3",
+        "muhb": "^3.2.1",
         "toml": "^3.0.0"
     }
 }
