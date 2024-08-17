@@ -118,3 +118,26 @@ build-node22:
     - docker push "gcsboss/$CI_PROJECT_NAME:$MIN-node22"
     - docker push "gcsboss/$CI_PROJECT_NAME:$TAG-node22"
     - docker push "gcsboss/$CI_PROJECT_NAME:node22"
+
+build-slim:
+  image: docker:latest
+  stage: publish
+  services:
+    - docker:dind
+  tags:
+    - docker
+  only:
+    - tags
+    - triggers
+  script:
+    - TAG=${CI_COMMIT_TAG:1}
+    - MIN=$(echo "$TAG" | cut -d. -f1,2)
+    - docker build --pull -f Dockerfile-slim
+      -t "gcsboss/$CI_PROJECT_NAME:$MIN-slim"
+      -t "gcsboss/$CI_PROJECT_NAME:$TAG-slim"
+      -t "gcsboss/$CI_PROJECT_NAME:slim"
+      .
+    - docker login -u "$DOCKER_HUB_USER" -p "$DOCKER_HUB_PASSWORD"
+    - docker push "gcsboss/$CI_PROJECT_NAME:$MIN-slim"
+    - docker push "gcsboss/$CI_PROJECT_NAME:$TAG-slim"
+    - docker push "gcsboss/$CI_PROJECT_NAME:slim"
