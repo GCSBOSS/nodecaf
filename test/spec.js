@@ -1019,23 +1019,69 @@ describe('Error Handling', () => {
 });
 
 describe('Logging', () => {
+    let log;
 
-    it('Should not log filtered level and type', async () => {
+    before(function(){
         const app = new Nodecaf();
-        app.setup({ log: { only: 'test', level: 'info' } });
-        await app.start();
-        assert.strictEqual(app.log.debug({ type: 'test' }), false);
-        assert.strictEqual(app.log.info({ type: 'foo' }), false);
-        assert(app.log.info({ type: 'test' }));
-        await app.stop();
+        log = app.log;
     });
 
-    it('Should not log when disbled via conf', async () => {
+    it('Should log appropriate objects according to log level', function(){
+        assert.strictEqual(log.debug().level, 'debug');
+        assert.strictEqual(log.info().level, 'info');
+        assert.strictEqual(log.warn().level, 'warn');
+        assert.strictEqual(log.error().level, 'error');
+        assert.strictEqual(log.fatal().level, 'fatal');
+    });
+
+    it('Should printf format message with input arguments', function(){
+        assert.strictEqual(log.debug('a b %s d %s', 'c', 'e').msg, 'a b c d e');
+    });
+
+    it('Should assign first object argument properties to final log entry', function(){
+        const e = log.info({ a: 1, b: 2 });
+        assert.strictEqual(e.a, 1);
+        assert.strictEqual(e.b, 2);
+    });
+
+    it('Should include entry type', function(){
+        assert.strictEqual(log.warn().type, 'event');
+        assert.strictEqual(log.error({ type: 'foobar' }).type, 'foobar');
+    });
+
+    it('Should parse error objects', function(){
+        const app = new Nodecaf();
+        log = app.log;
+        assert(Array.isArray(log.warn({ err: new Error('Foobar') }).stack));
+        assert.strictEqual(typeof log.info({ err: 'My Error' }).err, 'string');
+    });
+
+
+    it('Should not log when entry level is below conf level [level]', function(){
+        const app = new Nodecaf({ conf: { log: { level: 'error' } } });
+        const log = app.log;
+        assert(!log.warn());
+    });
+
+    it('Should not log anything when conf is FALSE', function(){
         const app = new Nodecaf({ conf: { log: false } });
-        await app.start();
-        assert.strictEqual(app.log.debug('my entry'), false);
-        assert.strictEqual(app.log.error({ type: 'foo' }), false);
-        await app.stop();
+        const log = app.log;
+        assert(!log.debug());
+    });
+
+    it('Should only log selected types [only]', function(){
+        const app = new Nodecaf({ conf: { log: { only: 'a' } } });
+        const log = app.log;
+        assert(log.debug({ type: 'a' }));
+        assert(!log.debug({ type: 'b' }));
+    });
+
+    it('Should not log filtered types [except]', function(){
+        const app = new Nodecaf({ conf: { log: { except: [ 'a', 'c' ] } } });
+        const log = app.log;
+        assert(!log.debug({ type: 'a' }));
+        assert(log.debug({ type: 'b' }));
+        assert(!log.debug({ type: 'c' }));
     });
 
 });
