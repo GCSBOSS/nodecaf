@@ -1,4 +1,4 @@
-import globals from'globals';
+import globals from 'globals';
 import mochaPlugin from 'eslint-plugin-mocha';
 
 export default [
@@ -65,6 +65,12 @@ export default [
                     case: {
                         after: true,
                     },
+                    default: {
+                        after: true,
+                    },
+                    from: {
+                        after: true,
+                    },
                     return: {
                         after: true,
                     },
@@ -87,6 +93,7 @@ export default [
             'no-tabs': 'error',
             quotes: ['warn', 'single'],
             'linebreak-style': ['error', 'windows'],
+            'complexity': ['warn', 5]
         },
     }
 ];
