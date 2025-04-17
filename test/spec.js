@@ -1240,6 +1240,46 @@ describe('Regression', () => {
         await app.stop();
     });
 
+    it('Should expose up to date global values for each \'call\' execution', async function(){
+
+        function changeGlobalKey(){
+            assert(this.global.someKey === 'some value');
+            this.global.someKey = 'new value';
+        }
+
+        function testGlobalKeyChangedInRoute({ res, someKey }){
+            res.badRequest(someKey !== 'new value');
+        }
+
+        function testGlobalKeyChanged({ someKey }){
+            assert.strictEqual(someKey, 'new value');
+        }
+
+        const app = new Nodecaf({
+
+            startup({ global, call }){
+                global.someKey = 'some value';
+                call(changeGlobalKey);
+                call(testGlobalKeyChanged);
+
+                global.someKey = 'some value';
+            },
+
+            api({ get }){
+                get('/foo', function({ res, call }){
+                    call(changeGlobalKey);
+                    call(testGlobalKeyChangedInRoute);
+                    res.end();
+                });
+            }
+        });
+        await app.start();
+
+        const { status } = await app.trigger('get', '/foo');
+        assert.strictEqual(status, 200);
+        await app.stop();
+    });
+
 });
 
 describe('Other Features', function(){
