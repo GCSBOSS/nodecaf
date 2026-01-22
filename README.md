@@ -277,6 +277,7 @@ table below:
 | app | info | The application has started |
 | app | info | The application has stopped |
 | app | info | The application configuration has been reloaded |
+| server | info | The HTTP server started listening |
 | event | warn | Called `res.end()` after response was already finished |
 
 Additionally, you can filter log entries by level and type with the following
@@ -437,7 +438,6 @@ get('/my/ws/endpoint', async ({ websocket }) => {
 | Property | Type | Description | Default |
 |----------|------|-------------|---------|
 | `app.http` | Integer | Port for the web server to listen | `80` |
-| `app.conf.cookie.secret` | String | A secure random string to be used for signing cookies | none |
 | `opts.name` | String | Manually set application name used in various places | `package.json`s |
 | `opts.version` | String | Manually set application version | `package.json`s |
 | `opts.shouldParseBody` | Boolean | Whether supported request body types should be parsed | `true` |
