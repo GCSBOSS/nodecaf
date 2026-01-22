@@ -20,27 +20,16 @@ describe('Nodecaf', () => {
             assert.throws( () => new Nodecaf(false), /Options/ );
         });
 
-        it('Should fail when API builder is not a function', () => {
-            assert.throws( () => new Nodecaf({ api: 3 }), /API/ );
-        });
-
-        it('Should execute the API Builder passing the method funcs', done => {
-            new Nodecaf({
-                api(funcs){
-                    assert.strictEqual(typeof funcs, 'object');
-                    done();
-                }
-            });
+        it('Should fail when Routes is not an array', () => {
+            assert.throws( () => new Nodecaf({ routes: 3 }), /Routes/ );
         });
 
         it('Should allow registering routes', async () => {
             const app = new Nodecaf({
                 conf: { port: 80 },
-                api({ post, del, patch }){
-                    post('/foo', ({ res }) => res.status(500).end());
-                    assert.strictEqual(typeof del, 'function');
-                    assert.strictEqual(typeof patch, 'function');
-                }
+                routes: [
+                    Nodecaf.post('/foo', ({ res }) => res.status(500).end())
+                ]
             });
             await app.start();
             const { status } = await muhb.post(LOCAL_HOST + '/foo');
@@ -178,10 +167,10 @@ describe('Nodecaf', () => {
         it('Should trigger route without http server', async () => {
             const app = new Nodecaf({
                 conf: { port: 80 },
-                api({ post }){
-                    post('/foo', ({ res }) => res.status(202).end('Test'));
-                    post('/nores', ({ res }) => res.status(204).end());
-                }
+                routes: [
+                    Nodecaf.post('/foo', ({ res }) => res.status(202).end('Test')),
+                    Nodecaf.post('/nores', ({ res }) => res.status(204).end())
+                ]
             });
             await app.start();
             await app.trigger('post', '/nores');
@@ -194,15 +183,15 @@ describe('Nodecaf', () => {
         it('Should default to response status to 200', async () => {
             const app = new Nodecaf({
                 conf: { port: 80 },
-                api({ post }){
-                    post('/foo', ({ res }) => {
+                routes: [
+                    Nodecaf.post('/foo', ({ res }) => {
                         res.set('X-Test', 'Foo');
                         res.end();
-                    });
-                    post('/bar', ({ res }) => {
+                    }),
+                    Nodecaf.post('/bar', ({ res }) => {
                         res.end();
-                    });
-                }
+                    })
+                ]
             });
             await app.start();
             const r = await app.trigger('post', '/bar', { body: Buffer.from('abc') });
@@ -216,31 +205,31 @@ describe('Nodecaf', () => {
         it('Should properly parse body inputs', async () => {
             const app = new Nodecaf({
                 conf: { port: 80 },
-                api({ post }){
-                    post('/raw', async ({ body, res }) => {
+                routes: [
+                    Nodecaf.post('/raw', async ({ body, res }) => {
                         const input = await body.raw();
                         assert.strictEqual(input.toString(), '12345');
                         res.end();
-                    });
+                    }),
 
-                    post('/json', async ({ body, res }) => {
+                    Nodecaf.post('/json', async ({ body, res }) => {
                         const input = await body.json();
                         assert.strictEqual(input, 12345);
                         res.end();
-                    });
+                    }),
 
-                    post('/text', async ({ body, res }) => {
+                    Nodecaf.post('/text', async ({ body, res }) => {
                         const input = await body.text();
                         assert.strictEqual(input, '12345');
                         res.end();
-                    });
+                    }),
 
-                    post('/urlencoded', async ({ body, res }) => {
+                    Nodecaf.post('/urlencoded', async ({ body, res }) => {
                         const input = await body.urlencoded();
                         assert.strictEqual(input['12345'], '');
                         res.end();
-                    });
-                }
+                    })
+                ]
             });
             await app.start();
 
@@ -264,12 +253,12 @@ describe('Nodecaf', () => {
         it('Should allow streaming data in', async () => {
             const app = new Nodecaf({
                 conf: { port: 80 },
-                api({ post }){
-                    post('/stream', ({ body, res }) => {
+                routes: [
+                    Nodecaf.post('/stream', ({ body, res }) => {
                         body.on('end', () => res.status(201).end());
                         body.resume();
-                    });
-                }
+                    })
+                ]
             });
             await app.start();
             const body = Readable.from('foobar');
@@ -341,13 +330,13 @@ describe('Nodecaf', () => {
 describe('Handlers', () => {
 
     it('Should fail when receiving invalid route handlers', () => {
-        new Nodecaf({
-            api({ post }){
-                assert.throws(() => post('/foobar', undefined), TypeError);
-                post('/foobaz', Function.prototype);
-                assert.throws(() => post('/foobaz', Function.prototype), /already/);
-            }
-        });
+        assert.throws(() => Nodecaf.post('/foobar', undefined), TypeError);
+        assert.throws(() => new Nodecaf({
+            routes: [
+                Nodecaf.post('/foobaz', Function.prototype),
+                Nodecaf.post('/foobaz', Function.prototype)
+            ]
+        }), /already/);
     });
 
     it('Should pass all the required args to handler', async () => {
@@ -372,11 +361,11 @@ describe('Handlers', () => {
     it('Should execute \'all\' handler on any non-matched route', async () => {
         const app = new Nodecaf({
             conf: { port: 80 },
-            api({ post, all }){
+            routes: [
                 // All should be only run when non-matching regardless of order it was defined
-                all(({ res, path }) => res.end(path));
-                post('/foo/:bar', ({ res }) => res.end('foo'));
-            }
+                Nodecaf.all(({ res, path }) => res.end(path)),
+                Nodecaf.post('/foo/:bar', ({ res }) => res.end('foo'))
+            ]
         });
         await app.start();
         assert.strictEqual((await app.trigger('post', '/foo/bar')).body.toString(), 'foo');
@@ -387,13 +376,13 @@ describe('Handlers', () => {
     it('Should pass all present parameters to handler', async () => {
         const app = new Nodecaf({
             conf: { port: 80 },
-            api({ get }){
-                get('/fo/:o', Function.prototype);
-                get('/foo/:bar', function({ params, res }){
+            routes: [
+                Nodecaf.get('/fo/:o', Function.prototype),
+                Nodecaf.get('/foo/:bar', function({ params, res }){
                     res.badRequest(params.bar !== 'test');
                     res.end();
-                });
-            }
+                })
+            ]
         });
         await app.start();
         const { status }  = await muhb.get(LOCAL_HOST + '/foo/test');
@@ -420,12 +409,12 @@ describe('Handlers', () => {
     it('Should parse URL query string', async () => {
         const app = new Nodecaf({
             conf: { port: 80 },
-            api({ post }){
-                post('/foobar', ({ query, res }) => {
+            routes: [
+                Nodecaf.post('/foobar', ({ query, res }) => {
                     assert.strictEqual(query.foo, 'bar');
                     res.end();
-                });
-            }
+                })
+            ]
         });
         await app.start();
         const { status } = await muhb.post(LOCAL_HOST + '/foobar?foo=bar');
@@ -444,12 +433,12 @@ describe('Handlers', () => {
     it('Should stream bytes to client', async () => {
         const app = new Nodecaf({
             conf: { port: 80 },
-            api({ get }){
-                get('/foo', function({ res }){
+            routes: [
+                Nodecaf.get('/foo', function({ res }){
                     const s = require('fs').createReadStream('./package.json');
                     s.pipe(res);
-                });
-            }
+                })
+            ]
         });
         await app.start();
         const { body } = await muhb.get(LOCAL_HOST + '/foo');
@@ -461,11 +450,11 @@ describe('Handlers', () => {
     it('Should parse object as json response [res.json()]', async () => {
         const app = new Nodecaf({
             conf: { port: 80 },
-            api({ get }){
-                get('/foo', function({ res }){
+            routes: [
+                Nodecaf.get('/foo', function({ res }){
                     res.json('{"hey":"ho"}');
-                });
-            }
+                })
+            ]
         });
         await app.start();
         const { headers } = await muhb.get(LOCAL_HOST + '/foo');
@@ -477,14 +466,14 @@ describe('Handlers', () => {
 
         const app = new Nodecaf({
             conf: { port: 80 },
-            api({ get }){
-                get('/foo', function({ res }){
+            routes: [
+                Nodecaf.get('/foo', function({ res }){
                     res.cookie('test', 'foo');
                     res.cookie('testa', 'bar');
                     res.cookie('testa', 'baz');
                     res.end();
-                });
-            }
+                })
+            ]
         });
         await app.start();
         const { headers } = await muhb.get(LOCAL_HOST + '/foo');
@@ -495,20 +484,19 @@ describe('Handlers', () => {
     it('Should set encrypted (signed) cookies', async function(){
         const app = new Nodecaf({
             conf: { port: 80, cookie: { secret: 'OH YEAH' } },
-            api({ get }){
-
-                get('/foo', function({ res }){
+            routes: [
+                Nodecaf.get('/foo', function({ res }){
                     res.cookie('test', 'foo', { signed: true, maxAge: 5000  });
                     res.cookie('testa', 'bar');
                     res.end();
-                });
+                }),
 
-                get('/bar', function({ res, cookies, signedCookies }){
+                Nodecaf.get('/bar', function({ res, cookies, signedCookies }){
                     res.badRequest(cookies.testa !== 'bar');
                     res.badRequest(signedCookies.test !== 'foo');
                     res.end();
-                });
-            }
+                })
+            ]
         });
         await app.start();
         const { cookies } = await muhb.get(LOCAL_HOST + '/foo');
@@ -520,11 +508,11 @@ describe('Handlers', () => {
     it('Should fail when trying to sign cookies without a secret', async function(){
         const app = new Nodecaf({
             conf: { port: 80 },
-            api({ get }){
-                get('/foo', function({ res }){
+            routes: [
+                Nodecaf.get('/foo', function({ res }){
                     res.cookie('test', 'foo', { signed: true });
-                });
-            }
+                })
+            ]
         });
         await app.start();
         const { status } = await muhb.get(LOCAL_HOST + '/foo');
@@ -535,17 +523,17 @@ describe('Handlers', () => {
     it('Should not read cookies with wrong signature', async function(){
         const app = new Nodecaf({
             conf: { port: 80, cookie: { secret: 'OH YEAH' } },
-            api({ get }){
-                get('/foo', function({ res }){
+            routes: [
+                Nodecaf.get('/foo', function({ res }){
                     res.cookie('test', 'foo', { signed: true, maxAge: 5000  });
                     res.end();
-                });
+                }),
 
-                get('/bar', function({ res, signedCookies }){
+                Nodecaf.get('/bar', function({ res, signedCookies }){
                     res.badRequest(signedCookies.test !== 'foo');
                     res.end();
-                });
-            }
+                })
+            ]
         });
         await app.start();
         const { cookies } = await muhb.get(LOCAL_HOST + '/foo');
@@ -558,18 +546,17 @@ describe('Handlers', () => {
     it('Should clear cookies', async function(){
         const app = new Nodecaf({
             conf: { port: 80 },
-            api({ get }){
-
-                get('/foo', function({ res }){
+            routes: [
+                Nodecaf.get('/foo', function({ res }){
                     res.cookie('testa', 'bar');
                     res.end();
-                });
+                }),
 
-                get('/bar', function({ res }){
+                Nodecaf.get('/bar', function({ res }){
                     res.clearCookie('testa');
                     res.end();
-                });
-            }
+                })
+            ]
         });
         await app.start();
         const { cookies } = await muhb.get(LOCAL_HOST + '/foo');
@@ -588,12 +575,12 @@ describe('Handlers', () => {
 
         const app = new Nodecaf({
             conf: { bar: 'baz' },
-            api({ post }){
-                post('/foo', function({ call, res }){
+            routes: [
+                Nodecaf.post('/foo', function({ call, res }){
                     call(userFunc, 'foo');
                     res.end();
-                });
-            }
+                })
+            ]
         });
         await app.start();
         const { status } = await app.trigger('post', '/foo');
@@ -610,13 +597,13 @@ describe('Handlers', () => {
         const app = new Nodecaf({
             conf: { bar: 'baz' },
             autoParseBody: true,
-            api({ post }){
-                post('/foo', function({ keep, call, res, body }){
+            routes: [
+                Nodecaf.post('/foo', function({ keep, call, res, body }){
                     body == 'bar' && keep('myVal', true);
                     call(userFunc);
                     res.end();
-                });
-            }
+                })
+            ]
         });
         await app.start();
         const { status } = await app.trigger('post', '/foo', { body: 'bar' });
@@ -633,8 +620,8 @@ describe('Handlers', () => {
         const app = new Nodecaf({
             conf: { port: 80 },
             websocket: true,
-            api({ get }){
-                get('/bar', async ({ websocket }) => {
+            routes: [
+                Nodecaf.get('/bar', async ({ websocket }) => {
                     const ws = await websocket();
                     ws.on('message', m => {
                         assert.strictEqual(m.toString(), 'foobar');
@@ -642,7 +629,7 @@ describe('Handlers', () => {
                         ws.close();
                     });
                 })
-            }
+            ]
         });
 
         await app.start();
@@ -660,8 +647,8 @@ describe('Handlers', () => {
         const app = new Nodecaf({
             conf: { port: 80 },
             websocket: true,
-            api({ all }){
-                all(async ({ websocket }) => {
+            routes: [
+                Nodecaf.all(async ({ websocket }) => {
                     const ws = await websocket();
                     ws.on('message', m => {
                         assert.strictEqual(m.toString(), 'foobar');
@@ -669,7 +656,7 @@ describe('Handlers', () => {
                         ws.close();
                     });
                 })
-            }
+            ]
         });
 
         await app.start();
@@ -688,12 +675,12 @@ describe('Body Parsing', () => {
         const app = new Nodecaf({
             conf: { port: 80 },
             autoParseBody: true,
-            api({ post }){
-                post('/foobar', ({ body, res }) => {
+            routes: [
+                Nodecaf.post('/foobar', ({ body, res }) => {
                     assert.strictEqual(body, undefined);
                     res.end();
-                });
-            }
+                })
+            ]
         });
         await app.start();
         const { status } = await muhb.post(LOCAL_HOST + '/foobar');
@@ -705,12 +692,12 @@ describe('Body Parsing', () => {
         const app = new Nodecaf({
             conf: { port: 80 },
             autoParseBody: true,
-            api({ post }){
-                post('/foobar', ({ body, res }) => {
+            routes: [
+                Nodecaf.post('/foobar', ({ body, res }) => {
                     assert.strictEqual(body.foo, 'bar');
                     res.end();
-                });
-            }
+                })
+            ]
         });
         await app.start();
         const { status } = await muhb.post(LOCAL_HOST + '/foobar',
@@ -723,9 +710,9 @@ describe('Body Parsing', () => {
         const app = new Nodecaf({
             conf: { port: 80 },
             autoParseBody: true,
-            api({ post }){
-                post('/foobar', Function.prototype);
-            }
+            routes: [
+                Nodecaf.post('/foobar', Function.prototype)
+            ]
         });
         await app.start();
         const { status } = await muhb.post(LOCAL_HOST + '/foobar',
@@ -739,12 +726,12 @@ describe('Body Parsing', () => {
         const app = new Nodecaf({
             conf: { port: 80 },
             autoParseBody: true,
-            api({ post }){
-                post('/foobar', ({ body, res }) => {
+            routes: [
+                Nodecaf.post('/foobar', ({ body, res }) => {
                     assert.strictEqual(body, '{"foo":"bar"}');
                     res.end();
-                });
-            }
+                })
+            ]
         });
         await app.start();
         const { status } = await muhb.post(LOCAL_HOST + '/foobar',
@@ -759,12 +746,12 @@ describe('Body Parsing', () => {
         const app = new Nodecaf({
             conf: { port: 80 },
             autoParseBody: true,
-            api({ post }){
-                post('/foobar', ({ body, res }) => {
+            routes: [
+                Nodecaf.post('/foobar', ({ body, res }) => {
                     assert.strictEqual(body.toString(), '{"foo":"bar"}');
                     res.end();
-                });
-            }
+                })
+            ]
         });
         await app.start();
         const { status } = await muhb.post(LOCAL_HOST + '/foobar',
@@ -779,12 +766,12 @@ describe('Body Parsing', () => {
         const app = new Nodecaf({
             conf: { port: 80 },
             autoParseBody: true,
-            api({ post }){
-                post('/foobar', ({ body, res }) => {
+            routes: [
+                Nodecaf.post('/foobar', ({ body, res }) => {
                     assert(body instanceof Buffer);
                     res.end();
-                });
-            }
+                })
+            ]
         });
         await app.start();
         const { status } = await muhb.post(LOCAL_HOST + '/foobar',
@@ -799,12 +786,12 @@ describe('Body Parsing', () => {
         const app = new Nodecaf({
             conf: { port: 80 },
             autoParseBody: true,
-            api({ post }){
-                post('/foobar', ({ body, res }) => {
+            routes: [
+                Nodecaf.post('/foobar', ({ body, res }) => {
                     assert.strictEqual(body.foo, 'bar');
                     res.end();
-                });
-            }
+                })
+            ]
         });
         await app.start();
         const { status } = await muhb.post(LOCAL_HOST + '/foobar',
@@ -818,12 +805,12 @@ describe('Body Parsing', () => {
     it('Should not parse request body when setup so', async () => {
         const app = new Nodecaf({
             conf: { port: 80 },
-            api({ post }){
-                post('/foobar', ({ body, res }) => {
+            routes: [
+                Nodecaf.post('/foobar', ({ body, res }) => {
                     assert.strictEqual(body.constructor.name, 'IncomingMessage');
                     res.end();
-                });
-            }
+                })
+            ]
         });
         await app.start();
         const { status } = await muhb.post(LOCAL_HOST + '/foobar',
@@ -837,13 +824,13 @@ describe('Body Parsing', () => {
     it('Should catch body issues even when called explicitly', async () => {
         const app = new Nodecaf({
             conf: { port: 80 },
-            api({ post }){
-                post('/foobar', async ({ body, res }) => {
+            routes: [
+                Nodecaf.post('/foobar', async ({ body, res }) => {
                     const b = await body.parse();
                     assert.strictEqual(b.foo, 'bar');
                     res.end();
-                });
-            }
+                })
+            ]
         });
         await app.start();
         const { status, body } = await muhb.post(LOCAL_HOST + '/foobar',
@@ -950,8 +937,8 @@ describe('Assertions', () => {
     it('Should throw when condition evaluates to true', async () => {
         const app = new Nodecaf({
             conf: { port: 80 },
-            api({ get }){
-                get('/foo', function({ res }){
+            routes: [
+                Nodecaf.get('/foo', function({ res }){
                     assert.throws( () => res.badRequest(true, Buffer.from('abc')) );
                     assert.throws( () => res.unauthorized(true) );
                     assert.throws( () => res.forbidden(true) );
@@ -959,8 +946,8 @@ describe('Assertions', () => {
                     assert.throws( () => res.conflict(true) );
                     assert.throws( () => res.gone(true) );
                     res.end();
-                });
-            }
+                })
+            ]
         });
         await app.start();
         await muhb.get(LOCAL_HOST + '/foo');
@@ -970,8 +957,8 @@ describe('Assertions', () => {
     it('Should do nothing when condition evaluates to false', async () => {
         const app = new Nodecaf({
             conf: { port: 80 },
-            api({ get }){
-                get('/foo', function({ res }){
+            routes: [
+                Nodecaf.get('/foo', function({ res }){
                     assert.doesNotThrow( () => res.badRequest(false) );
                     assert.doesNotThrow( () => res.unauthorized(false) );
                     assert.doesNotThrow( () => res.forbidden(false) );
@@ -979,8 +966,8 @@ describe('Assertions', () => {
                     assert.doesNotThrow( () => res.conflict(false) );
                     assert.doesNotThrow( () => res.gone(false) );
                     res.end();
-                });
-            }
+                })
+            ]
         });
         await app.start();
         await muhb.get(LOCAL_HOST + '/foo');
@@ -990,11 +977,11 @@ describe('Assertions', () => {
     it('Should interpolate %s variables in assertion message', async () => {
         const app = new Nodecaf({
             conf: { port: 80 },
-            api({ get }){
-                get('/foo', function({ res }){
+            routes: [
+                Nodecaf.get('/foo', function({ res }){
                     res.badRequest(true, '%sfoo%sbaz%%s', 1, 'bar', 2);
-                });
-            }
+                })
+            ]
         });
         await app.start();
         const { body } = await muhb.get(LOCAL_HOST + '/foo');
@@ -1010,11 +997,11 @@ describe('Error Handling', () => {
     it('Should handle Error thrown sync on the route', async () => {
         const app = new Nodecaf({
             conf: { port: 80 },
-            api({ post }){
-                post('/unknown', () => {
+            routes: [
+                Nodecaf.post('/unknown', () => {
                     throw new Error('othererr');
-                });
-            }
+                })
+            ]
         });
         await app.start();
         const { status: status } = await muhb.post(LOCAL_HOST + '/unknown');
@@ -1025,17 +1012,17 @@ describe('Error Handling', () => {
     it('Should handle Error injected sync on the route', async () => {
         const app = new Nodecaf({
             conf: { port: 80 },
-            api({ post }){
-                post('/known', ({ res }) => {
+            routes: [
+                Nodecaf.post('/known', ({ res }) => {
                     throw res.error(404, 'abc %s', 'def');
-                });
-                post('/unknown', ({ res }) => {
+                }),
+                Nodecaf.post('/unknown', ({ res }) => {
                     throw res.error(new Error('errfoobar'));
-                });
-                post('/serverfault', ({ res }) => {
+                }),
+                Nodecaf.post('/serverfault', ({ res }) => {
                     throw res.error(501, { test: 'foo' });
-                });
-            }
+                })
+            ]
         });
         await app.start();
         const { status } = await muhb.post(LOCAL_HOST + '/known');
@@ -1050,11 +1037,11 @@ describe('Error Handling', () => {
     it('Should handle Rejection on async route', async () => {
         const app = new Nodecaf({
             conf: { port: 80 },
-            api({ post }){
-                post('/async', async () => {
+            routes: [
+                Nodecaf.post('/async', async () => {
                     await new Promise((y, n) => n(new Error('foo')));
-                });
-            }
+                })
+            ]
         });
         await app.start();
         const { status } = await muhb.post(LOCAL_HOST + '/async');
@@ -1065,21 +1052,21 @@ describe('Error Handling', () => {
     it('Should handle Error injected ASYNC on the route', async () => {
         const app = new Nodecaf({
             conf: { port: 80 },
-            api({ post }){
-                post('/known', ({ res }) => {
+            routes: [
+                Nodecaf.post('/known', ({ res }) => {
                     fs.readdir('.', function(){
                         res.error(404, true);
                     });
-                });
-                post('/unknown', async ({ res }) => {
+                }),
+                Nodecaf.post('/unknown', async ({ res }) => {
                     await fs.readdir('.', function(){
                         res.error({ a: 'b' });
                     });
-                });
-                post('/unknown/object', ({ res }) => {
+                }),
+                Nodecaf.post('/unknown/object', ({ res }) => {
                     res.error(Buffer.from('abc'));
-                });
-            }
+                })
+            ]
         });
         await app.start();
         const { status } = await muhb.post(LOCAL_HOST + '/known');
@@ -1120,11 +1107,11 @@ describe('Regression', () => {
     it('Should handle errors even when error event has no listeners', async () => {
         const app = new Nodecaf({
             conf: { port: 80 },
-            api({ post }){
-                post('/bar', () => {
+            routes: [
+                Nodecaf.post('/bar', () => {
                     throw new Error('errfoobar');
-                });
-            }
+                })
+            ]
         });
         await app.start();
         const { status } = await muhb.post(LOCAL_HOST + '/bar');
@@ -1162,13 +1149,13 @@ describe('Regression', () => {
         const cookieOpts = { maxAge: 68300000 };
         const app = new Nodecaf({
             conf: { port: 80 },
-            api({ get }){
-                get('/foo', function({ res }){
+            routes: [
+                Nodecaf.get('/foo', function({ res }){
                     res.cookie('test', 'foo', cookieOpts);
                     res.cookie('testa', 'bar', cookieOpts);
                     res.json(cookieOpts);
-                });
-            }
+                })
+            ]
         });
         await app.start();
         const { body } = await muhb.get(LOCAL_HOST + '/foo');
@@ -1179,11 +1166,11 @@ describe('Regression', () => {
     it('Should NOT send reponse body when assertion has no message', async () => {
         const app = new Nodecaf({
             conf: { port: 80 },
-            api({ get }){
-                get('/foo', function({ res }){
+            routes: [
+                Nodecaf.get('/foo', function({ res }){
                     res.unauthorized(true);
-                });
-            }
+                })
+            ]
         });
         await app.start();
         const { headers, body } = await muhb.get(LOCAL_HOST + '/foo');
@@ -1198,11 +1185,11 @@ describe('Regression', () => {
             const app = new Nodecaf({
                 autoParseBody: true,
                 conf: { port: 80 },
-                api({ post }){
-                    post('/foobar', function({ res }){
+                routes: [
+                    Nodecaf.post('/foobar', function({ res }){
                         res.end();
-                    });
-                }
+                    })
+                ]
             });
             await app.start();
             process.on('uncaughtException', done);
@@ -1237,14 +1224,14 @@ describe('Regression', () => {
     it('Should properly route paths with multiple segments', async function(){
         const app = new Nodecaf({
             conf: { port: 80 },
-            api({ get }){
-                get('/foo/:id', function({ res }){
+            routes: [
+                Nodecaf.get('/foo/:id', function({ res }){
                     res.text('shortest');
-                });
-                get('/foo/:id/abc', function({ res }){
+                }),
+                Nodecaf.get('/foo/:id/abc', function({ res }){
                     res.text('largest');
-                });
-            }
+                })
+            ]
         });
         await app.start();
         const { body } = await muhb.get(LOCAL_HOST + '/foo/123/abc');
@@ -1277,13 +1264,13 @@ describe('Regression', () => {
                 global.someKey = 'some value';
             },
 
-            api({ get }){
-                get('/foo', function({ res, call }){
+            routes: [
+                Nodecaf.get('/foo', function({ res, call }){
                     call(changeGlobalKey);
                     call(testGlobalKeyChangedInRoute);
                     res.end();
-                });
-            }
+                })
+            ]
         });
         await app.start();
 
@@ -1299,9 +1286,9 @@ describe('Other Features', function(){
     it('Should send permissive CORS headers when setup so [cors]', async () => {
         const app = new Nodecaf({
             conf: { cors: true, port: 80 },
-            api({ get }){
-                get('/foobar', ({ res }) => res.end() );
-            }
+            routes: [
+                Nodecaf.get('/foobar', ({ res }) => res.end() )
+            ]
         });
         await app.start();
 
@@ -1321,9 +1308,9 @@ describe('Other Features', function(){
     it('Should not send CORS headers when setup so [cors]', async () => {
         const app = new Nodecaf({
             conf: { port: 80 },
-            api({ get }){
-                get('/foobar', ({ res }) => res.end() );
-            }
+            routes: [
+                Nodecaf.get('/foobar', ({ res }) => res.end() )
+            ]
         });
         await app.start();
         const { status, headers } = await muhb.get(LOCAL_HOST + '/foobar',
@@ -1336,11 +1323,11 @@ describe('Other Features', function(){
     it('Should store data to be accessible to all handlers [app.global]', async () => {
         const app = new Nodecaf({
             conf: { port: 80 },
-            api({ post }){
-                post('/bar', ({ foo, res }) => {
+            routes: [
+                Nodecaf.post('/bar', ({ foo, res }) => {
                     res.text(foo);
                 })
-            }
+            ]
         });
         await app.start();
         app.global.foo = 'foobar';
@@ -1352,9 +1339,9 @@ describe('Other Features', function(){
     it('Should delay server initialization by given milliseconds [conf.delay]', async function(){
         const app = new Nodecaf({
             conf: { delay: 1500, port: 80 },
-            api({ get }){
-                get('/foobar', ({ res }) => res.end());
-            }
+            routes: [
+                Nodecaf.get('/foobar', ({ res }) => res.end())
+            ]
         });
         const ps = app.start();
         await new Promise(done => setTimeout(done, 400));
