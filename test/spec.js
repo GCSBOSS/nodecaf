@@ -977,7 +977,7 @@ describe('Error Handling', () => {
             conf: { port: 80 },
             routes: [
                 Nodecaf.post('/async', async () => {
-                    await new Promise((y, n) => n(new Error('foo')));
+                    await fetch('http://nonexistent.localhost/');
                 })
             ]
         });
@@ -1082,6 +1082,69 @@ describe('Logging', () => {
         assert(!log.debug({ type: 'a' }));
         assert(log.debug({ type: 'b' }));
         assert(!log.debug({ type: 'c' }));
+    });
+
+    it('Should generate a capture stack trace for errors', function(){
+        const app = new Nodecaf();
+        const log = app.log;
+        const entry = log.error({ err: new Error('Test Error') });
+
+        assert(Array.isArray(entry.capture));
+        assert(entry.capture.length > 0);
+        // The capture should point to this test file (spec.js)
+        // and not include internal logger files due to the slice offset
+        assert(entry.capture[0].includes('spec.js'));
+    });
+
+    it('Should generate an errorId string', function(){
+        const app = new Nodecaf();
+        const log = app.log;
+        const entry = log.error({ err: new Error('Test') });
+        assert.strictEqual(typeof entry.errorId, 'string');
+        assert(entry.errorId.length > 0);
+    });
+
+    it('Should group errors from the same scope with the same errorId', function(){
+        const app = new Nodecaf();
+        const log = app.log;
+        const err = new Error('Persistent Error');
+
+        // Even though these are on different lines, they are in the same
+        // function/file scope, so the stack slug (and hash) should be identical.
+        const entry1 = log.error({ err });
+        const entry2 = log.error({ err });
+
+        assert.strictEqual(entry1.errorId, entry2.errorId);
+    });
+
+    it('Should differentiate errorIds from different scopes', function(){
+        const app = new Nodecaf();
+        const log = app.log;
+        const err = new Error('Shared Error');
+
+        // We use named functions to force different stack frame names
+        function scopeA() { return log.error({ err }); }
+        function scopeB() { return log.error({ err }); }
+
+        const entryA = scopeA();
+        const entryB = scopeB();
+
+        assert.notStrictEqual(entryA.errorId, entryB.errorId);
+    });
+
+    it('Should differentiate errorIds for different error origins', function(){
+        const app = new Nodecaf();
+        const log = app.log;
+
+        function throwA() { return new Error('A'); }
+        function throwB() { return new Error('B'); }
+
+        // The error stacks themselves are different, so the first half
+        // of the errorId hash will differ.
+        const entryA = log.error({ err: throwA() });
+        const entryB = log.error({ err: throwB() });
+
+        assert.notStrictEqual(entryA.errorId, entryB.errorId);
     });
 
 });
