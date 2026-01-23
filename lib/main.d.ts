@@ -23,13 +23,22 @@ declare namespace Nodecaf {
     type ConfObject = {
         /** Controls logging output. */
         log?: {
-            /** Define fields to be added to all log entries */
+            /** 
+             * Define fields to be added to all log entries 
+             * @deprecated Setting `conf.log.defaults` is deprecated. This option will be dropped on `v0.14.0`.  
+             **/
             defaults?: Record<string, unknown>,
             /** Only output log entries with specified `level` or above */
             level?: 'debug' | 'info' | 'warn' | 'error' | 'fatal',
-            /** Only output log entries matching any `type` */
+            /** 
+             * Only output log entries matching any `type`
+             * @deprecated Setting `conf.log.only` is deprecated. This option will be dropped on `v0.14.0`. Use external filtering instead.  
+             **/
             only?: string | string[],
-            /** Only output log entries not matching any `type` */
+            /** 
+             * Only output log entries not matching any `type` 
+             * @deprecated Setting `conf.log.except` is deprecated. This option will be dropped on `v0.14.0`. Use external filtering instead. 
+             **/
             except?: string | string[]
         },
         /** 
