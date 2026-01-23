@@ -2,7 +2,8 @@ import globals from 'globals';
 import mochaPlugin from 'eslint-plugin-mocha';
 
 export default [
-    mochaPlugin.configs.flat.recommended,
+    mochaPlugin.configs.recommended,
+    // mochaPlugin.configs.flat.recommended,
     {
         languageOptions: {
             globals: {
