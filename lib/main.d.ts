@@ -32,6 +32,11 @@ declare namespace Nodecaf {
             /** Only output log entries not matching any `type` */
             except?: string | string[]
         },
+        /** 
+         * A number of milliseconds to wait between calling `app.start` and server actually starting. Defults to zero.
+         * @deprecated Setting a start up delay is deprecated. This option will be dropped on `v0.14.0`. Use an external tool instead.   
+         */
+        delay?: number,
         /** Creates an HTTP server that will be managed on the given port. */
         port?: number
     } & Record<string, unknown>
