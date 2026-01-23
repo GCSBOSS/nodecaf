@@ -159,6 +159,69 @@ describe('Nodecaf', () => {
             assert.strictEqual(app.conf.key, 'value');
             fs.unlink(__dirname + '/a.toml', Function.prototype);
         });
+        
+        describe('Conf Layering', () => {
+            const { layerConf } = require('../lib/conf');
+            const fs = require('fs');
+
+            it('Should ignore non-object layers', () => {
+                const conf = layerConf({ key: 'value' }, 1);
+                assert.strictEqual(conf.key, 'value');
+            });
+
+            it('Should preserve values not present in new layer', () => {
+                let conf = layerConf({ key: 'value' });
+                conf = layerConf(conf, { newKey: 'valu3' });
+                assert.strictEqual(conf.key, 'value');
+            });
+
+            it('Should merge objects recursively instead of just replacing', () => {
+                let conf = layerConf({ key: { a: 'b', e: [ 0 ] } });
+                conf = layerConf(conf, { key: { c: 'd', e: [ 1 ] } });
+                assert.strictEqual(conf.key.a, 'b');
+                assert.strictEqual(conf.key.c, 'd');
+                assert.strictEqual(conf.key.e[0], 1);
+            });
+
+            it('Should merge objects with null prototype', () => {
+                const o = Object.create(null);
+                o.b = 2;
+                let conf = layerConf(o);
+                conf = layerConf(conf, { a: 1 });
+                assert.strictEqual(conf.a, 1);
+                assert.strictEqual(conf.b, 2);
+            });
+
+            it('Should ignore objects with a class other than Object', () => {
+                class Foo{ constructor(){ this.a = 'foo' } }
+                const conf = layerConf({ key: { a: 'a', b: 'bar' } }, { key: new Foo() });
+                assert.strictEqual(conf.key.a, 'foo');
+                assert.strictEqual(typeof conf.key.b, 'undefined');
+            });
+
+            it('Should fail if given file conf type is not supported', () => {
+                assert.throws(() => layerConf('./conf.xml'));
+            });
+
+            it('Should fail if conf file is not found', () => {
+                assert.throws(() => layerConf('./bla.json'));
+            });
+
+            it('Should properly load a TOML file and generate an object', () => {
+                fs.writeFileSync(__dirname + '/a.toml', 'key = "value"', 'utf-8');
+                const conf = layerConf(__dirname + '/a.toml');
+                assert.strictEqual(conf.key, 'value');
+                fs.unlink(__dirname + '/a.toml', Function.prototype);
+            });
+
+            it('Should properly load an JSON file and generate an object', () => {
+                fs.writeFileSync(__dirname + '/a.json', '{"key": "value"}', 'utf-8');
+                const conf = layerConf(__dirname + '/a.json');
+                assert.strictEqual(conf.key, 'value');
+                fs.unlink(__dirname + '/a.json', Function.prototype);
+            });
+
+        });
 
     });
 
