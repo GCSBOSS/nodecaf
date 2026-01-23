@@ -8,7 +8,8 @@
         "test": "npx mocha -b --no-diff test/spec.js",
         "test-docker": "node test/docker.js --all",
         "lint": "npx eslint lib",
-        "coverage": "nyc -r html -r text-summary mocha -b --no-diff --no-warnings test/*.js"
+        "coverage": "npx nyc -r html -r text-summary mocha -b --no-diff --no-warnings test/spec.js",
+        "quality": "qlty init && (qlty smells -a --sarif) > ./.qlty/out/report.sarif && qlty metrics ./lib"
     },
     "repository": {
         "type": "git",

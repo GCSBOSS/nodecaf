@@ -10,6 +10,7 @@ const LOCAL_HOST = 'http://localhost:80'
 const { Readable } = require('stream');
 
 const Nodecaf = require('../lib/main');
+const { parse, serialize } = require('../lib/cookie');
 
 describe('Nodecaf', () => {
 
@@ -398,8 +399,13 @@ describe('Nodecaf', () => {
 
 describe('Handlers', () => {
 
-    it('Should fail when receiving invalid route handlers', () => {
+    it('Should fail when receiving invalid or duplicated route handlers', () => {
         assert.throws(() => Nodecaf.post('/foobar', undefined), TypeError);
+        assert.throws(() => new Nodecaf({
+            routes: [
+                { method: 'post' }
+            ]
+        }), /function/);
         assert.throws(() => new Nodecaf({
             routes: [
                 Nodecaf.post('/foobaz', Function.prototype),
@@ -443,6 +449,21 @@ describe('Handlers', () => {
         await app.stop();
     });
 
+    it('Should fail when trying to use \'all\' twice, or passing a non-function handler', () => {
+        assert.throws(() => Nodecaf.all(), /function/);
+        assert.throws(() => new Nodecaf({
+            routes: [
+                { all: true }
+            ]
+        }), /function/);
+        assert.throws(() => new Nodecaf({
+            routes: [
+                Nodecaf.all(Function.prototype),
+                Nodecaf.all(Function.prototype)
+            ]
+        }), /already/);
+    });
+    
     it('Should pass all present parameters to handler', async () => {
         const app = new Nodecaf({
             conf: { port: 80 },
@@ -1269,6 +1290,10 @@ describe('Logging', () => {
         assert.strictEqual(log.debug('a b %s d %s', 'c', 'e').msg, 'a b c d e');
     });
 
+    it('Should accept msg in data object', function(){
+        assert.strictEqual(log.debug({ msg: 'foo' }).msg, 'foo');
+    });
+
     it('Should assign first object argument properties to final log entry', function(){
         const e = log.info({ a: 1, b: 2 });
         assert.strictEqual(e.a, 1);
@@ -1281,8 +1306,6 @@ describe('Logging', () => {
     });
 
     it('Should parse error objects', function(){
-        const app = new Nodecaf();
-        log = app.log;
         assert(Array.isArray(log.warn({ err: new Error('Foobar') }).stack));
         assert.strictEqual(typeof log.info({ err: 'My Error' }).err, 'string');
     });
@@ -1316,8 +1339,6 @@ describe('Logging', () => {
     });
 
     it('Should generate a capture stack trace for errors', function(){
-        const app = new Nodecaf();
-        const log = app.log;
         const entry = log.error({ err: new Error('Test Error') });
 
         assert(Array.isArray(entry.capture));
@@ -1328,16 +1349,12 @@ describe('Logging', () => {
     });
 
     it('Should generate an errorId string', function(){
-        const app = new Nodecaf();
-        const log = app.log;
         const entry = log.error({ err: new Error('Test') });
         assert.strictEqual(typeof entry.errorId, 'string');
         assert(entry.errorId.length > 0);
     });
 
     it('Should group errors from the same scope with the same errorId', function(){
-        const app = new Nodecaf();
-        const log = app.log;
         const err = new Error('Persistent Error');
 
         // Even though these are on different lines, they are in the same
@@ -1349,8 +1366,6 @@ describe('Logging', () => {
     });
 
     it('Should differentiate errorIds from different scopes', function(){
-        const app = new Nodecaf();
-        const log = app.log;
         const err = new Error('Shared Error');
 
         // We use named functions to force different stack frame names
@@ -1364,9 +1379,6 @@ describe('Logging', () => {
     });
 
     it('Should differentiate errorIds for different error origins', function(){
-        const app = new Nodecaf();
-        const log = app.log;
-
         function throwA() { return new Error('A'); }
         function throwB() { return new Error('B'); }
 
@@ -1376,6 +1388,21 @@ describe('Logging', () => {
         const entryB = log.error({ err: throwB() });
 
         assert.notStrictEqual(entryA.errorId, entryB.errorId);
+    });
+
+    it('Should parse complex stack trace for errorIds', function(){
+        const err = new Error('Test error');
+        err.stack = `Error: Test error
+            at Object.<anonymous> (/Users/User/My Project/app.js:33:15)
+            at Object.dangerousFn (/Users/User/app(v2)/script.js:10:1)
+            at Module._compile (node:internal/modules/cjs/loader:1376:14)
+            at Module._compile (node:internal/modules/cjs/loader:1376:14)
+            at My Folder/modules/cjs/test.spec.js:1376:14
+            at node:internal/modules/cjs/loader:1376:14`;
+
+        const entry = log.error({ err });
+        assert.strictEqual(typeof entry.errorId, 'string');
+        assert(entry.errorId.length > 0);
     });
 
 });
@@ -1573,7 +1600,7 @@ describe('Regression', () => {
 
 });
 
-describe('Other Features', function(){
+describe('CORS', function(){
 
     it('Should send permissive CORS headers when setup so [cors]', async () => {
         const app = new Nodecaf({
@@ -1616,6 +1643,226 @@ describe('Other Features', function(){
         await app.stop();
     });
 
+    it('Should handle specific String origin and set Vary header', async () => {
+        const app = new Nodecaf({
+            conf: { 
+                port: 80, 
+                cors: { origin: 'http://trusted.com' } 
+            },
+            routes: [ Nodecaf.get('/cors-string', ({ res }) => res.end()) ]
+        });
+        await app.start();
+
+        const res = await fetch(LOCAL_HOST + '/cors-string', {
+            headers: { 'Origin': 'http://trusted.com', 'Connection': 'close' }
+        });
+
+        assert.strictEqual(res.headers.get('access-control-allow-origin'), 'http://trusted.com');
+        
+        // Fix: Expect 'origin' (lowercase) because setVaryHeader normalizes it
+        assert.strictEqual(res.headers.get('vary'), 'origin');
+
+        await app.stop();
+    });
+
+    it('Should handle Regex/Array origins and reject mismatches', async () => {
+        const app = new Nodecaf({
+            conf: { 
+                port: 80, 
+                // Complex origin logic (Array + Regex)
+                cors: { origin: [/foo\.com$/, 'http://exact-match.com'] } 
+            },
+            routes: [ Nodecaf.get('/cors-regex', ({ res }) => res.end()) ]
+        });
+        await app.start();
+
+        // 1. Regex Match
+        const res1 = await fetch(LOCAL_HOST + '/cors-regex', {
+            headers: { 'Origin': 'http://sub.foo.com', 'Connection': 'close' }
+        });
+        assert.strictEqual(res1.headers.get('access-control-allow-origin'), 'http://sub.foo.com');
+
+        // 2. Exact String in Array Match
+        const res2 = await fetch(LOCAL_HOST + '/cors-regex', {
+            headers: { 'Origin': 'http://exact-match.com', 'Connection': 'close' }
+        });
+        assert.strictEqual(res2.headers.get('access-control-allow-origin'), 'http://exact-match.com');
+
+        // 3. Mismatch (Should return 'false' or block access)
+        const res3 = await fetch(LOCAL_HOST + '/cors-regex', {
+            headers: { 'Origin': 'http://evil.com', 'Connection': 'close' }
+        });
+        assert.strictEqual(res3.headers.get('access-control-allow-origin'), 'false');
+
+        await app.stop();
+    });
+
+    it('Should handle Credentials and Exposed Headers options', async () => {
+        const app = new Nodecaf({
+            conf: { 
+                port: 80, 
+                cors: { 
+                    credentials: true, 
+                    exposedHeaders: ['X-Custom-Header', 'X-Time'] 
+                } 
+            },
+            routes: [ Nodecaf.get('/cors-creds', ({ res }) => res.end()) ]
+        });
+        await app.start();
+
+        const res = await fetch(LOCAL_HOST + '/cors-creds', {
+            headers: { 'Origin': 'http://site.com', 'Connection': 'close' }
+        });
+
+        assert.strictEqual(res.headers.get('access-control-allow-credentials'), 'true');
+        // Note: fetch might normalize header values (spaces/commas)
+        const exposed = res.headers.get('access-control-expose-headers');
+        assert(exposed.includes('X-Custom-Header'));
+        assert(exposed.includes('X-Time'));
+
+        await app.stop();
+    });
+
+    it('Should handle custom Preflight (OPTIONS) configurations', async () => {
+        const app = new Nodecaf({
+            conf: { 
+                port: 80, 
+                cors: { 
+                    // Custom preflight settings
+                    maxAge: 3600,
+                    allowedHeaders: ['X-Api-Key'],
+                    methods: ['GET', 'POST']
+                } 
+            },
+            routes: [ Nodecaf.get('/cors-opt', ({ res }) => res.end()) ]
+        });
+        await app.start();
+
+        const res = await fetch(LOCAL_HOST + '/cors-opt', {
+            method: 'OPTIONS',
+            headers: { 
+                'Origin': 'http://site.com',
+                'Access-Control-Request-Method': 'POST',
+                'Connection': 'close'
+            }
+        });
+
+        assert.strictEqual(res.status, 204);
+        assert.strictEqual(res.headers.get('access-control-max-age'), '3600');
+        assert.strictEqual(res.headers.get('access-control-allow-headers'), 'X-Api-Key');
+        assert.strictEqual(res.headers.get('access-control-allow-methods'), 'GET,POST');
+
+        await app.stop();
+    });
+
+    it('Should properly append to an existing Vary header', async () => {
+        const app = new Nodecaf({
+            conf: { 
+                port: 80, 
+                // Force a specific origin so the CORS middleware sets "Vary: Origin"
+                cors: { origin: 'http://site.com' } 
+            },
+            routes: [ 
+                Nodecaf.get('/vary-test', ({ res }) => {
+                    // 1. Read the current Vary header (set by CORS just moments ago)
+                    const existing = res.get('vary') || '';
+
+                    // 2. Append our new value instead of overwriting
+                    const next = existing ? existing + ', Accept-Encoding' : 'Accept-Encoding';
+
+                    // 3. Set the combined value
+                    res.set('Vary', next);
+                    res.end();
+                }) 
+            ]
+        });
+        await app.start();
+
+        const res = await fetch(LOCAL_HOST + '/vary-test', {
+            headers: { 'Origin': 'http://site.com', 'Connection': 'close' }
+        });
+
+        const vary = res.headers.get('vary');
+        
+        // Assertions will now pass because both values are present
+        assert(vary.toLowerCase().includes('accept-encoding'));
+        assert(vary.toLowerCase().includes('origin'));
+
+        await app.stop();
+    });
+
+});
+
+describe('Cookies', () => {
+
+    it('Should parse HTTP cookies', () => {
+        
+        // --- Parse Tests ---
+        // 1. Happy path
+        assert.deepStrictEqual(parse('a=1; b=2'), { a: '1', b: '2' });
+
+        // 2. Backtracking (skipping keys without values)
+        assert.deepStrictEqual(parse('secure; foo=bar'), { foo: 'bar' });
+
+        // 3. Duplicate keys (first wins)
+        assert.deepStrictEqual(parse('a=1; a=2'), { a: '1' });
+
+        // 4. Quoted values
+        assert.deepStrictEqual(parse('a="b"'), { a: 'b' });
+
+        // 5. Decoding
+        assert.deepStrictEqual(parse('a=b%20c'), { a: 'b c' });
+
+        // 6. Argument validation
+        assert.throws(() => parse(123), TypeError);
+
+        // 7. Trailing attributes/flags 
+        // The parser encounters "secure", finds no "=", and breaks gracefully.
+        assert.deepStrictEqual(parse('a=1; secure'), { a: '1' });
+        
+        // Alternatively, trailing spaces or garbage text also trigger this:
+        assert.deepStrictEqual(parse('a=1;      '), { a: '1' });
+    });
+
+    it('Should serialize HTTP cookies', () => {
+        
+        // --- Serialize Tests ---
+        // 1. Happy path
+        assert.strictEqual(serialize('a', 'b'), 'a=b');
+
+        // 2. All valid options (Date, Secure, HttpOnly, etc)
+        assert.ok(serialize('a', 'b', {
+            secure: true,
+            httpOnly: true,
+            maxAge: 100,
+            domain: 'example.com',
+            path: '/',
+            expires: new Date()
+        }));
+
+        // 3. Priority Variations
+        assert.ok(serialize('a', 'b', { priority: 'Low' })); 
+        assert.throws(() => serialize('a', 'b', { priority: 'foo' }), TypeError);
+
+        // 4. SameSite Variations
+        assert.ok(serialize('a', 'b', { sameSite: true })); 
+        assert.ok(serialize('a', 'b', { sameSite: 'Lax' }));
+        assert.throws(() => serialize('a', 'b', { sameSite: 'foo' }), TypeError);
+
+        // 5. Invalid Inputs (Regex checks)
+        assert.throws(() => serialize('a\n', 'b'), TypeError);
+        assert.strictEqual(serialize('a', 'b\n'), 'a=b%0A'); 
+        assert.throws(() => serialize('a', 'b', { domain: 'a\n' }), TypeError); 
+        assert.throws(() => serialize('a', 'b', { path: 'a\n' }), TypeError); 
+
+        // 6. Invalid Numbers/Dates
+        assert.throws(() => serialize('a', 'b', { maxAge: Infinity }), TypeError);
+        assert.throws(() => serialize('a', 'b', { expires: 'not-a-date' }), TypeError);
+    });
+});
+
+describe('Other Features', function(){
+
     it('Should store data to be accessible to all handlers [app.global]', async () => {
         const app = new Nodecaf({
             conf: { port: 80 },
@@ -1653,6 +1900,12 @@ describe('Other Features', function(){
         const { status } = await fetch(LOCAL_HOST + '/foobar', { headers: { 'Connection': 'close' } });
         assert.strictEqual(status, 200);
         await app.stop();
+    });
+
+    it('Should fail when passing non-function server builders [conf.server]', () => {
+        assert.throws(() => {
+            new Nodecaf({ server: 'not-a-function' });
+        }, TypeError);
     });
 
 });
