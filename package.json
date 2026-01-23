@@ -48,7 +48,6 @@
         "eslint-plugin-mocha": "^11.2.0",
         "globals": "^17.1.0",
         "mocha": "^11.7.5",
-        "muhb": "^3.2.1",
         "toml": "^3.0.0"
     }
 }

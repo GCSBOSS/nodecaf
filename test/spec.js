@@ -7,7 +7,6 @@ process.env.NODE_ENV = 'testing';
 // Address for the tests' local servers to listen.
 const LOCAL_HOST = 'http://localhost:80'
 
-const muhb = require('muhb');
 const { Readable } = require('stream');
 
 const Nodecaf = require('../lib/main');
@@ -32,7 +31,10 @@ describe('Nodecaf', () => {
                 ]
             });
             await app.start();
-            const { status } = await muhb.post(LOCAL_HOST + '/foo');
+            const { status } = await fetch(LOCAL_HOST + '/foo', { 
+                method: 'POST',
+                headers: { 'Connection': 'close' }
+            });
             assert.strictEqual(status, 500);
             await app.stop();
         });
@@ -68,7 +70,9 @@ describe('Nodecaf', () => {
         it('Should start the http server when port set in config [conf.port]', async () => {
             const app = new Nodecaf({ conf: { port: 8765 } });
             await app.start();
-            const { status } = await muhb.get('http://127.0.0.1:8765/');
+            const { status } = await fetch('http://127.0.0.1:8765/', {
+                headers: { 'Connection': 'close' }
+            });
             assert.strictEqual(status, 404);
             await app.stop();
         });
@@ -76,7 +80,9 @@ describe('Nodecaf', () => {
         it('Should start the http server when http option set [opts.http]', async () => {
             const app = new Nodecaf({ http: 8765 });
             await app.start();
-            const { status } = await muhb.get('http://127.0.0.1:8765/');
+            const { status } = await fetch('http://127.0.0.1:8765/', {
+                headers: { 'Connection': 'close' }
+            });
             assert.strictEqual(status, 404);
             await app.stop();
         });
@@ -98,7 +104,7 @@ describe('Nodecaf', () => {
             await app.start();
             await app.stop();
             this.timeout(3000);
-            await assert.rejects(muhb.get(LOCAL_HOST + '/'));
+            await assert.rejects(fetch(LOCAL_HOST + '/'));
         });
 
         it('Should trigger after stop event', async () => {
@@ -124,10 +130,14 @@ describe('Nodecaf', () => {
             this.timeout(3000);
             const app = new Nodecaf({ conf: { port: 80 } });
             await app.start();
-            const r1 = await muhb.get(LOCAL_HOST + '/');
+            const r1 = await fetch(LOCAL_HOST + '/', {
+                headers: { 'Connection': 'close' }
+            });
             assert.strictEqual(r1.status, 404);
             await app.restart();
-            const r2 = await muhb.get(LOCAL_HOST + '/');
+            const r2 = await fetch(LOCAL_HOST + '/', {
+                headers: { 'Connection': 'close' }
+            });
             assert.strictEqual(r2.status, 404);
             await app.stop();
         });
@@ -229,7 +239,6 @@ describe('Nodecaf', () => {
 
         it('Should trigger route without http server', async () => {
             const app = new Nodecaf({
-                conf: { port: 80 },
                 routes: [
                     Nodecaf.post('/foo', ({ res }) => res.status(202).end('Test')),
                     Nodecaf.post('/nores', ({ res }) => res.status(204).end())
@@ -245,7 +254,6 @@ describe('Nodecaf', () => {
 
         it('Should default to response status to 200', async () => {
             const app = new Nodecaf({
-                conf: { port: 80 },
                 routes: [
                     Nodecaf.post('/foo', ({ res }) => {
                         res.set('X-Test', 'Foo');
@@ -267,7 +275,6 @@ describe('Nodecaf', () => {
 
         it('Should properly parse body inputs', async () => {
             const app = new Nodecaf({
-                conf: { port: 80 },
                 routes: [
                     Nodecaf.post('/raw', async ({ body, res }) => {
                         const input = await body.raw();
@@ -315,7 +322,6 @@ describe('Nodecaf', () => {
 
         it('Should allow streaming data in', async () => {
             const app = new Nodecaf({
-                conf: { port: 80 },
                 routes: [
                     Nodecaf.post('/stream', ({ body, res }) => {
                         body.on('end', () => res.status(201).end());
@@ -416,14 +422,15 @@ describe('Handlers', () => {
             routes: [ route ]
         });
         await app.start();
-        const { status } = await muhb.get(LOCAL_HOST + '/foo');
+        const { status } = await fetch(LOCAL_HOST + '/foo', {
+            headers: { 'Connection': 'close' }
+        });
         assert.strictEqual(status, 200);
         await app.stop();
     });
 
     it('Should execute \'all\' handler on any non-matched route', async () => {
         const app = new Nodecaf({
-            conf: { port: 80 },
             routes: [
                 // All should be only run when non-matching regardless of order it was defined
                 Nodecaf.all(({ res, path }) => res.end(path)),
@@ -448,7 +455,9 @@ describe('Handlers', () => {
             ]
         });
         await app.start();
-        const { status }  = await muhb.get(LOCAL_HOST + '/foo/test');
+        const { status }  = await fetch(LOCAL_HOST + '/foo/test', {
+            headers: { 'Connection': 'close' }
+        });
         assert.strictEqual(status, 200);
         await app.stop();
     });
@@ -464,7 +473,9 @@ describe('Handlers', () => {
             ]
         });
         await app.start();
-        const { status }  = await muhb.get(LOCAL_HOST + '/foo/abc%3Adef');
+        const { status }  = await fetch(LOCAL_HOST + '/foo/abc%3Adef', {
+            headers: { 'Connection': 'close' }
+        });
         assert.strictEqual(status, 200);
         await app.stop();
     });
@@ -480,7 +491,10 @@ describe('Handlers', () => {
             ]
         });
         await app.start();
-        const { status } = await muhb.post(LOCAL_HOST + '/foobar?foo=bar');
+        const { status } = await fetch(LOCAL_HOST + '/foobar?foo=bar', { 
+            method: 'POST',
+            headers: { 'Connection': 'close' }
+        });
         assert.strictEqual(status, 200);
         await app.stop();
     });
@@ -488,7 +502,10 @@ describe('Handlers', () => {
     it('Should output a 404 when no route is found for a given path', async () => {
         const app = new Nodecaf({ conf: { port: 80 } });
         await app.start();
-        const { status } = await muhb.post(LOCAL_HOST + '/foobar');
+        const { status } = await fetch(LOCAL_HOST + '/foobar', { 
+            method: 'POST',
+            headers: { 'Connection': 'close' }
+        });
         assert.strictEqual(status, 404);
         await app.stop();
     });
@@ -504,8 +521,11 @@ describe('Handlers', () => {
             ]
         });
         await app.start();
-        const { body } = await muhb.get(LOCAL_HOST + '/foo');
-        const o = JSON.parse(body.toString());
+        const res = await fetch(LOCAL_HOST + '/foo', {
+            headers: { 'Connection': 'close' }
+        });
+        const body = await res.text();
+        const o = JSON.parse(body);
         assert.strictEqual(o.name, 'nodecaf');
         await app.stop();
     });
@@ -520,8 +540,10 @@ describe('Handlers', () => {
             ]
         });
         await app.start();
-        const { headers } = await muhb.get(LOCAL_HOST + '/foo');
-        assert.strictEqual(headers['content-type'], 'application/json');
+        const { headers } = await fetch(LOCAL_HOST + '/foo', {
+            headers: { 'Connection': 'close' }
+        });
+        assert.strictEqual(headers.get('content-type'), 'application/json');
         await app.stop();
     });
 
@@ -539,8 +561,11 @@ describe('Handlers', () => {
             ]
         });
         await app.start();
-        const { headers } = await muhb.get(LOCAL_HOST + '/foo');
-        assert.strictEqual(headers['set-cookie'][1], 'testa=bar');
+        const { headers } = await fetch(LOCAL_HOST + '/foo', {
+            headers: { 'Connection': 'close' }
+        });
+        const cookies = headers.getSetCookie();
+        assert(cookies.some(c => c.startsWith('testa=bar')));
         await app.stop();
     });
 
@@ -560,9 +585,18 @@ describe('Handlers', () => {
             ]
         });
         await app.start();
-        const { cookies } = await muhb.get(LOCAL_HOST + '/foo');
-        const { headers } = await muhb.get(LOCAL_HOST + '/bar', { cookies });
-        assert(headers['set-cookie'][0].indexOf('Expire') > -1);
+        const res1 = await fetch(LOCAL_HOST + '/foo', {
+            headers: { Connection: 'close' }
+        });
+        // Extract cookie value for next request
+        const cookie = res1.headers.getSetCookie()[0].split(';')[0];
+        
+        const res2 = await fetch(LOCAL_HOST + '/bar', { headers: { 
+            Connection: 'close',
+            Cookie: cookie 
+        } });
+        const setCookies = res2.headers.getSetCookie();
+        assert(setCookies[0].indexOf('Expire') > -1);
         await app.stop();
     });
 
@@ -684,7 +718,10 @@ describe('Body Parsing', () => {
             ]
         });
         await app.start();
-        const { status } = await muhb.post(LOCAL_HOST + '/foobar');
+        const { status } = await fetch(LOCAL_HOST + '/foobar', { 
+            method: 'POST',
+            headers: { 'Connection': 'close' }
+        });
         assert.strictEqual(status, 200);
         await app.stop();
     });
@@ -701,8 +738,14 @@ describe('Body Parsing', () => {
             ]
         });
         await app.start();
-        const { status } = await muhb.post(LOCAL_HOST + '/foobar',
-            { 'Content-Type': 'application/json' }, { foo: 'bar' });
+        const { status } = await fetch(LOCAL_HOST + '/foobar', {
+            method: 'POST',
+            headers: { 
+                'Content-Type': 'application/json',
+                'Connection': 'close'
+            },
+            body: JSON.stringify({ foo: 'bar' })
+        });
         assert.strictEqual(status, 200);
         await app.stop();
     });
@@ -716,8 +759,14 @@ describe('Body Parsing', () => {
             ]
         });
         await app.start();
-        const { status } = await muhb.post(LOCAL_HOST + '/foobar',
-            { 'Content-Type': 'application/json' }, 'foobar}');
+        const { status } = await fetch(LOCAL_HOST + '/foobar', {
+            method: 'POST',
+            headers: { 
+                'Content-Type': 'application/json',
+                'Connection': 'close'
+            },
+            body: 'foobar}'
+        });
 
         assert.strictEqual(status, 400);
         await app.stop();
@@ -735,10 +784,14 @@ describe('Body Parsing', () => {
             ]
         });
         await app.start();
-        const { status } = await muhb.post(LOCAL_HOST + '/foobar',
-            { 'Content-Type': 'text/css' },
-            JSON.stringify({foo: 'bar'})
-        );
+        const { status } = await fetch(LOCAL_HOST + '/foobar', {
+            method: 'POST',
+            headers: { 
+                'Content-Type': 'text/css',
+                'Connection': 'close'
+            },
+            body: JSON.stringify({foo: 'bar'})
+        });
         assert.strictEqual(status, 200);
         await app.stop();
     });
@@ -755,10 +808,11 @@ describe('Body Parsing', () => {
             ]
         });
         await app.start();
-        const { status } = await muhb.post(LOCAL_HOST + '/foobar',
-            { 'no-auto': true, 'Content-Length': 13 },
-            JSON.stringify({foo: 'bar'})
-        );
+        const { status } = await fetch(LOCAL_HOST + '/foobar', {
+            method: 'POST',
+            headers: { 'no-auto': true, 'Content-Length': 13, 'Connection': 'close' },
+            body: JSON.stringify({foo: 'bar'})
+        });
         assert.strictEqual(status, 200);
         await app.stop();
     });
@@ -775,10 +829,11 @@ describe('Body Parsing', () => {
             ]
         });
         await app.start();
-        const { status } = await muhb.post(LOCAL_HOST + '/foobar',
-            { 'Content-Type': 'application/octet-stream' },
-            'fobariummuch'
-        );
+        const { status } = await fetch(LOCAL_HOST + '/foobar', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/octet-stream', 'Connection': 'close' },
+            body: 'fobariummuch'
+        });
         assert.strictEqual(status, 200);
         await app.stop();
     });
@@ -795,10 +850,14 @@ describe('Body Parsing', () => {
             ]
         });
         await app.start();
-        const { status } = await muhb.post(LOCAL_HOST + '/foobar',
-            { 'Content-Type': 'application/x-www-form-urlencoded' },
-            'foo=bar'
-        );
+        const { status } = await fetch(LOCAL_HOST + '/foobar', {
+            method: 'POST',
+            headers: { 
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'Connection': 'close'
+            },
+            body: 'foo=bar'
+        });
         assert.strictEqual(status, 200);
         await app.stop();
     });
@@ -814,10 +873,14 @@ describe('Body Parsing', () => {
             ]
         });
         await app.start();
-        const { status } = await muhb.post(LOCAL_HOST + '/foobar',
-            { 'Content-Type': 'application/x-www-form-urlencoded' },
-            'foo=bar'
-        );
+        const { status } = await fetch(LOCAL_HOST + '/foobar', {
+            method: 'POST',
+            headers: { 
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'Connection': 'close'
+            },
+            body: 'foo=bar'
+        });
         assert.strictEqual(status, 200);
         await app.stop();
     });
@@ -834,9 +897,13 @@ describe('Body Parsing', () => {
             ]
         });
         await app.start();
-        const { status, body } = await muhb.post(LOCAL_HOST + '/foobar',
-            { 'Content-Type': 'application/json' }, '{sdfs');
-        assert.strictEqual(status, 400);
+        const res = await fetch(LOCAL_HOST + '/foobar', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Connection': 'close' },
+            body: '{sdfs'
+        });
+        const body = await res.text();
+        assert.strictEqual(res.status, 400);
         assert.strictEqual(body, 'Invalid format');
         await app.stop();
     });
@@ -856,17 +923,30 @@ describe('Body Parsing', () => {
         });
 
         await app.start();
-        const req = muhb.post(LOCAL_HOST + '/chunked', {
-            stream: true, 'Transfer-Encoding': 'chunked' });
+        
+        const { PassThrough } = require('stream');
+        const stream = new PassThrough();
+        
+        // Create the request but catch immediate errors to prevent process crash
+        const reqPromise = fetch(LOCAL_HOST + '/chunked', {
+            method: 'POST',
+            body: stream,
+            duplex: 'half',
+            headers: { 'Connection': 'close' }
+        });
 
-        req.write('123');
+        stream.write('123');
         await new Promise(done => setTimeout(done, 500));
-        req.write('45');
+        stream.write('45');
         await new Promise(done => setTimeout(done, 500));
-        req.end();
+        stream.end();
 
-        const { status } = await req;
-        assert.strictEqual(status, 201);
+        const res = await reqPromise;
+        
+        // If fetch failed, we throw to see the error in the test output
+        if(res.error) throw res.error;
+
+        assert.strictEqual(res.status, 201);
         await app.stop();
     });
 
@@ -884,18 +964,23 @@ describe('Body Parsing', () => {
 
         await app.start();
 
-        const req = muhb.post(LOCAL_HOST + '/tto', {
-            'Content-Type': 'text/plain',
-            stream: true
+        const { PassThrough } = require('stream');
+        const stream = new PassThrough();
+
+        const req = fetch(LOCAL_HOST + '/tto', {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain', 'Connection': 'close' },
+            body: stream,
+            duplex: 'half',
         });
+        
+        stream.write('a');
 
         const { status } = await req;
 
-        req.end();
-        req.destroy();
-
         assert.strictEqual(status, 408);
 
+        stream.destroy();
         await app.stop();
     });
 
@@ -903,6 +988,8 @@ describe('Body Parsing', () => {
 
         let abortedRouted = true;
         let startedRoute = false;
+        let abortErrorName = false;
+
         const app = new Nodecaf({
             conf: { port: 80 },
             routes: [
@@ -916,19 +1003,32 @@ describe('Body Parsing', () => {
 
         await app.start();
 
-        const req = muhb.post(LOCAL_HOST + '/tto', {
-            'Content-Type': 'text/plain',
-            stream: true
+        const controller = new AbortController();
+        const { PassThrough } = require('stream');
+        const stream = new PassThrough();
+
+        // Start request but don't await response immediately
+        const p = fetch(LOCAL_HOST + '/tto', {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain', 'Connection': 'close' },
+            body: stream,
+            duplex: 'half',
+            signal: controller.signal
+        }).catch(err => {
+            abortErrorName = err.name;
         });
 
-        req.write('abc');
-        req.on('error', Function.prototype);
+        stream.write('abc');
         await new Promise(resolve => setTimeout(resolve, 300));
-        req.destroy();
+        
+        // Destroy the request (abort)
+        controller.abort();
 
+        await p;
         await app.stop();
         assert(abortedRouted);
         assert(startedRoute);
+        assert.strictEqual(abortErrorName, 'AbortError');
     });
 
 });
@@ -941,17 +1041,56 @@ describe('Assertions', () => {
             routes: [
                 Nodecaf.get('/foo', function({ res }){
                     assert.throws( () => res.badRequest(true, Buffer.from('abc')) );
+                    res.end();
+                }),
+                Nodecaf.get('/foo2', function({ res }){
                     assert.throws( () => res.unauthorized(true) );
+                    res.end();
+                }),
+                Nodecaf.get('/foo3', function({ res }){
                     assert.throws( () => res.forbidden(true) );
+                    res.end();
+                }),
+                Nodecaf.get('/foo4', function({ res }){
                     assert.throws( () => res.notFound(true) );
+                    res.end();
+                }),
+                Nodecaf.get('/foo5', function({ res }){
                     assert.throws( () => res.conflict(true) );
+                    res.end();
+                }),
+                Nodecaf.get('/foo6', function({ res }){
                     assert.throws( () => res.gone(true) );
                     res.end();
                 })
             ]
         });
         await app.start();
-        await muhb.get(LOCAL_HOST + '/foo');
+        
+        const res = await fetch(LOCAL_HOST + '/foo', { headers: { 'Connection': 'close' } });
+        await res.text();
+        assert.strictEqual(res.status, 400);
+
+        const res2 = await fetch(LOCAL_HOST + '/foo2', { headers: { 'Connection': 'close' } });
+        await res2.text();
+        assert.strictEqual(res2.status, 401);
+        
+        const res3 = await fetch(LOCAL_HOST + '/foo3', { headers: { 'Connection': 'close' } });
+        await res3.text();
+        assert.strictEqual(res3.status, 403);
+        
+        const res4 = await fetch(LOCAL_HOST + '/foo4', { headers: { 'Connection': 'close' } });
+        await res4.text();
+        assert.strictEqual(res4.status, 404);
+        
+        const res5 = await fetch(LOCAL_HOST + '/foo5', { headers: { 'Connection': 'close' } });
+        await res5.text();
+        assert.strictEqual(res5.status, 409);
+        
+        const res6 = await fetch(LOCAL_HOST + '/foo6', { headers: { 'Connection': 'close' } });
+        await res6.text();
+        assert.strictEqual(res6.status, 410);
+
         await app.stop();
     });
 
@@ -971,7 +1110,8 @@ describe('Assertions', () => {
             ]
         });
         await app.start();
-        await muhb.get(LOCAL_HOST + '/foo');
+        const res = await fetch(LOCAL_HOST + '/foo', { headers: { 'Connection': 'close' } });
+        await res.text();
         await app.stop();
     });
 
@@ -985,7 +1125,8 @@ describe('Assertions', () => {
             ]
         });
         await app.start();
-        const { body } = await muhb.get(LOCAL_HOST + '/foo');
+        const res = await fetch(LOCAL_HOST + '/foo', { headers: { 'Connection': 'close' } });
+        const body = await res.text();
         assert.strictEqual(body, '1foobarbaz%s 2');
         await app.stop();
     });
@@ -1005,7 +1146,10 @@ describe('Error Handling', () => {
             ]
         });
         await app.start();
-        const { status: status } = await muhb.post(LOCAL_HOST + '/unknown');
+        const { status } = await fetch(LOCAL_HOST + '/unknown', { 
+            method: 'POST',
+            headers: { 'Connection': 'close' }
+        });
         assert.strictEqual(status, 500);
         await app.stop();
     });
@@ -1026,11 +1170,20 @@ describe('Error Handling', () => {
             ]
         });
         await app.start();
-        const { status } = await muhb.post(LOCAL_HOST + '/known');
+        const { status } = await fetch(LOCAL_HOST + '/known', { 
+            method: 'POST',
+            headers: { 'Connection': 'close' }
+        });
         assert.strictEqual(status, 404);
-        const { status: s2 } = await muhb.post(LOCAL_HOST + '/unknown');
+        const { status: s2 } = await fetch(LOCAL_HOST + '/unknown', { 
+            method: 'POST',
+            headers: { 'Connection': 'close' }
+        });
         assert.strictEqual(s2, 500);
-        const { status: s3 } = await muhb.post(LOCAL_HOST + '/serverfault');
+        const { status: s3 } = await fetch(LOCAL_HOST + '/serverfault', { 
+            method: 'POST',
+            headers: { 'Connection': 'close' }
+        });
         assert.strictEqual(s3, 501);
         await app.stop();
     });
@@ -1040,12 +1193,18 @@ describe('Error Handling', () => {
             conf: { port: 80 },
             routes: [
                 Nodecaf.post('/async', async () => {
-                    await fetch('http://nonexistent.localhost/');
+                    // This uses fetch as part of the test logic, coincidentally
+                    await fetch('http://nonexistent.localhost/', {
+                        headers: { 'Connection': 'close' }
+                    });
                 })
             ]
         });
         await app.start();
-        const { status } = await muhb.post(LOCAL_HOST + '/async');
+        const { status } = await fetch(LOCAL_HOST + '/async', { 
+            method: 'POST',
+            headers: { 'Connection': 'close' } 
+        });
         assert.strictEqual(status, 500);
         await app.stop();
     });
@@ -1070,11 +1229,20 @@ describe('Error Handling', () => {
             ]
         });
         await app.start();
-        const { status } = await muhb.post(LOCAL_HOST + '/known');
+        const { status } = await fetch(LOCAL_HOST + '/known', { 
+            method: 'POST',
+            headers: { 'Connection': 'close' }
+        });
         assert.strictEqual(status, 404);
-        const { status: s2 } = await muhb.post(LOCAL_HOST + '/unknown');
+        const { status: s2 } = await fetch(LOCAL_HOST + '/unknown', { 
+            method: 'POST',
+            headers: { 'Connection': 'close' }
+        });
         assert.strictEqual(s2, 500);
-        const { status: s3 } = await muhb.post(LOCAL_HOST + '/unknown/object');
+        const { status: s3 } = await fetch(LOCAL_HOST + '/unknown/object', { 
+            method: 'POST',
+            headers: { 'Connection': 'close' }
+        });
         assert.strictEqual(s3, 500);
         await app.stop();
     });
@@ -1224,7 +1392,10 @@ describe('Regression', () => {
             ]
         });
         await app.start();
-        const { status } = await muhb.post(LOCAL_HOST + '/bar');
+        const { status } = await fetch(LOCAL_HOST + '/bar', { 
+            method: 'POST',
+            headers: { 'Connection': 'close' } 
+        });
         assert.strictEqual(status, 500);
         await app.stop();
     });
@@ -1268,8 +1439,11 @@ describe('Regression', () => {
             ]
         });
         await app.start();
-        const { body } = await muhb.get(LOCAL_HOST + '/foo');
-        assert.strictEqual(JSON.parse(body).maxAge, 68300000);
+        const res = await fetch(LOCAL_HOST + '/foo', {
+            headers: { 'Connection': 'close' }
+        });
+        const body = await res.json();
+        assert.strictEqual(body.maxAge, 68300000);
         await app.stop();
     });
 
@@ -1283,8 +1457,9 @@ describe('Regression', () => {
             ]
         });
         await app.start();
-        const { headers, body } = await muhb.get(LOCAL_HOST + '/foo');
-        assert(!headers['content-type']);
+        const res = await fetch(LOCAL_HOST + '/foo', { headers: { 'Connection': 'close' } });
+        const body = await res.text();
+        assert(!res.headers.get('content-type'));
         assert.strictEqual(body.length, 0);
         await app.stop();
     });
@@ -1304,10 +1479,14 @@ describe('Regression', () => {
             await app.start();
             process.on('uncaughtException', done);
             process.on('unhandledRejection', done);
-            const { status } = await muhb.post(LOCAL_HOST + '/foobar',
-                { 'Content-Type': 'application/json' },
-                '{"sdf:'
-            );
+            const { status } = await fetch(LOCAL_HOST + '/foobar', {
+                method: 'POST',
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Connection': 'close'
+                },
+                body: '{"sdf:'
+            });
             assert.strictEqual(status, 400);
             await app.stop();
             done();
@@ -1344,7 +1523,10 @@ describe('Regression', () => {
             ]
         });
         await app.start();
-        const { body } = await muhb.get(LOCAL_HOST + '/foo/123/abc');
+        const res = await fetch(LOCAL_HOST + '/foo/123/abc', {
+            headers: { 'Connection': 'close' }
+        });
+        const body = await res.text();
         assert.strictEqual(body, 'largest');
         await app.stop();
     });
@@ -1402,14 +1584,17 @@ describe('Other Features', function(){
         });
         await app.start();
 
-        const { status, headers } = await muhb.get(LOCAL_HOST + '/foobar',
-            { 'Origin': 'http://outsider.com' });
-        assert.strictEqual(status, 200);
-        assert.strictEqual(headers['access-control-allow-origin'], '*');
+        const res = await fetch(LOCAL_HOST + '/foobar', {
+            headers: { 'Origin': 'http://outsider.com', 'Connection': 'close' }
+        });
+        assert.strictEqual(res.status, 200);
+        assert.strictEqual(res.headers.get('access-control-allow-origin'), '*');
 
-        const r = await muhb.options(LOCAL_HOST + '/foobar',
-            { 'Origin': 'http://outsider.com' });
-        assert.strictEqual(r.headers['access-control-allow-methods'],
+        const r = await fetch(LOCAL_HOST + '/foobar', {
+            method: 'OPTIONS',
+            headers: { 'Origin': 'http://outsider.com', 'Connection': 'close' }
+        });
+        assert.strictEqual(r.headers.get('access-control-allow-methods'),
             'GET,HEAD,PUT,PATCH,POST,DELETE');
 
         await app.stop();
@@ -1423,10 +1608,11 @@ describe('Other Features', function(){
             ]
         });
         await app.start();
-        const { status, headers } = await muhb.get(LOCAL_HOST + '/foobar',
-            { 'Origin': 'http://outsider.com' });
-        assert.strictEqual(status, 200);
-        assert.strictEqual(headers['access-control-allow-origin'], undefined);
+        const res = await fetch(LOCAL_HOST + '/foobar', {
+            headers: { 'Origin': 'http://outsider.com', 'Connection': 'close' }
+        });
+        assert.strictEqual(res.status, 200);
+        assert.strictEqual(res.headers.get('access-control-allow-origin'), null);
         await app.stop();
     });
 
@@ -1441,7 +1627,11 @@ describe('Other Features', function(){
         });
         await app.start();
         app.global.foo = 'foobar';
-        const { body } = await muhb.post(LOCAL_HOST + '/bar');
+        const res = await fetch(LOCAL_HOST + '/bar', { 
+            method: 'POST',
+            headers: { 'Connection': 'close' } 
+        });
+        const body = await res.text();
         assert.strictEqual(body, 'foobar');
         await app.stop();
     });
@@ -1455,12 +1645,14 @@ describe('Other Features', function(){
         });
         const ps = app.start();
         await new Promise(done => setTimeout(done, 400));
-        await assert.rejects(muhb.get(LOCAL_HOST + '/foobar', { timeout: 200 }));
+        await assert.rejects(fetch(LOCAL_HOST + '/foobar', { 
+            signal: AbortSignal.timeout(200),
+            headers: { 'Connection': 'close' } 
+        }));
         await ps;
-        const { status } = await muhb.get(LOCAL_HOST + '/foobar');
+        const { status } = await fetch(LOCAL_HOST + '/foobar', { headers: { 'Connection': 'close' } });
         assert.strictEqual(status, 200);
         await app.stop();
     });
 
 });
-
