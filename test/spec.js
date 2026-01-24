@@ -1323,13 +1323,6 @@ describe('Logging', () => {
         assert(!log.debug());
     });
 
-    it('Should only log selected types [only]', function(){
-        const app = new Nodecaf({ conf: { log: { only: 'a' } } });
-        const log = app.log;
-        assert(log.debug({ type: 'a' }));
-        assert(!log.debug({ type: 'b' }));
-    });
-
     it('Should generate a capture stack trace for errors', function(){
         const entry = log.error({ err: new Error('Test Error') });
 

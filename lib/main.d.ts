@@ -25,11 +25,6 @@ declare namespace Nodecaf {
         log?: {
             /** Only output log entries with specified `level` or above */
             level?: 'debug' | 'info' | 'warn' | 'error' | 'fatal',
-            /** 
-             * Only output log entries matching any `type`
-             * @deprecated Setting `conf.log.only` is deprecated. This setting will be dropped on `v0.14.0`. Use external filtering instead.  
-             **/
-            only?: string | string[],
         },
         /** 
          * A number of milliseconds to wait between calling `app.start` and server actually starting. Defults to zero.
