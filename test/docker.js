@@ -1,5 +1,6 @@
 const { exec, spawn } = require('child_process');
 const path = require('path');
+const { argv } = require('process');
 
 const ROOT_DIR = path.resolve(__dirname.replace(/test$/, ''));
 
@@ -11,7 +12,14 @@ function checkDockerInstallation() {
                 reject(new Error('Docker is not installed or not available in the PATH.'));
                 return;
             }
-            resolve(stdout.trim());
+
+            exec('docker info', (infoError, infoStdout, infoStderr) => {
+                if(infoError) {
+                    reject(new Error('Docker is not running or not accessible: ' + infoStderr.trim()));
+                    return;
+                }
+                resolve(stdout.trim());
+            });
         });
     });
 }
@@ -26,8 +34,10 @@ function buildImage(imageVariant){
     });
 }
 
-function runNodeTestDockerContainer(nodeImageTag = '16-alpine') {
+function runNodeTestDockerContainer(nodeImageTag = '18-alpine') {
     return new Promise((resolve, reject) => {
+
+        console.log(`\n=== Running tests in Docker container with Node.js ${nodeImageTag} ===`);
 
         // Define the Docker run command as an array of arguments
         const dockerArgs = [
@@ -48,7 +58,7 @@ function runNodeTestDockerContainer(nodeImageTag = '16-alpine') {
         // Handle the end of the process
         dockerProcess.on('close', (code) => {
             if(code !== 0)
-                reject(new Error(`Docker container exited with code ${code}.`));
+                reject(new Error(`Docker container exited with code ${code}. Node.js ${nodeImageTag} tests failed.`));
             else
                 resolve();
         });
@@ -61,7 +71,23 @@ function runNodeTestDockerContainer(nodeImageTag = '16-alpine') {
 }
 
 (async () => {
-    const nodeVersion = process.argv[2];
+    let versions = [];
+
+    const testAll = process.argv.includes('--all');
+    const testSpecific = process.argv.find(arg => arg.startsWith('--node='));
+
+    if(testAll) 
+        versions = ['18-alpine', '20-alpine', '22-alpine', '24-alpine'];
+    else if(testSpecific) {
+        const version = testSpecific.split('=')[1] + '-alpine';
+        versions.push(version);
+    }
+
+    if(versions.length === 0)
+        versions.push('18-alpine'); 
+
     await checkDockerInstallation();
-    await runNodeTestDockerContainer(nodeVersion);
+
+    for(const nodeVersion of versions)
+        await runNodeTestDockerContainer(nodeVersion);
 })();

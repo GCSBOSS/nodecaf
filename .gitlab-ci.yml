@@ -46,10 +46,10 @@ quality-check:
       codequality: gl-code-quality-report.json
   allow_failure: true
 
-# Performs unit testing.
-unit-test:
+# Main test with coverage
+test-node-18:
   coverage: '/Statements\s*:\s*(\d+(?:\.\d+)?\%)/'
-  image: node:16-alpine
+  image: node:18-alpine
   timeout: one minute
   stage: test
   artifacts:
@@ -59,15 +59,15 @@ unit-test:
     - npm ci .
     - npm run coverage
 
-compat-test-node-18:
-  image: node:18-alpine
+test-node-24:
+  image: node:24-alpine
   timeout: one minute
   stage: test
   script:
     - npm ci .
     - npm t
 
-compat-test-node-20:
+test-node-20:
   image: node:20-alpine
   timeout: one minute
   stage: test
@@ -75,7 +75,7 @@ compat-test-node-20:
     - npm ci .
     - npm t
 
-compat-test-node-22:
+test-node-22:
   image: node:22-alpine
   timeout: one minute
   stage: test
