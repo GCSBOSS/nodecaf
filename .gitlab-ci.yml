@@ -124,8 +124,6 @@ build-node22:
   stage: publish
   services:
     - docker:dind
-  tags:
-    - docker
   only:
     - tags
     - triggers
@@ -147,8 +145,6 @@ build-slim:
   stage: publish
   services:
     - docker:dind
-  tags:
-    - docker
   only:
     - tags
     - triggers
