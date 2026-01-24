@@ -61,6 +61,10 @@ describe('Nodecaf', () => {
             assert.throws( () => new Nodecaf({ shutdown: 3 }), /function/ );
         });
 
+        it('Should fail when http port is not a number', () => {
+            assert.throws( () => new Nodecaf({ http: '80' }), /number/ );
+        });
+
     });
 
     describe('#start', () => {
@@ -72,8 +76,16 @@ describe('Nodecaf', () => {
             await app.stop();
         });
 
-        it('Should start the http server on port sent', async () => {
+        it('Should start the http server when port set in config [conf.port]', async () => {
             const app = new Nodecaf({ conf: { port: 8765 } });
+            await app.start();
+            const { status } = await muhb.get('http://127.0.0.1:8765/');
+            assert.strictEqual(status, 404);
+            await app.stop();
+        });
+
+        it('Should start the http server when http option set [opts.http]', async () => {
+            const app = new Nodecaf({ http: 8765 });
             await app.start();
             const { status } = await muhb.get('http://127.0.0.1:8765/');
             assert.strictEqual(status, 404);

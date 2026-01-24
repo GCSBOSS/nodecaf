@@ -23,30 +23,28 @@ declare namespace Nodecaf {
     type ConfObject = {
         /** Controls logging output. */
         log?: {
-            /** 
-             * Define fields to be added to all log entries 
-             * @deprecated Setting `conf.log.defaults` is deprecated. This option will be dropped on `v0.14.0`.  
-             **/
-            defaults?: Record<string, unknown>,
             /** Only output log entries with specified `level` or above */
             level?: 'debug' | 'info' | 'warn' | 'error' | 'fatal',
             /** 
              * Only output log entries matching any `type`
-             * @deprecated Setting `conf.log.only` is deprecated. This option will be dropped on `v0.14.0`. Use external filtering instead.  
+             * @deprecated Setting `conf.log.only` is deprecated. This setting will be dropped on `v0.14.0`. Use external filtering instead.  
              **/
             only?: string | string[],
             /** 
              * Only output log entries not matching any `type` 
-             * @deprecated Setting `conf.log.except` is deprecated. This option will be dropped on `v0.14.0`. Use external filtering instead. 
+             * @deprecated Setting `conf.log.except` is deprecated. This setting will be dropped on `v0.14.0`. Use external filtering instead. 
              **/
             except?: string | string[]
         },
         /** 
          * A number of milliseconds to wait between calling `app.start` and server actually starting. Defults to zero.
-         * @deprecated Setting a start up delay is deprecated. This option will be dropped on `v0.14.0`. Use an external tool instead.   
+         * @deprecated Setting `conf.delay` is deprecated. This setting will be dropped on `v0.14.0`. Use an external tool instead.   
          */
         delay?: number,
-        /** Creates an HTTP server that will be managed on the given port. */
+        /** 
+         * Creates an HTTP server that will be managed on the given port. 
+         * @deprecated Setting `conf.port` is deprecated. This setting will be dropped on `v0.14.0`. Use `opts.http/´ instead.   
+         **/
         port?: number
     } & Record<string, unknown>
 
@@ -218,7 +216,9 @@ declare namespace Nodecaf {
         /** A function that returns a custom HTTP server to be used by the app */
         server?: (args: Nodecaf) => Server,
         /** Whether to handle websocket upgrade requests. Defaults to `false`. */
-        websocket?: boolean
+        websocket?: boolean,
+        /** Port number to create an HTTP server and bind. */
+        http?: number
     }
 
 }
