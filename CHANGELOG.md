@@ -5,6 +5,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.13.4] - 2025-01-23
+
+### Deprecated
+- `hostname` and `pid` fields from log entries
+- `conf.delay` in favor of using external tools to delay app start
+- `conf.log.only` and `conf.log.except` in favor of using external log filtering tools
+- Deprecate `conf.port` in favor of `opts.http`
+
+### Fixed
+- `res.set()` and `res.append()` to properly handle header name casing
+- `call()` in routes to always expose up to date globals in handler args
+- uncaught timeout error when client request is aborted
+
+### Added
+- slim docker image variant based on google distroless
+- docker image variant for Node v22
+- `opts.reqBodyTimeout` to set a timeout for reading a non-chunked body to completion
+- `opts.http` to setup HTTP server port without using config
+
 ## [v0.13.3] - 2023-08-22
 
 ### Deprecated
@@ -691,3 +710,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [v0.13.1]: https://gitlab.com/GCSBOSS/nodecaf/-/tags/v0.13.1
 [v0.13.2]: https://gitlab.com/GCSBOSS/nodecaf/-/tags/v0.13.2
 [v0.13.3]: https://gitlab.com/GCSBOSS/nodecaf/-/tags/v0.13.3
+[v0.13.4]: https://gitlab.com/GCSBOSS/nodecaf/-/tags/v0.13.4

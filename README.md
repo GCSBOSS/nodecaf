@@ -35,7 +35,7 @@ const routes = require('./routes');
 module.exports = () => new Nodecaf({
 
     // Optionally bind to a given port
-    conf: { port: 80 },
+    http: 80,
 
     // Load your routes.
     routes,
@@ -245,7 +245,7 @@ source code to be overwritten by your user's.
 ### Logging
 
 Nodecaf logs events to stdout by default where each line of the ouput is a JSON object.
-The log entries will have some default predefined values like pid, hostname etc...
+The log entries will have some default predefined values like 'app', 'time' etc...
 In your route handlers, use the functions available in the `log` object as follows:
 
 ```js
@@ -436,8 +436,7 @@ get('/my/ws/endpoint', async ({ websocket }) => {
 
 | Property | Type | Description | Default |
 |----------|------|-------------|---------|
-| `app.conf.delay` | Integer | Milliseconds to wait before actually starting the app | `0` |
-| `app.conf.port` | Integer | Port for the web server to listen (also exposed as user conf) | `80` or `443` |
+| `app.http` | Integer | Port for the web server to listen | `80` |
 | `app.conf.cookie.secret` | String | A secure random string to be used for signing cookies | none |
 | `opts.name` | String | Manually set application name used in various places | `package.json`s |
 | `opts.version` | String | Manually set application version | `package.json`s |
