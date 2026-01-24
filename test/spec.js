@@ -1330,14 +1330,6 @@ describe('Logging', () => {
         assert(!log.debug({ type: 'b' }));
     });
 
-    it('Should not log filtered types [except]', function(){
-        const app = new Nodecaf({ conf: { log: { except: [ 'a', 'c' ] } } });
-        const log = app.log;
-        assert(!log.debug({ type: 'a' }));
-        assert(log.debug({ type: 'b' }));
-        assert(!log.debug({ type: 'c' }));
-    });
-
     it('Should generate a capture stack trace for errors', function(){
         const entry = log.error({ err: new Error('Test Error') });
 

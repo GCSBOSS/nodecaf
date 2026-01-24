@@ -30,11 +30,6 @@ declare namespace Nodecaf {
              * @deprecated Setting `conf.log.only` is deprecated. This setting will be dropped on `v0.14.0`. Use external filtering instead.  
              **/
             only?: string | string[],
-            /** 
-             * Only output log entries not matching any `type` 
-             * @deprecated Setting `conf.log.except` is deprecated. This setting will be dropped on `v0.14.0`. Use external filtering instead. 
-             **/
-            except?: string | string[]
         },
         /** 
          * A number of milliseconds to wait between calling `app.start` and server actually starting. Defults to zero.
