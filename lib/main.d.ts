@@ -25,12 +25,7 @@ declare namespace Nodecaf {
         log?: {
             /** Only output log entries with specified `level` or above */
             level?: 'debug' | 'info' | 'warn' | 'error' | 'fatal',
-        },
-        /** 
-         * Creates an HTTP server that will be managed on the given port. 
-         * @deprecated Setting `conf.port` is deprecated. This setting will be dropped on `v0.14.0`. Use `opts.http/´ instead.   
-         **/
-        port?: number
+        }
     } & Record<string, unknown>
 
     type RunOptions = {
