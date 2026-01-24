@@ -11,8 +11,8 @@ RUN cp -r ./node_modules /dist/
 
 FROM mhart/alpine-node:slim-16
 
-ENV NODE_ENV production
-ENV APP_PATH /app
+ENV NODE_ENV=production
+ENV APP_PATH=/app
 
 WORKDIR /app
 

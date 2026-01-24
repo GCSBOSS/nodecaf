@@ -11,8 +11,8 @@ RUN cp -r ./node_modules /dist/
 
 FROM gcr.io/distroless/nodejs22-debian12
 
-ENV NODE_ENV production
-ENV APP_PATH /app
+ENV NODE_ENV=production
+ENV APP_PATH=/app
 
 WORKDIR /app
 
