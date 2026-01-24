@@ -27,11 +27,6 @@ declare namespace Nodecaf {
             level?: 'debug' | 'info' | 'warn' | 'error' | 'fatal',
         },
         /** 
-         * A number of milliseconds to wait between calling `app.start` and server actually starting. Defults to zero.
-         * @deprecated Setting `conf.delay` is deprecated. This setting will be dropped on `v0.14.0`. Use an external tool instead.   
-         */
-        delay?: number,
-        /** 
          * Creates an HTTP server that will be managed on the given port. 
          * @deprecated Setting `conf.port` is deprecated. This setting will be dropped on `v0.14.0`. Use `opts.http/´ instead.   
          **/

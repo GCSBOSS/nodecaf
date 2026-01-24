@@ -1868,25 +1868,6 @@ describe('Other Features', function(){
         await app.stop();
     });
 
-    it('Should delay server initialization by given milliseconds [conf.delay]', async function(){
-        const app = new Nodecaf({
-            conf: { delay: 1500, port: 80 },
-            routes: [
-                Nodecaf.get('/foobar', ({ res }) => res.end())
-            ]
-        });
-        const ps = app.start();
-        await new Promise(done => setTimeout(done, 400));
-        await assert.rejects(fetch(LOCAL_HOST + '/foobar', { 
-            signal: AbortSignal.timeout(200),
-            headers: { 'Connection': 'close' } 
-        }));
-        await ps;
-        const { status } = await fetch(LOCAL_HOST + '/foobar', { headers: { 'Connection': 'close' } });
-        assert.strictEqual(status, 200);
-        await app.stop();
-    });
-
     it('Should fail when passing non-function server builders [conf.server]', () => {
         assert.throws(() => {
             new Nodecaf({ server: 'not-a-function' });
