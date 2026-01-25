@@ -74,8 +74,12 @@ describe('Nodecaf', () => {
             const { status } = await fetch('http://127.0.0.1:8765/', {
                 headers: { 'Connection': 'close' }
             });
+            console.log('status:', status);
             assert.strictEqual(status, 404);
+            console.log('before stop')
             await app.stop();
+            console.log('after stop')
+
         });
 
         it('Should trigger before start event', async () => {
@@ -1046,31 +1050,41 @@ describe('Body Parsing', () => {
 
 describe('Assertions', () => {
 
+    it('Should not respond unless exception escapes the route', async () => {
+        const app = new Nodecaf({
+            http: 80,
+            routes: [
+                Nodecaf.get('/foo', function({ res }){
+                    try{
+                        res.badRequest(true, 'Bad Request');
+                    } catch(e){}
+                    res.end('All good');
+                })
+            ]
+        });
+        await app.start();
+        console.log('Fetching /foo');
+        const res = await fetch(LOCAL_HOST + '/foo', { headers: { 'Connection': 'close' } });
+        console.log('Fetched /foo');
+        const body = await res.text();
+        console.log('Body received');
+        assert.strictEqual(body, 'All good');
+        assert.strictEqual(res.status, 200);
+        console.log('Before close');
+        await app.stop();
+        console.log('After close');
+    });
+
     it('Should throw when condition evaluates to true', async () => {
         const app = new Nodecaf({
             http: 80,
             routes: [
                 Nodecaf.get('/foo', function({ res }){
                     assert.throws( () => res.badRequest(true, Buffer.from('abc')) );
-                    res.end();
-                }),
-                Nodecaf.get('/foo2', function({ res }){
                     assert.throws( () => res.unauthorized(true) );
-                    res.end();
-                }),
-                Nodecaf.get('/foo3', function({ res }){
                     assert.throws( () => res.forbidden(true) );
-                    res.end();
-                }),
-                Nodecaf.get('/foo4', function({ res }){
                     assert.throws( () => res.notFound(true) );
-                    res.end();
-                }),
-                Nodecaf.get('/foo5', function({ res }){
                     assert.throws( () => res.conflict(true) );
-                    res.end();
-                }),
-                Nodecaf.get('/foo6', function({ res }){
                     assert.throws( () => res.gone(true) );
                     res.end();
                 })
@@ -1080,27 +1094,7 @@ describe('Assertions', () => {
         
         const res = await fetch(LOCAL_HOST + '/foo', { headers: { 'Connection': 'close' } });
         await res.text();
-        assert.strictEqual(res.status, 400);
-
-        const res2 = await fetch(LOCAL_HOST + '/foo2', { headers: { 'Connection': 'close' } });
-        await res2.text();
-        assert.strictEqual(res2.status, 401);
-        
-        const res3 = await fetch(LOCAL_HOST + '/foo3', { headers: { 'Connection': 'close' } });
-        await res3.text();
-        assert.strictEqual(res3.status, 403);
-        
-        const res4 = await fetch(LOCAL_HOST + '/foo4', { headers: { 'Connection': 'close' } });
-        await res4.text();
-        assert.strictEqual(res4.status, 404);
-        
-        const res5 = await fetch(LOCAL_HOST + '/foo5', { headers: { 'Connection': 'close' } });
-        await res5.text();
-        assert.strictEqual(res5.status, 409);
-        
-        const res6 = await fetch(LOCAL_HOST + '/foo6', { headers: { 'Connection': 'close' } });
-        await res6.text();
-        assert.strictEqual(res6.status, 410);
+        assert.strictEqual(res.status, 200);
 
         await app.stop();
     });
