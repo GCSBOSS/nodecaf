@@ -74,12 +74,8 @@ describe('Nodecaf', () => {
             const { status } = await fetch('http://127.0.0.1:8765/', {
                 headers: { 'Connection': 'close' }
             });
-            console.log('status:', status);
             assert.strictEqual(status, 404);
-            console.log('before stop')
             await app.stop();
-            console.log('after stop')
-
         });
 
         it('Should trigger before start event', async () => {
@@ -273,7 +269,8 @@ describe('Nodecaf', () => {
                 routes: [
                     Nodecaf.post('/raw', async ({ body, res }) => {
                         const input = await body.raw();
-                        assert.strictEqual(input.toString(), '12345');
+                        const decoder = new TextDecoder();
+                        assert.strictEqual(decoder.decode(input), '12345');
                         res.end();
                     }),
 
@@ -318,9 +315,18 @@ describe('Nodecaf', () => {
         it('Should allow streaming data in', async () => {
             const app = new Nodecaf({
                 routes: [
-                    Nodecaf.post('/stream', ({ body, res }) => {
-                        body.on('end', () => res.status(201).end());
-                        body.resume();
+                    Nodecaf.post('/stream', async ({ res, body }) => {
+                        const stream = await body.stream();
+                        const reader = stream.getReader();
+                        let received = '';
+                        while(true){
+                            const { done, value } = await reader.read();
+                            if(done)
+                                break;
+                            received += value;
+                        }
+                        if(received === 'foobar')
+                            res.status(201).end();
                     })
                 ]
             });
@@ -727,7 +733,7 @@ describe('Body Parsing', () => {
             autoParseBody: true,
             routes: [
                 Nodecaf.post('/foobar', ({ body, res }) => {
-                    assert.strictEqual(body, undefined);
+                    assert.strictEqual(body.length, 0);
                     res.end();
                 })
             ]
@@ -838,7 +844,7 @@ describe('Body Parsing', () => {
             autoParseBody: true,
             routes: [
                 Nodecaf.post('/foobar', ({ body, res }) => {
-                    assert(body instanceof Buffer);
+                    assert(body instanceof Uint8Array);
                     res.end();
                 })
             ]
@@ -882,7 +888,7 @@ describe('Body Parsing', () => {
             http: 80,
             routes: [
                 Nodecaf.post('/foobar', ({ body, res }) => {
-                    assert.strictEqual(body.constructor.name, 'IncomingMessage');
+                    assert.strictEqual(body.constructor.name, 'Body');
                     res.end();
                 })
             ]
@@ -929,8 +935,7 @@ describe('Body Parsing', () => {
             http: 80,
             routes: [
                 Nodecaf.post('/chunked', async ({ body, res }) => {
-                    const input = await body.raw();
-                    const str = input.toString();
+                    const str = await body.text();
                     assert.strictEqual(str, '12345');
                     res.status(201).end();
                 })
@@ -1063,16 +1068,11 @@ describe('Assertions', () => {
             ]
         });
         await app.start();
-        console.log('Fetching /foo');
         const res = await fetch(LOCAL_HOST + '/foo', { headers: { 'Connection': 'close' } });
-        console.log('Fetched /foo');
         const body = await res.text();
-        console.log('Body received');
         assert.strictEqual(body, 'All good');
         assert.strictEqual(res.status, 200);
-        console.log('Before close');
         await app.stop();
-        console.log('After close');
     });
 
     it('Should throw when condition evaluates to true', async () => {

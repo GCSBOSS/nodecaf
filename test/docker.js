@@ -58,7 +58,7 @@ function runNodeTestDockerContainer(nodeImageTag = '18-alpine') {
         // Handle the end of the process
         dockerProcess.on('close', (code) => {
             if(code !== 0)
-                reject(new Error(`Docker container exited with code ${code}. Node.js ${nodeImageTag} tests failed.`));
+                reject(new Error(`Docker container exited with error. Node.js ${nodeImageTag} tests failed.`));
             else
                 resolve();
         });
