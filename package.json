@@ -6,6 +6,7 @@
     "types": "./lib/main.d.ts",
     "scripts": {
         "test": "npx mocha -b --no-diff test/spec.js",
+        "test-full": "node test/full.js",
         "test-docker": "node test/docker.js --all",
         "lint": "npx eslint lib",
         "coverage": "npx nyc -r html -r text-summary mocha -b --no-diff --no-warnings test/spec.js",
@@ -50,6 +51,7 @@
         "eslint-plugin-mocha": "^11.2.0",
         "globals": "^17.1.0",
         "mocha": "^11.7.5",
+        "split-exec": "^0.0.2",
         "toml": "^3.0.0"
     }
 }

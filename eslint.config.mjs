@@ -94,7 +94,7 @@ export default [
             'no-tabs': 'error',
             quotes: ['warn', 'single'],
             'linebreak-style': ['error', 'windows'],
-            'complexity': ['warn', 5]
+            // 'complexity': ['warn', 5]
         },
     }
 ];

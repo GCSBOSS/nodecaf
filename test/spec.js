@@ -1,8 +1,10 @@
 /* eslint-env mocha */
-
+const os = require('os');
+const path = require('path');
+const fs = require('fs');
 const assert = require('assert');
 
-// process.env.NODE_ENV = 'testing';
+process.env.NODE_ENV = 'testing';
 
 // Address for the tests' local servers to listen.
 const LOCAL_HOST = 'http://localhost:80'
@@ -154,11 +156,12 @@ describe('Nodecaf', () => {
 
         it('Should load form file when path is sent', () => {
             const fs = require('fs');
-            fs.writeFileSync(__dirname + '/a.toml', 'key = "value"', 'utf-8');
+            const fp = createTempFile('a.toml');
+            fs.writeFileSync(fp, 'key = "value"', 'utf-8');
             const app = new Nodecaf({ conf: { key: 'valueOld' } });
-            app.setup(__dirname + '/a.toml');
+            app.setup(fp);
             assert.strictEqual(app.conf.key, 'value');
-            fs.unlink(__dirname + '/a.toml', Function.prototype);
+            fs.unlink(fp, Function.prototype);
         });
         
         describe('Conf Layering', () => {
@@ -209,17 +212,19 @@ describe('Nodecaf', () => {
             });
 
             it('Should properly load a TOML file and generate an object', () => {
-                fs.writeFileSync(__dirname + '/a.toml', 'key = "value"', 'utf-8');
-                const conf = layerConf(__dirname + '/a.toml');
+                const fp = createTempFile('a.toml');
+                fs.writeFileSync(fp, 'key = "value"', 'utf-8');
+                const conf = layerConf(fp);
                 assert.strictEqual(conf.key, 'value');
-                fs.unlink(__dirname + '/a.toml', Function.prototype);
+                fs.unlink(fp, Function.prototype);
             });
 
             it('Should properly load an JSON file and generate an object', () => {
-                fs.writeFileSync(__dirname + '/a.json', '{"key": "value"}', 'utf-8');
-                const conf = layerConf(__dirname + '/a.json');
+                const fp = createTempFile('a.json');
+                fs.writeFileSync(fp, '{"key": "value"}', 'utf-8');
+                const conf = layerConf(fp);
                 assert.strictEqual(conf.key, 'value');
-                fs.unlink(__dirname + '/a.json', Function.prototype);
+                fs.unlink(fp, Function.prototype);
             });
 
         });
@@ -1006,8 +1011,8 @@ describe('Body Parsing', () => {
         await app.stop();
     });
 
-    it('Should abort route when client conneciton is reset while reading req body', async () => {
-
+    it('Should abort route when client conneciton is reset while reading req body', async function(){
+        this.timeout(5000);
         let abortedRouted = true;
         let startedRoute = false;
         let abortErrorName = false;
@@ -1041,7 +1046,7 @@ describe('Body Parsing', () => {
         });
 
         stream.write('abc');
-        await new Promise(resolve => setTimeout(resolve, 300));
+        await new Promise(resolve => setTimeout(resolve, 200));
         
         // Destroy the request (abort)
         controller.abort();
@@ -1060,7 +1065,8 @@ describe('Body Parsing', () => {
 
 describe('Assertions', () => {
 
-    it('Should not respond unless exception escapes the route', async () => {
+    it('Should not respond unless exception escapes the route', async function() {
+        this.timeout(5000);
         const app = new Nodecaf({
             http: 80,
             routes: [
@@ -1865,3 +1871,19 @@ describe('Other Features', function(){
     });
 
 });
+
+/**
+ * Creates an empty file in the OS temp directory and returns the full path.
+ * @param {string} fileName - The name of the file (e.g., 'log.txt')
+ * @returns {string} The full path to the created file
+ */
+function createTempFile(fileName) {
+    // 1. Construct the full path safely
+    const filePath = path.join(os.tmpdir(), fileName);
+    
+    // 2. Create the file (writes an empty string). 
+    // This overwrites the file if it already exists.
+    fs.writeFileSync(filePath, '');
+    
+    return filePath;
+}

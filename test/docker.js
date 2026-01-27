@@ -1,6 +1,6 @@
 const { exec } = require('child_process');
 const path = require('path');
-const { splitRun } = require('./split-run');
+const { splitExec } = require('split-exec');
 
 const ROOT_DIR = path.resolve(__dirname.replace(/test$/, ''));
 
@@ -34,7 +34,7 @@ function getDockerCommandConfig(nodeImageTag = '18-alpine') {
             '-e', 'FORCE_COLOR=3',
             'node:' + nodeImageTag,
             '/bin/sh', '-c',
-            'npm i && npm t'
+            '"npm i && npm t"'
         ]
     };
 }
@@ -56,7 +56,7 @@ function getDockerCommandConfig(nodeImageTag = '18-alpine') {
         await checkDockerInstallation();
         const commands = versions.map(v => getDockerCommandConfig(v));
 
-        splitRun(commands);
+        splitExec(commands);
     }
     catch(err) {
         console.log(err.message);
