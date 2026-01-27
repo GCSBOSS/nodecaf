@@ -2,7 +2,7 @@
 
 const assert = require('assert');
 
-process.env.NODE_ENV = 'testing';
+// process.env.NODE_ENV = 'testing';
 
 // Address for the tests' local servers to listen.
 const LOCAL_HOST = 'http://localhost:80'
@@ -28,7 +28,7 @@ describe('Nodecaf', () => {
             const app = new Nodecaf({
                 http: 80,
                 routes: [
-                    Nodecaf.post('/foo', ({ res }) => res.status(500).end())
+                    Nodecaf.post('/foo', ({ res }) => res.status(200).end())
                 ]
             });
             await app.start();
@@ -36,7 +36,7 @@ describe('Nodecaf', () => {
                 method: 'POST',
                 headers: { 'Connection': 'close' }
             });
-            assert.strictEqual(status, 500);
+            assert.strictEqual(status, 200);
             await app.stop();
         });
 
@@ -231,7 +231,7 @@ describe('Nodecaf', () => {
         it('Should trigger route without http server', async () => {
             const app = new Nodecaf({
                 routes: [
-                    Nodecaf.post('/foo', ({ res }) => res.status(202).end('Test')),
+                    Nodecaf.post('/foo', ({ res }) => res.status(202).text('Test')),
                     Nodecaf.post('/nores', ({ res }) => res.status(204).end())
                 ]
             });
@@ -239,7 +239,7 @@ describe('Nodecaf', () => {
             await app.trigger('post', '/nores');
             const res = await app.trigger('post', '/foo');
             assert.strictEqual(res.status, 202);
-            assert.strictEqual(res.body.toString(), 'Test');
+            assert.strictEqual(res.body, 'Test');
             await app.stop();
         });
 
@@ -439,13 +439,13 @@ describe('Handlers', () => {
         const app = new Nodecaf({
             routes: [
                 // All should be only run when non-matching regardless of order it was defined
-                Nodecaf.all(({ res, path }) => res.end(path)),
-                Nodecaf.post('/foo/:bar', ({ res }) => res.end('foo'))
+                Nodecaf.all(({ res, path }) => res.text(path)),
+                Nodecaf.post('/foo/:bar', ({ res }) => res.text('foo'))
             ]
         });
         await app.start();
-        assert.strictEqual((await app.trigger('post', '/foo/bar')).body.toString(), 'foo');
-        assert.strictEqual((await app.trigger('get', '/abc')).body.toString(), '/abc');
+        assert.strictEqual((await app.trigger('post', '/foo/bar')).body, 'foo');
+        assert.strictEqual((await app.trigger('get', '/abc')).body, '/abc');
         await app.stop();
     });
 
@@ -535,9 +535,11 @@ describe('Handlers', () => {
         const app = new Nodecaf({
             http: 80,
             routes: [
-                Nodecaf.get('/foo', function({ res }){
-                    const s = require('fs').createReadStream('./package.json');
-                    s.pipe(res);
+                Nodecaf.get('/foo', async function({ res }){
+                    const s = await res.stream();
+                    const rs = require('fs').createReadStream('./package.json');
+                    const wrs = Readable.toWeb(rs);
+                    await wrs.pipeTo(s);
                 })
             ]
         });
@@ -1044,8 +1046,11 @@ describe('Body Parsing', () => {
         // Destroy the request (abort)
         controller.abort();
 
+        console.log('got here?')
         await p;
+        console.log('after promise?')
         await app.stop();
+        console.log('after stop?')
         assert(abortedRouted);
         assert(startedRoute);
         assert.strictEqual(abortErrorName, 'AbortError');

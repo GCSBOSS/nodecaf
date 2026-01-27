@@ -1,9 +1,8 @@
-const { exec, spawn } = require('child_process');
+const { exec } = require('child_process');
 const path = require('path');
-const { argv } = require('process');
+const { splitRun } = require('./split-run');
 
 const ROOT_DIR = path.resolve(__dirname.replace(/test$/, ''));
-
 
 function checkDockerInstallation() {
     return new Promise((resolve, reject) => {
@@ -13,7 +12,7 @@ function checkDockerInstallation() {
                 return;
             }
 
-            exec('docker info', (infoError, infoStdout, infoStderr) => {
+            exec('docker info', (infoError, _infoStdout, infoStderr) => {
                 if(infoError) {
                     reject(new Error('Docker is not running or not accessible: ' + infoStderr.trim()));
                     return;
@@ -24,23 +23,11 @@ function checkDockerInstallation() {
     });
 }
 
-function buildImage(imageVariant){
-    return new Promise((resolve, reject) => {
-        exec('docker build -q -f Dockerfile .' + imageVariant, (error, stdout, stderr) => {
-            if(error)
-                return reject(stdout + stderr);
-            resolve(stdout.trim());
-        });
-    });
-}
-
-function runNodeTestDockerContainer(nodeImageTag = '18-alpine') {
-    return new Promise((resolve, reject) => {
-
-        console.log(`\n=== Running tests in Docker container with Node.js ${nodeImageTag} ===`);
-
-        // Define the Docker run command as an array of arguments
-        const dockerArgs = [
+function getDockerCommandConfig(nodeImageTag = '18-alpine') {
+    return {
+        cmd: 'docker',
+        title: `Node ${nodeImageTag}`,
+        args: [
             'run', '--rm',
             '-v', `${ROOT_DIR}:/app`,
             '-w', '/app',
@@ -48,46 +35,31 @@ function runNodeTestDockerContainer(nodeImageTag = '18-alpine') {
             'node:' + nodeImageTag,
             '/bin/sh', '-c',
             'npm i && npm t'
-        ];
-
-        // Spawn the Docker process
-        const dockerProcess = spawn('docker', dockerArgs, {
-            stdio: 'inherit'
-        });
-
-        // Handle the end of the process
-        dockerProcess.on('close', (code) => {
-            if(code !== 0)
-                reject(new Error(`Docker container exited with error. Node.js ${nodeImageTag} tests failed.`));
-            else
-                resolve();
-        });
-
-        // Handle errors during spawn
-        dockerProcess.on('error', (error) => {
-            reject(`Failed to start Docker process: ${error.message}`);
-        });
-    });
+        ]
+    };
 }
 
 (async () => {
-    let versions = [];
+    try{
+        let versions = [];
+        const testAll = process.argv.includes('--all');
+        const testSpecific = process.argv.find(arg => arg.startsWith('--node='));
 
-    const testAll = process.argv.includes('--all');
-    const testSpecific = process.argv.find(arg => arg.startsWith('--node='));
+        if(testAll) 
+            versions = ['18-alpine', '20-alpine', '22-alpine', '24-alpine'];
+        else if(testSpecific) 
+            versions.push(testSpecific.split('=')[1] + '-alpine');
+        
+        if(versions.length === 0) 
+            versions.push('18-alpine');
 
-    if(testAll) 
-        versions = ['18-alpine', '20-alpine', '22-alpine', '24-alpine'];
-    else if(testSpecific) {
-        const version = testSpecific.split('=')[1] + '-alpine';
-        versions.push(version);
+        await checkDockerInstallation();
+        const commands = versions.map(v => getDockerCommandConfig(v));
+
+        splitRun(commands);
     }
-
-    if(versions.length === 0)
-        versions.push('18-alpine'); 
-
-    await checkDockerInstallation();
-
-    for(const nodeVersion of versions)
-        await runNodeTestDockerContainer(nodeVersion);
+    catch(err) {
+        console.log(err.message);
+        process.exit(1);
+    }
 })();
