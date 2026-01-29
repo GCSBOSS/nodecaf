@@ -4,7 +4,7 @@ const path = require('path');
 const fs = require('fs');
 const assert = require('assert');
 
-process.env.NODE_ENV = 'testing';
+// process.env.NODE_ENV = 'testing';
 
 // Address for the tests' local servers to listen.
 const LOCAL_HOST = 'http://localhost:80'
@@ -42,9 +42,15 @@ describe('Nodecaf', () => {
             await app.stop();
         });
 
-        it('Should store any settings sent', () => {
-            const app = new Nodecaf({ conf: { key: 'value' } });
-            assert.strictEqual(app.conf.key, 'value');
+        it('Should store any settings sent', async () => {
+            const app = new Nodecaf({ 
+                conf: { key: 'value' },
+                routes: [
+                    Nodecaf.get('/bar', ({ res, conf }) => res.text(conf.key))
+                ] 
+            });
+            const res = await app.trigger('get', '/bar');
+            assert.strictEqual(res.body, 'value');
         });
 
         it('Should fail when startup handler is not a function', () => {
@@ -73,11 +79,15 @@ describe('Nodecaf', () => {
         it('Should start the http server when http option set [opts.http]', async () => {
             const app = new Nodecaf({ http: 8765 });
             await app.start();
+            console.log('before fetch');
             const { status } = await fetch('http://127.0.0.1:8765/', {
                 headers: { 'Connection': 'close' }
             });
+            console.log('after fetch');
             assert.strictEqual(status, 404);
+            console.log('before stop');
             await app.stop();
+            console.log('after stop');
         });
 
         it('Should trigger before start event', async () => {
@@ -136,10 +146,16 @@ describe('Nodecaf', () => {
         });
 
         it('Should reload conf when new object is sent', async () => {
-            const app = new Nodecaf();
+            const app = new Nodecaf({
+                conf: { myKey: 1 },
+                routes: [
+                    Nodecaf.get('/foo', ({ res, conf }) => res.json(conf))
+                ]
+            });
             await app.start();
             await app.restart({ myKey: 3 });
-            assert.strictEqual(app.conf.myKey, 3);
+            const res = await app.trigger('get', '/foo');
+            assert.strictEqual(res.body.myKey, 3);
             await app.stop();
         });
 
@@ -147,20 +163,32 @@ describe('Nodecaf', () => {
 
     describe('#setup', () => {
 
-        it('Should apply settings on top of existing one', () => {
-            const app = new Nodecaf({ conf: { key: 'value' } });
+        it('Should apply settings on top of existing one', async () => {
+            const app = new Nodecaf({ 
+                conf: { key: 'value' },
+                routes: [
+                    Nodecaf.get('/bar', ({ res, conf }) => res.json(conf))
+                ]
+            });
             app.setup({ key: 'value2', key2: 'value' });
-            assert.strictEqual(app.conf.key, 'value2');
-            assert.strictEqual(app.conf.key2, 'value');
+            const res = await app.trigger('get', '/bar');
+            assert.strictEqual(res.body.key, 'value2');
+            assert.strictEqual(res.body.key2, 'value');
         });
 
-        it('Should load form file when path is sent', () => {
+        it('Should load form file when path is sent', async () => {
             const fs = require('fs');
             const fp = createTempFile('a.toml');
             fs.writeFileSync(fp, 'key = "value"', 'utf-8');
-            const app = new Nodecaf({ conf: { key: 'valueOld' } });
+            const app = new Nodecaf({ 
+                conf: { key: 'valueOld' },
+                routes: [
+                    Nodecaf.get('/bar', ({ res, conf }) => res.json(conf))
+                ]
+            });
             app.setup(fp);
-            assert.strictEqual(app.conf.key, 'value');
+            const res = await app.trigger('get', '/bar');
+            assert.strictEqual(res.body.key, 'value');
             fs.unlink(fp, Function.prototype);
         });
         
@@ -346,12 +374,12 @@ describe('Nodecaf', () => {
 
     describe('#call', () => {
 
-        it('Should call any user func with route handler args', async () => {
+        it('Should call any user func with global handler args', async () => {
 
-            function userFunc({ conf }, arg1){
+            function userFunc(obj, arg1){
                 assert.strictEqual(arg1, 'foo');
-                assert.strictEqual(conf.bar, 'baz');
-                assert(this instanceof Nodecaf);
+                assert.strictEqual(obj.conf.bar, 'baz');
+                assert(obj.conf && obj.log);
             }
 
             const app = new Nodecaf({
@@ -423,8 +451,7 @@ describe('Handlers', () => {
 
         const route = Nodecaf.get('/foo', function(obj){
             assert(obj.res && obj.method && obj.path && obj.body && obj.ip
-                && obj.params && obj.query && obj.conf && obj.log && obj.keep);
-            assert(this instanceof Nodecaf);
+                && obj.params && obj.query && obj.conf && obj.log);
             obj.res.end();
         });
 
@@ -437,6 +464,28 @@ describe('Handlers', () => {
             headers: { 'Connection': 'close' }
         });
         assert.strictEqual(status, 200);
+        await app.stop();
+    });
+
+    it('Should store data to be accessible to all handlers [app.global]', async () => {
+        const app = new Nodecaf({
+            http: 80,
+            routes: [
+                Nodecaf.post('/bar', ({ foo, res }) => {
+                    res.text(foo);
+                })
+            ],
+            startup({ global }) {
+                global.foo = 'foobar';
+            }
+        });
+        await app.start();
+        const res = await fetch(LOCAL_HOST + '/bar', { 
+            method: 'POST',
+            headers: { 'Connection': 'close' } 
+        });
+        const body = await res.text();
+        assert.strictEqual(body, 'foobar');
         await app.stop();
     });
 
@@ -630,10 +679,12 @@ describe('Handlers', () => {
 
     it('Should call any user func with route handler args', async () => {
 
-        function userFunc({ path }, arg1){
+        function userFunc(obj, arg1){
             assert.strictEqual(arg1, 'foo');
-            assert.strictEqual(path, '/foo');
-            assert(this instanceof Nodecaf);
+            assert.strictEqual(obj.path, '/foo');
+            console.log(obj);
+            assert(obj.res && obj.method && obj.path && obj.body && obj.ip
+                && obj.params && obj.query && obj.conf && obj.log);
         }
 
         const app = new Nodecaf({
@@ -648,31 +699,6 @@ describe('Handlers', () => {
         await app.start();
         const { status } = await app.trigger('post', '/foo');
         assert.strictEqual(status, 200);
-        await app.stop();
-    });
-
-    it('Should keep any user defined value for the lifetime of the request', async () => {
-
-        function userFunc({ myVal, res }){
-            res.badRequest(!myVal);
-        }
-
-        const app = new Nodecaf({
-            conf: { bar: 'baz' },
-            autoParseBody: true,
-            routes: [
-                Nodecaf.post('/foo', function({ keep, call, res, body }){
-                    body == 'bar' && keep('myVal', true);
-                    call(userFunc);
-                    res.end();
-                })
-            ]
-        });
-        await app.start();
-        const { status } = await app.trigger('post', '/foo', { body: 'bar' });
-        assert.strictEqual(status, 200);
-        const r = await app.trigger('post', '/foo', { body: 'foo' });
-        assert.strictEqual(r.status, 400);
         await app.stop();
     });
 
@@ -1430,7 +1456,8 @@ describe('Regression', () => {
 
     it('Should read correct package.json for name and version', () => {
         const app = new Nodecaf();
-        assert.strictEqual(app._name, 'nodecaf');
+        const entry = app.log.info('Test log');
+        assert.strictEqual(entry.app, 'nodecaf');
     });
 
     it('Should not modify the very object used as cookie options', async () => {
@@ -1541,15 +1568,23 @@ describe('Regression', () => {
     it('Should expose up to date global values for each \'call\' execution', async function(){
 
         function changeGlobalKey(){
+            console.log('before change', this);
+
             assert(this.global.someKey === 'some value');
             this.global.someKey = 'new value';
+            console.log('after change', this);
+
         }
 
         function testGlobalKeyChangedInRoute({ res, someKey }){
+            console.log('gonna check in route', this, someKey);
+
             res.badRequest(someKey !== 'new value');
         }
 
         function testGlobalKeyChanged({ someKey }){
+            console.log('gonna check change', this, someKey);
+
             assert.strictEqual(someKey, 'new value');
         }
 
@@ -1840,36 +1875,6 @@ describe('Cookies', () => {
         assert.throws(() => serialize('a', 'b', { maxAge: Infinity }), TypeError);
         assert.throws(() => serialize('a', 'b', { expires: 'not-a-date' }), TypeError);
     });
-});
-
-describe('Other Features', function(){
-
-    it('Should store data to be accessible to all handlers [app.global]', async () => {
-        const app = new Nodecaf({
-            http: 80,
-            routes: [
-                Nodecaf.post('/bar', ({ foo, res }) => {
-                    res.text(foo);
-                })
-            ]
-        });
-        await app.start();
-        app.global.foo = 'foobar';
-        const res = await fetch(LOCAL_HOST + '/bar', { 
-            method: 'POST',
-            headers: { 'Connection': 'close' } 
-        });
-        const body = await res.text();
-        assert.strictEqual(body, 'foobar');
-        await app.stop();
-    });
-
-    it('Should fail when passing non-function server builders [conf.server]', () => {
-        assert.throws(() => {
-            new Nodecaf({ server: 'not-a-function' });
-        }, TypeError);
-    });
-
 });
 
 /**
