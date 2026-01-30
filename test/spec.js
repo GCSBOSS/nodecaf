@@ -351,8 +351,9 @@ describe('Nodecaf', () => {
                         let received = '';
                         while(true){
                             const { done, value } = await reader.read();
+                            console.log(value, typeof value);
                             if(done)
-                            	break;
+                                break;
                             received += decoder.decode(value, { stream: true });
                         }
 
@@ -365,7 +366,7 @@ describe('Nodecaf', () => {
             });
             await app.start();
             const body = Readable.from('foobar');
-            const r = await app.trigger('post', '/stream', { body });
+            const r = await app.trigger('post', '/stream/', { body });
             assert.strictEqual(r.status, 201);
             await app.stop();
         });
@@ -436,7 +437,7 @@ describe('Handlers', () => {
         assert.throws(() => Nodecaf.post('/foobar', undefined), TypeError);
         assert.throws(() => new Nodecaf({
             routes: [
-                { method: 'post' }
+                { method: 'post', path: '/foobaz'}
             ]
         }), /function/);
         assert.throws(() => new Nodecaf({
