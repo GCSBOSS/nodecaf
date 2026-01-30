@@ -1,19 +1,23 @@
 import globals from 'globals';
 import mochaPlugin from 'eslint-plugin-mocha';
+import stylistic from '@stylistic/eslint-plugin'
 
 export default [
     mochaPlugin.configs.recommended,
-    // mochaPlugin.configs.flat.recommended,
     {
         languageOptions: {
             globals: {
                 ...globals.node,
             },
         },
+        plugins: {
+            '@stylistic': stylistic
+        },
         rules: {
             'mocha/no-mocha-arrows': 'off',
             'mocha/max-top-level-suites': 'off',
             'mocha/no-setup-in-describe': 'off',
+            '@stylistic/nonblock-statement-body-position': ['error', 'below'],
             'prefer-const': 'warn',
             'no-var': 'warn',
             'no-undef': ['error', {

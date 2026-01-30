@@ -45,6 +45,7 @@
         "ws": "^8.19.0"
     },
     "devDependencies": {
+        "@stylistic/eslint-plugin": "^5.7.1",
         "blessed": "^0.1.81",
         "eslint": "^9.39.2",
         "eslint-formatter-gitlab": "^7.0.1",
