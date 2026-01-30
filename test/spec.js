@@ -4,7 +4,7 @@ const path = require('path');
 const fs = require('fs');
 const assert = require('assert');
 
-// process.env.NODE_ENV = 'testing';
+process.env.NODE_ENV = 'testing';
 
 // Address for the tests' local servers to listen.
 const LOCAL_HOST = 'http://localhost:80'
@@ -46,7 +46,7 @@ describe('Nodecaf', () => {
             const app = new Nodecaf({ 
                 conf: { key: 'value' },
                 routes: [
-                    Nodecaf.get('/bar', ({ res, conf }) => res.text(conf.key))
+                    Nodecaf.get('/bar', ({ res, conf }) => { res.text(conf.key) })
                 ] 
             });
             const res = await app.trigger('get', '/bar');
@@ -79,15 +79,11 @@ describe('Nodecaf', () => {
         it('Should start the http server when http option set [opts.http]', async () => {
             const app = new Nodecaf({ http: 8765 });
             await app.start();
-            console.log('before fetch');
             const { status } = await fetch('http://127.0.0.1:8765/', {
                 headers: { 'Connection': 'close' }
             });
-            console.log('after fetch');
             assert.strictEqual(status, 404);
-            console.log('before stop');
             await app.stop();
-            console.log('after stop');
         });
 
         it('Should trigger before start event', async () => {
@@ -349,17 +345,21 @@ describe('Nodecaf', () => {
             const app = new Nodecaf({
                 routes: [
                     Nodecaf.post('/stream', async ({ res, body }) => {
-                        const stream = await body.stream();
+                        const stream = body.stream();
                         const reader = stream.getReader();
+                        const decoder = new TextDecoder(); 
                         let received = '';
                         while(true){
                             const { done, value } = await reader.read();
                             if(done)
-                                break;
-                            received += value;
+                            	break;
+                            received += decoder.decode(value, { stream: true });
                         }
-                        if(received === 'foobar')
-                            res.status(201).end();
+
+                        received += decoder.decode();
+
+                        assert.strictEqual(received, 'foobar')
+                        res.status(201).end();
                     })
                 ]
             });
@@ -682,7 +682,6 @@ describe('Handlers', () => {
         function userFunc(obj, arg1){
             assert.strictEqual(arg1, 'foo');
             assert.strictEqual(obj.path, '/foo');
-            console.log(obj);
             assert(obj.res && obj.method && obj.path && obj.body && obj.ip
                 && obj.params && obj.query && obj.conf && obj.log);
         }
@@ -1077,11 +1076,8 @@ describe('Body Parsing', () => {
         // Destroy the request (abort)
         controller.abort();
 
-        console.log('got here?')
         await p;
-        console.log('after promise?')
         await app.stop();
-        console.log('after stop?')
         assert(abortedRouted);
         assert(startedRoute);
         assert.strictEqual(abortErrorName, 'AbortError');
@@ -1568,23 +1564,15 @@ describe('Regression', () => {
     it('Should expose up to date global values for each \'call\' execution', async function(){
 
         function changeGlobalKey(){
-            console.log('before change', this);
-
             assert(this.global.someKey === 'some value');
             this.global.someKey = 'new value';
-            console.log('after change', this);
-
         }
 
         function testGlobalKeyChangedInRoute({ res, someKey }){
-            console.log('gonna check in route', this, someKey);
-
             res.badRequest(someKey !== 'new value');
         }
 
         function testGlobalKeyChanged({ someKey }){
-            console.log('gonna check change', this, someKey);
-
             assert.strictEqual(someKey, 'new value');
         }
 
