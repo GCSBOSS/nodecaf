@@ -1,18 +1,19 @@
 /* eslint-env mocha */
-const os = require('os');
-const path = require('path');
-const fs = require('fs');
-const assert = require('assert');
+import os from 'node:os';
+import path from 'node:path';
+import fs from 'node:fs';
+import assert from 'node:assert';
+import { Readable, PassThrough } from 'node:stream';
+import { WebSocket } from 'ws';
 
 process.env.NODE_ENV = 'testing';
 
 // Address for the tests' local servers to listen.
-const LOCAL_HOST = 'http://localhost:80'
+const LOCAL_HOST = 'http://localhost:80';
 
-const { Readable } = require('stream');
-
-const Nodecaf = require('../lib/main');
-const { parse, serialize } = require('../lib/cookie');
+import { Nodecaf } from '../lib/main.js';
+import { parse, serialize } from '../lib/cookie.js';
+import { layerConf } from '../lib/conf.js';
 
 describe('Nodecaf', () => {
 
@@ -182,7 +183,6 @@ describe('Nodecaf', () => {
         });
 
         describe('Conf Layering', () => {
-            const { layerConf } = require('../lib/conf');
 
             it('Should ignore non-object layers', () => {
                 const conf = layerConf({ key: 'value' }, 1);
@@ -622,8 +622,8 @@ describe('Handlers', () => {
             http: 80,
             routes: [
                 Nodecaf.get('/foo', async function({ res }){
-                    const s = await res.stream();
-                    const rs = require('fs').createReadStream('./package.json');
+                    const s = res.stream();
+                    const rs = fs.createReadStream('./package.json');
                     const wrs = Readable.toWeb(rs);
                     await wrs.pipeTo(s);
                 })
@@ -735,7 +735,6 @@ describe('Handlers', () => {
 
     it('Should handle websocket upgrade requests [opts.websocket]', async function(){
 
-        const { WebSocket } = require('ws');
         let done;
         const app = new Nodecaf({
             http: 80,
@@ -761,8 +760,6 @@ describe('Handlers', () => {
     });
 
     it('Should handle websocket upgrade requests even on \'all\' handler [opts.websocket]', async function(){
-
-        const { WebSocket } = require('ws');
         let done;
         const app = new Nodecaf({
             http: 80,
@@ -1008,7 +1005,6 @@ describe('Body Parsing', () => {
 
         await app.start();
         
-        const { PassThrough } = require('stream');
         const stream = new PassThrough();
         
         // Create the request but catch immediate errors to prevent process crash
@@ -1049,7 +1045,6 @@ describe('Body Parsing', () => {
 
         await app.start();
 
-        const { PassThrough } = require('stream');
         const stream = new PassThrough();
 
         const req = fetch(LOCAL_HOST + '/tto', {
@@ -1089,7 +1084,6 @@ describe('Body Parsing', () => {
         await app.start();
 
         const controller = new AbortController();
-        const { PassThrough } = require('stream');
         const stream = new PassThrough();
 
         // Start request but don't await response immediately
@@ -1208,7 +1202,6 @@ describe('Assertions', () => {
 });
 
 describe('Error Handling', () => {
-    const fs = require('fs');
 
     it('Should handle Error thrown sync on the route', async () => {
         const app = new Nodecaf({

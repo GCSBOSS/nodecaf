@@ -4,10 +4,11 @@
     "description": "Nodecaf is a light framework for developing RESTful Apps in a quick and convenient manner.",
     "main": "lib/main.js",
     "types": "./lib/main.d.ts",
+    "type": "module",
     "scripts": {
         "test": "npx mocha -b --no-diff test/spec.js",
         "test-full": "node test/full.js",
-        "test-docker": "node test/docker.js --all",
+        "test-docker": "node test/docker.js",
         "lint": "npx eslint lib",
         "coverage": "npx nyc -r html -r text-summary mocha -b --no-diff --no-warnings test/spec.js",
         "quality": "qlty init && (qlty smells -a --sarif) > ./.qlty/out/report.sarif && qlty metrics ./lib"

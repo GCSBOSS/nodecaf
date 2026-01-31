@@ -1,6 +1,11 @@
-const { exec } = require('child_process');
-const path = require('path');
-const { splitExec } = require('split-exec');
+import { exec } from 'child_process';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import { splitExec } from 'split-exec';
+
+// ESM replacement for __dirname
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const ROOT_DIR = path.resolve(__dirname.replace(/test$/, ''));
 
@@ -39,27 +44,25 @@ function getDockerCommandConfig(nodeImageTag = '18-alpine') {
     };
 }
 
-(async () => {
-    try{
-        let versions = [];
-        const testAll = process.argv.includes('--all');
-        const testSpecific = process.argv.find(arg => arg.startsWith('--node='));
+try{
+    let versions = [];
 
-        if(testAll) 
-            versions = ['18-alpine', '20-alpine', '22-alpine', '24-alpine'];
-        else if(testSpecific) 
-            versions.push(testSpecific.split('=')[1] + '-alpine');
-        
-        if(versions.length === 0) 
-            versions.push('18-alpine');
+    const testAll = process.argv.includes('--all');
+    const testSpecific = process.argv.find(arg => arg.startsWith('--node='));
+    if(testAll) 
+        versions = ['18-alpine', '20-alpine', '22-alpine', '24-alpine'];
+    else if(testSpecific) 
+        versions.push(`${testSpecific.split('=')[1]}-alpine`);
+    
+    if(versions.length === 0) 
+        versions.push('18-alpine');
 
-        await checkDockerInstallation();
-        const commands = versions.map(v => getDockerCommandConfig(v));
+    await checkDockerInstallation();
+    const commands = versions.map(getDockerCommandConfig);
 
-        splitExec(commands);
-    }
-    catch(err) {
-        console.log(err.message);
-        process.exit(1);
-    }
-})();
+    splitExec(commands);
+}
+catch(err) {
+    console.log(err.message);
+    process.exit(1);
+}

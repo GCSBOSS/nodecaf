@@ -91,6 +91,9 @@ export default [
                     let: {
                         after: true,
                     },
+                    import: {
+                        after: true,
+                    },
                 },
             }],
             'line-comment-position': 'error',

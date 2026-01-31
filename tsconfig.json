@@ -1,9 +1,10 @@
 {
     "compilerOptions": {
+        "module": "es2022",
         "checkJs": true,
         "target": "es2024",
         "noEmit": true,
-        "moduleResolution": "node"
+        "moduleResolution": "node",
     },
     "include": ["lib/**/*"]
 }
