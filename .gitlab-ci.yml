@@ -55,7 +55,6 @@ test-node-18:
   artifacts:
     paths: [coverage]
   script:
-    - npm i -g mocha nyc
     - npm ci .
     - npm run coverage
 

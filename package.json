@@ -10,7 +10,7 @@
         "test-full": "node test/full.js",
         "test-docker": "node test/docker.js",
         "lint": "npx eslint lib",
-        "coverage": "npx nyc -r html -r text-summary mocha -b --no-diff --no-warnings test/spec.js",
+        "coverage": "npx c8 -r html -r text-summary mocha -b --no-diff --no-warnings test/spec.js",
         "quality": "qlty init && (qlty smells -a --sarif) > ./.qlty/out/report.sarif && qlty metrics ./lib"
     },
     "repository": {
