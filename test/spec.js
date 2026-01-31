@@ -172,25 +172,8 @@ describe('Nodecaf', () => {
             assert.strictEqual(res.body.key2, 'value');
         });
 
-        it('Should load form file when path is sent', async () => {
-            const fs = require('fs');
-            const fp = createTempFile('a.toml');
-            fs.writeFileSync(fp, 'key = "value"', 'utf-8');
-            const app = new Nodecaf({ 
-                conf: { key: 'valueOld' },
-                routes: [
-                    Nodecaf.get('/bar', ({ res, conf }) => res.json(conf))
-                ]
-            });
-            app.setup(fp);
-            const res = await app.trigger('get', '/bar');
-            assert.strictEqual(res.body.key, 'value');
-            fs.unlink(fp, Function.prototype);
-        });
-        
         describe('Conf Layering', () => {
             const { layerConf } = require('../lib/conf');
-            const fs = require('fs');
 
             it('Should ignore non-object layers', () => {
                 const conf = layerConf({ key: 'value' }, 1);
@@ -225,30 +208,6 @@ describe('Nodecaf', () => {
                 const conf = layerConf({ key: { a: 'a', b: 'bar' } }, { key: new Foo() });
                 assert.strictEqual(conf.key.a, 'foo');
                 assert.strictEqual(typeof conf.key.b, 'undefined');
-            });
-
-            it('Should fail if given file conf type is not supported', () => {
-                assert.throws(() => layerConf('./conf.xml'));
-            });
-
-            it('Should fail if conf file is not found', () => {
-                assert.throws(() => layerConf('./bla.json'));
-            });
-
-            it('Should properly load a TOML file and generate an object', () => {
-                const fp = createTempFile('a.toml');
-                fs.writeFileSync(fp, 'key = "value"', 'utf-8');
-                const conf = layerConf(fp);
-                assert.strictEqual(conf.key, 'value');
-                fs.unlink(fp, Function.prototype);
-            });
-
-            it('Should properly load an JSON file and generate an object', () => {
-                const fp = createTempFile('a.json');
-                fs.writeFileSync(fp, '{"key": "value"}', 'utf-8');
-                const conf = layerConf(fp);
-                assert.strictEqual(conf.key, 'value');
-                fs.unlink(fp, Function.prototype);
             });
 
         });
@@ -424,6 +383,47 @@ describe('Nodecaf', () => {
             const { body } = await app.trigger('get', '/bar');
             assert.strictEqual(body, 'nodecaf');
             await app.stop();
+        });
+        
+        it('Should fail if given file conf type is not supported', async () => {
+            const p = new Nodecaf().run({ conf: [ 'conf.xml' ] });
+            assert.rejects(() => p);
+        });
+
+        it('Should fail if conf file is not found', () => {
+            const p = new Nodecaf().run({ conf: [ 'bla.json' ] });
+            assert.rejects(() => p);
+        });
+
+        it('Should properly load a TOML file and generate an object', async () => {
+            const fp = createTempFile('a.toml');
+            fs.writeFileSync(fp, 'key = "value"', 'utf-8');
+
+            const app = await new Nodecaf({
+                routes: [ 
+                    Nodecaf.get('/bar', ({ res, conf }) => res.json(conf)) 
+                ]
+            }).run({ conf: [ fp ] });
+
+            const { body } = await app.trigger('get', '/bar');
+            assert.strictEqual(body.key, 'value');
+            await app.stop();
+            fs.unlink(fp, Function.prototype);
+        });
+
+        it('Should properly load an JSON file and generate an object', async () => {
+            const fp = createTempFile('a.json');
+            fs.writeFileSync(fp, '{"key": "value"}', 'utf-8');
+            const app = await new Nodecaf({
+                routes: [ 
+                    Nodecaf.get('/bar', ({ res, conf }) => res.json(conf)) 
+                ]
+            }).run({ conf: [ fp ] });
+
+            const { body } = await app.trigger('get', '/bar');
+            assert.strictEqual(body.key, 'value');
+            await app.stop();
+            fs.unlink(fp, Function.prototype);
         });
 
     });
