@@ -26,6 +26,7 @@ function getDockerCommandConfig(nodeImageTag) {
         const commands = [
             'npm t',
             'npm run lint',
+            'npx tsc',
             ...dockerVersions.map(v => getDockerCommandConfig(v))
         ];
 
