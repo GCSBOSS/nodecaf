@@ -121,6 +121,15 @@ describe('Nodecaf', () => {
             assert.doesNotReject( app.stop() );
         });
 
+        it('Should not crash when both startup and shutdown throw', async function(){
+            const app = new Nodecaf({ 
+                startup: () => { throw new Error('Startup failure!!') },
+                shutdown: () => { throw new Error('Shutdown failure!!') }
+            });
+            await assert.rejects(app.start());
+            assert(app.state(), 'standby')
+        });
+
     });
 
     describe('#restart', () => {
@@ -310,7 +319,6 @@ describe('Nodecaf', () => {
                         let received = '';
                         while(true){
                             const { done, value } = await reader.read();
-                            console.log(value, typeof value);
                             if(done)
                                 break;
                             received += decoder.decode(value, { stream: true });
@@ -327,6 +335,24 @@ describe('Nodecaf', () => {
             const body = Readable.from('foobar');
             const r = await app.trigger('post', '/stream/', { body });
             assert.strictEqual(r.status, 201);
+            await app.stop();
+        });
+
+        it('Should handle buffer output', async () => {
+            const app = new Nodecaf({
+                routes: [
+                    Nodecaf.get('/buf', ({ res }) => {
+                        const encoder = new TextEncoder();
+                        const buf = encoder.encode('foobar');
+                        res.end(buf);
+                    })
+                ]
+            });
+            await app.start();
+            const r = await app.trigger('get', '/buf');
+            assert.strictEqual(r.status, 200);
+            const decoder = new TextDecoder();
+            assert.strictEqual('foobar', decoder.decode(r.body));
             await app.stop();
         });
 
@@ -442,6 +468,11 @@ describe('Handlers', () => {
         }), /function/);
         assert.throws(() => new Nodecaf({
             routes: [
+                { method: 'post' }
+            ]
+        }), /string/);
+        assert.throws(() => new Nodecaf({
+            routes: [
                 Nodecaf.post('/foobaz', Function.prototype),
                 Nodecaf.post('/foobaz', Function.prototype)
             ]
@@ -472,7 +503,7 @@ describe('Handlers', () => {
         const app = new Nodecaf({
             http: 80,
             routes: [
-                Nodecaf.post('/bar', ({ foo, res }) => {
+                Nodecaf.put('/bar', ({ foo, res }) => {
                     res.text(foo);
                 })
             ],
@@ -482,7 +513,7 @@ describe('Handlers', () => {
         });
         await app.start();
         const res = await fetch(LOCAL_HOST + '/bar', { 
-            method: 'POST',
+            method: 'PUT',
             headers: { 'Connection': 'close' } 
         });
         const body = await res.text();
@@ -560,7 +591,7 @@ describe('Handlers', () => {
         const app = new Nodecaf({
             http: 80,
             routes: [
-                Nodecaf.post('/foobar', ({ query, res }) => {
+                Nodecaf.patch('/foobar', ({ query, res }) => {
                     assert.strictEqual(query.foo, 'bar');
                     res.end();
                 })
@@ -568,7 +599,7 @@ describe('Handlers', () => {
         });
         await app.start();
         const { status } = await fetch(LOCAL_HOST + '/foobar?foo=bar', { 
-            method: 'POST',
+            method: 'PATCH',
             headers: { 'Connection': 'close' }
         });
         assert.strictEqual(status, 200);
@@ -690,14 +721,14 @@ describe('Handlers', () => {
         const app = new Nodecaf({
             conf: { bar: 'baz' },
             routes: [
-                Nodecaf.post('/foo', function({ call, res }){
+                Nodecaf.del('/foo', function({ call, res }){
                     call(userFunc, 'foo');
                     res.end();
                 })
             ]
         });
         await app.start();
-        const { status } = await app.trigger('post', '/foo');
+        const { status } = await app.trigger('delete', '/foo');
         assert.strictEqual(status, 200);
         await app.stop();
     });
@@ -1181,6 +1212,9 @@ describe('Error Handling', () => {
             routes: [
                 Nodecaf.post('/unknown', () => {
                     throw new Error('othererr');
+                }),
+                Nodecaf.post('/non-error', () => {
+                    throw 4;
                 })
             ]
         });
@@ -1190,6 +1224,11 @@ describe('Error Handling', () => {
             headers: { 'Connection': 'close' }
         });
         assert.strictEqual(status, 500);
+        const { status: s2 } = await fetch(LOCAL_HOST + '/non-error', { 
+            method: 'POST',
+            headers: { 'Connection': 'close' }
+        });
+        assert.strictEqual(s2, 500);
         await app.stop();
     });
 
