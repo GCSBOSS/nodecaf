@@ -411,7 +411,7 @@ describe('Nodecaf', () => {
             await app.stop();
         });
         
-        it('Should fail if given file conf type is not supported', async () => {
+        it('Should fail if given file conf type is not supported', () => {
             const p = new Nodecaf().run({ conf: [ 'conf.xml' ] });
             assert.rejects(() => p);
         });
@@ -1028,7 +1028,8 @@ describe('Body Parsing', () => {
         const res = await reqPromise;
         
         // If fetch failed, we throw to see the error in the test output
-        if(res.error) throw res.error;
+        if(res.error) 
+            throw res.error;
 
         assert.strictEqual(res.status, 201);
         await app.stop();
@@ -1127,7 +1128,10 @@ describe('Assertions', () => {
                 Nodecaf.get('/foo', function({ res }){
                     try{
                         res.badRequest(true, 'Bad Request');
-                    } catch(e){}
+                    } 
+                    catch(e){
+                        e
+                    }
                     res.end('All good');
                 })
             ]

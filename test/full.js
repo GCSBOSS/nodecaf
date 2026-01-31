@@ -19,7 +19,7 @@ function getDockerCommandConfig(nodeImageTag) {
     };
 }
 
-(async () => {
+(() => {
     try{
         const dockerVersions = ['18-alpine', '20-alpine', '22-alpine', '24-alpine'];
 
