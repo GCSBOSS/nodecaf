@@ -3115,7 +3115,6 @@ describe('uncovered branches analysis', () => {
     });
 
     it('should handle WebSocket client lifecycle with pong handler', async () => {
-        const { Nodecaf } = await import('../lib/main.js');
         const WebSocket = (await import('ws')).default;
         
         const app = new Nodecaf({

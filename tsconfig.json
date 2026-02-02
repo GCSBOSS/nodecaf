@@ -3,8 +3,12 @@
         "module": "es2022",
         "checkJs": true,
         "target": "es2024",
-        "noEmit": true,
         "moduleResolution": "node",
+        "declaration": true,
+        "emitDeclarationOnly": true,
+        "outDir": "test",
+        "outFile": "lib/main.d.ts"
     },
-    "include": ["lib/**/*"]
+    "include": ["lib/**/*"],
+    "exclude": ["lib/main.d.ts"]
 }
