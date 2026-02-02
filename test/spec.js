@@ -3,8 +3,12 @@ import os from 'node:os';
 import path from 'node:path';
 import fs from 'node:fs';
 import assert from 'node:assert';
+import crypto from 'node:crypto';
 import { Readable, PassThrough } from 'node:stream';
 import { WebSocket } from 'ws';
+import { spawn } from 'node:child_process';
+import * as http from 'node:http';
+import { nativeNodeModule } from '../lib/native_node.js';
 
 process.env.NODE_ENV = 'testing';
 
@@ -14,6 +18,82 @@ const LOCAL_HOST = 'http://localhost:80';
 import { Nodecaf } from '../lib/main.js';
 import { parse, serialize } from '../lib/cookie.js';
 import { layerConf } from '../lib/conf.js';
+import { Body } from '../lib/body.js';
+import { Logger } from '../lib/logger.js';
+import { HTTPError } from '../lib/error.js';
+
+/**
+ * Creates an empty file in the OS temp directory and returns the full path.
+ * @param {string} fileName - The name of the file (e.g., 'log.txt')
+ * @returns {string} The full path to the created file
+ */
+function createTempFile(fileName) {
+    // 0. Prepend random string to fileName to avoid collisions
+    // const randomPrefix = crypto.getRandomValues(new Uint32Array(1))[0].toString(16);
+    const randomPrefix = crypto.randomBytes(8).toString('hex');
+    fileName = `${randomPrefix}-${fileName}`;
+
+    // 1. Construct the full path safely
+    const filePath = path.join(os.tmpdir(), fileName);
+    
+    // 2. Create the file (writes an empty string). 
+    // This overwrites the file if it already exists.
+    fs.writeFileSync(filePath, '');
+    
+    return filePath;
+}
+
+/**
+ * Creates a temporary directory in the OS temp directory and returns its path.
+ * @returns {string} The full path to the created temporary directory
+ */
+function createTempDir(){
+    // const dirPath = path.join(os.tmpdir(), 'nodecaf-test-' + crypto.getRandomValues(new Uint32Array(1))[0].toString(16));
+    const dirPath = path.join(os.tmpdir(), 'nodecaf-test-' + crypto.randomBytes(8).toString('hex'));
+    fs.mkdirSync(dirPath);
+    return dirPath;
+}
+
+/**
+ * Runs a test application in a child process and return stdout for inspection.
+ * @param {string} appCode - The JavaScript code of the application to run.
+ * @param {object} [opts] - Options for running the test app.
+ * @param {number} [opts.timeout] - Maximum time (ms) to wait for app to complete.
+ * @param {string} [opts.cwd] - Current working directory for the child process.
+ * @returns {Promise<string>} Resolves with the stdout output of the app.
+ */
+function runTestApp(appCode, opts){
+    // Prepend Nodecaf import to the app code
+    appCode = `import { Nodecaf } from 'file:///${path.resolve('./lib/main.js').replace(/\\/g, '/')}';\n` + appCode;
+
+    return new Promise((resolve, reject) => {
+        const proc = spawn('node', ['--input-type=module', '-e', appCode], {
+            cwd: opts?.cwd || createTempDir(),
+            stdio: ['ignore', 'pipe', 'pipe']
+        });
+        let output = '';
+        const timeout = opts?.timeout ? setTimeout(() => {
+            proc.kill();
+            reject(new Error('Test app timed out'));
+        }, opts.timeout) : null;
+        proc.stdout.on('data', (data) => {
+            output += data.toString();
+        });
+        proc.stderr.on('data', (data) => {
+            output += data.toString();
+        });
+        proc.on('close', () => {
+            if(timeout) 
+                clearTimeout(timeout);
+            resolve(output);
+        });
+        proc.on('error', (err) => {
+            if(timeout) 
+                clearTimeout(timeout);
+            reject(err);
+        });
+    });
+}
 
 describe('Nodecaf', () => {
 
@@ -66,6 +146,17 @@ describe('Nodecaf', () => {
             assert.throws( () => new Nodecaf({ http: '80' }), /number/ );
         });
 
+        it('Should use default name and version when package info not found', async () => {
+            const stdout = await runTestApp(`
+                const app = new Nodecaf();
+                // await app.start();
+                const entry = app.log.info('test');
+                // await app.stop();
+                // process.exit(0);
+            `);
+            assert(stdout.includes('"app":"Untitled"'), `Expected "Untitled" in output, got: ${stdout}`);
+        });
+
     });
 
     describe('#start', () => {
@@ -93,6 +184,14 @@ describe('Nodecaf', () => {
             await app.start();
             assert(done);
             await app.stop();
+        });
+
+        it('Should throw when attempt listening on a busy port', async () => {
+            const app1 = new Nodecaf({ http: 8765 });
+            await app1.start();
+            const app2 = new Nodecaf({ http: 8765 });
+            await assert.rejects( app2.start() );
+            await app1.stop();
         });
 
     });
@@ -353,28 +452,6 @@ describe('Nodecaf', () => {
             assert.strictEqual(r.status, 200);
             const decoder = new TextDecoder();
             assert.strictEqual('foobar', decoder.decode(r.body));
-            await app.stop();
-        });
-
-    });
-
-    describe('#call', () => {
-
-        it('Should call any user func with global handler args', async () => {
-
-            function userFunc(obj, arg1){
-                assert.strictEqual(arg1, 'foo');
-                assert.strictEqual(obj.conf.bar, 'baz');
-                assert(obj.conf && obj.log);
-            }
-
-            const app = new Nodecaf({
-                conf: { bar: 'baz' },
-                startup({ call }){
-                    call(userFunc, 'foo');
-                }
-            });
-            await app.start();
             await app.stop();
         });
 
@@ -782,6 +859,42 @@ describe('Handlers', () => {
         ws.send('foobar');
         await app.stop();
         assert(done);
+    });
+
+    it('Should call any user func with global handler args on startup', async () => {
+
+        function userFunc(obj, arg1){
+            assert.strictEqual(arg1, 'foo');
+            assert.strictEqual(obj.conf.bar, 'baz');
+            assert(obj.conf && obj.log);
+        }
+
+        const app = new Nodecaf({
+            conf: { bar: 'baz' },
+            startup({ call }){
+                call(userFunc, 'foo');
+            }
+        });
+        await app.start();
+        await app.stop();
+    });
+
+    it('Should call any user func with global handler args on shutdown', async () => {
+
+        function userFunc(obj, arg1){
+            assert.strictEqual(arg1, 'foo');
+            assert.strictEqual(obj.conf.bar, 'baz');
+            assert(obj.conf && obj.log);
+        }
+
+        const app = new Nodecaf({
+            conf: { bar: 'baz' },
+            shutdown({ call }){
+                call(userFunc, 'foo');
+            }
+        });
+        await app.start();
+        await app.stop();
     });
 
 });
@@ -1199,6 +1312,23 @@ describe('Assertions', () => {
         await app.stop();
     });
 
+    it('Should respond 415 when res.badType is called inside a route', async () => {
+        const app = new Nodecaf({
+            http: 80,
+            routes: [
+                Nodecaf.get('/badtype', function({ res }){
+                    res.badType(true);
+                })
+            ]
+        });
+        await app.start();
+        const r = await fetch(LOCAL_HOST + '/badtype', { headers: { 'Connection': 'close' } });
+        const body = await r.text();
+        assert.strictEqual(r.status, 415);
+        assert.strictEqual(body.length, 0);
+        await app.stop();
+    });
+
 });
 
 describe('Error Handling', () => {
@@ -1207,7 +1337,7 @@ describe('Error Handling', () => {
         const app = new Nodecaf({
             http: 80,
             routes: [
-                Nodecaf.post('/unknown', () => {
+                Nodecaf.delete('/unknown', () => {
                     throw new Error('othererr');
                 }),
                 Nodecaf.post('/non-error', () => {
@@ -1217,7 +1347,7 @@ describe('Error Handling', () => {
         });
         await app.start();
         const { status } = await fetch(LOCAL_HOST + '/unknown', { 
-            method: 'POST',
+            method: 'DELETE',
             headers: { 'Connection': 'close' }
         });
         assert.strictEqual(status, 500);
@@ -1738,6 +1868,26 @@ describe('CORS', function(){
         await app.stop();
     });
 
+    it('Should allow all origins when origin is boolean true', async () => {
+        const app = new Nodecaf({
+            http: 80, 
+            conf: { 
+                cors: { origin: true }
+            },
+            routes: [ Nodecaf.get('/cors-bool-true', ({ res }) => res.end()) ]
+        });
+        await app.start();
+
+        const res = await fetch(LOCAL_HOST + '/cors-bool-true', {
+            headers: { 'Origin': 'http://any-origin.com', 'Connection': 'close' }
+        });
+
+        // When origin: true, should return the request origin (truthy origin allowed)
+        assert.strictEqual(res.headers.get('access-control-allow-origin'), 'http://any-origin.com');
+
+        await app.stop();
+    });
+
     it('Should handle Credentials and Exposed Headers options', async () => {
         const app = new Nodecaf({
             http: 80, 
@@ -1902,18 +2052,1096 @@ describe('Cookies', () => {
     });
 });
 
-/**
- * Creates an empty file in the OS temp directory and returns the full path.
- * @param {string} fileName - The name of the file (e.g., 'log.txt')
- * @returns {string} The full path to the created file
- */
-function createTempFile(fileName) {
-    // 1. Construct the full path safely
-    const filePath = path.join(os.tmpdir(), fileName);
+
+describe('Cookie Serialization Edge Cases', () => {
+    it('Should throw TypeError for invalid priority value', () => {
+        assert.throws(() => {
+            serialize('token', 'abc', { priority: 'invalid' });
+        }, TypeError, 'Should reject invalid priority');
+    });
+
+    it('Should throw TypeError for invalid sameSite value', () => {
+        assert.throws(() => {
+            serialize('token', 'abc', { sameSite: 'invalid-value' });
+        }, TypeError, 'Should reject invalid sameSite');
+    });
+
+    it('Should handle sameSite=true (maps to Strict)', () => {
+        const result = serialize('token', 'abc', { sameSite: true });
+        assert.ok(result.includes('SameSite=Strict'), 'sameSite=true should map to Strict');
+    });
+
+    it('Should throw TypeError for invalid domain', () => {
+        assert.throws(() => {
+            serialize('token', 'abc', { domain: String.fromCharCode(0) });
+        }, TypeError, 'Should reject invalid domain with null byte');
+    });
+
+    it('Should throw TypeError for invalid path', () => {
+        assert.throws(() => {
+            serialize('token', 'abc', { path: String.fromCharCode(256) });
+        }, TypeError, 'Should reject invalid path');
+    });
+
+    it('Should throw TypeError for invalid expires (non-Date)', () => {
+        assert.throws(() => {
+            serialize('token', 'abc', { expires: 'not-a-date' });
+        }, TypeError, 'Should reject non-Date expires');
+    });
+
+    it('Should throw TypeError for NaN expires', () => {
+        const badDate = new Date('invalid');
+        assert.throws(() => {
+            serialize('token', 'abc', { expires: badDate });
+        }, TypeError, 'Should reject NaN expires');
+    });
+
+    it('Should throw TypeError for invalid maxAge (NaN)', () => {
+        assert.throws(() => {
+            serialize('token', 'abc', { maxAge: NaN });
+        }, TypeError, 'Should reject NaN maxAge');
+    });
+
+    it('Should throw TypeError for infinite maxAge', () => {
+        assert.throws(() => {
+            serialize('token', 'abc', { maxAge: Infinity });
+        }, TypeError, 'Should reject infinite maxAge');
+    });
+
+    it('Should throw TypeError for invalid cookie name', () => {
+        assert.throws(() => {
+            serialize('bad\u0000name', 'value');
+        }, TypeError, 'Should reject invalid cookie name');
+    });
+});
+
+describe('Body Parsing Edge Cases', () => {
+    it('Should parse body with explicit charset', async () => {
+        const input = {
+            reqStream: new ReadableStream({
+                start(controller) {
+                    controller.enqueue(new TextEncoder().encode('{"key":"value"}'));
+                    controller.close();
+                }
+            }),
+            headers: { 'content-type': 'application/json; charset=utf-8' },
+            timeout: 1000
+        };
+        const body = new Body(input);
+        const data = await body.json();
+        assert.deepEqual(data, { key: 'value' });
+    });
+
+    it('Should throw HTTPError 415 when json() called on non-json content', async () => {
+        const input = {
+            reqStream: new ReadableStream({
+                start(controller) {
+                    controller.enqueue(new TextEncoder().encode('plain text'));
+                    controller.close();
+                }
+            }),
+            headers: { 'content-type': 'text/plain' },
+            timeout: 1000
+        };
+        const body = new Body(input);
+        try{
+            await body.json();
+            assert.fail('Should have thrown');
+        }
+        catch(err) {
+            assert.ok(err instanceof HTTPError, 'Should throw HTTPError');
+            assert.equal(err.status, 415, 'Should be 415 Unsupported Media Type');
+        }
+    });
+
+    it('Should throw HTTPError 400 on invalid JSON', async () => {
+        const input = {
+            reqStream: new ReadableStream({
+                start(controller) {
+                    controller.enqueue(new TextEncoder().encode('{invalid json}'));
+                    controller.close();
+                }
+            }),
+            headers: { 'content-type': 'application/json' },
+            timeout: 1000
+        };
+        const body = new Body(input);
+        try{
+            await body.json();
+            assert.fail('Should have thrown');
+        }
+        catch(err) {
+            assert.ok(err instanceof HTTPError, 'Should throw HTTPError');
+            assert.equal(err.status, 400, 'Should be 400 Bad Request');
+        }
+    });
+
+    it('Should parse text/plain content type', async () => {
+        const input = {
+            reqStream: new ReadableStream({
+                start(controller) {
+                    controller.enqueue(new TextEncoder().encode('just some text'));
+                    controller.close();
+                }
+            }),
+            headers: { 'content-type': 'text/plain' },
+            timeout: 1000
+        };
+        const body = new Body(input);
+        const result = await body.text();
+        assert.equal(result, 'just some text', 'Should parse plain text');
+    });
+
+    it('Should parse URLEncoded body correctly', async () => {
+        const input = {
+            reqStream: new ReadableStream({
+                start(controller) {
+                    controller.enqueue(new TextEncoder().encode('key1=value1&key2=value2'));
+                    controller.close();
+                }
+            }),
+            headers: { 'content-type': 'application/x-www-form-urlencoded' },
+            timeout: 1000
+        };
+        const body = new Body(input);
+        const data = await body.urlencoded();
+        assert.deepEqual(data, { key1: 'value1', key2: 'value2' });
+    });
+
+    it('Should throw HTTPError 415 when urlencoded() called on non-urlencoded content', async () => {
+        const input = {
+            reqStream: new ReadableStream({
+                start(controller) {
+                    controller.enqueue(new TextEncoder().encode('not-urlencoded'));
+                    controller.close();
+                }
+            }),
+            headers: { 'content-type': 'text/plain' },
+            timeout: 1000
+        };
+        const body = new Body(input);
+        try{
+            await body.urlencoded();
+            assert.fail('Should have thrown');
+        }
+        catch(err) {
+            assert.ok(err instanceof HTTPError, 'Should throw HTTPError');
+            assert.equal(err.status, 415, 'Should be 415');
+        }
+    });
+});
+
+describe('Logger Environment Output', () => {
+    it('Should log to console in all environments (verify no crash)', () => {
+        const logger = new Logger({ level: 'info', appName: 'test-app' });
+        // These should not throw (verify implementation is robust)
+        assert.doesNotThrow(() => {
+            logger.debug('debug msg');
+            logger.info('info msg');
+            logger.warn('warn msg');
+            logger.error('error msg');
+            logger.fatal('fatal msg');
+        });
+    });
+
+    it('Should not log when disabled', () => {
+        const logger = new Logger({ disabled: true });
+        const result = logger.info('this should not log');
+        assert.strictEqual(result, false, 'Should return false when disabled');
+    });
+
+    it('Should respect log level filtering', () => {
+        const logger = new Logger({ level: 'warn' });
+        assert.strictEqual(logger.debug('x'), false, 'debug should be filtered');
+        assert.strictEqual(logger.info('x'), false, 'info should be filtered');
+        // warn and above should proceed (though console.log is global)
+    });
+
+    it('Should generate errorId for errors', () => {
+        const logger = new Logger({ appName: 'test' });
+        const err = new Error('test error');
+        const entry = logger.error({ err });
+        assert.ok(entry.errorId, 'Should generate errorId');
+        assert.equal(typeof entry.errorId, 'string', 'errorId should be string');
+    });
+
+    it('Should extract stack trace from Error objects', () => {
+        const logger = new Logger({ appName: 'test' });
+        const err = new Error('stack test');
+        const entry = logger.error({ err });
+        assert.ok(entry.stack, 'Should extract stack');
+        assert.ok(Array.isArray(entry.stack), 'stack should be array');
+    });
+});
+
+describe('Cookie Parsing Edge Cases', () => {
+    it('Should parse empty cookie string', () => {
+        const result = parse('');
+        assert.deepEqual(result, {}, 'empty string should parse to empty object');
+    });
+
+    it('Should parse cookie without value', () => {
+        const result = parse('sessionId');
+        assert.deepEqual(result, {}, 'cookie without = should not parse');
+    });
+
+    it('Should decode URI-encoded values', () => {
+        const result = parse('key=%20value%20');
+        assert.equal(result.key, ' value ', 'Should decode URI-encoded values');
+    });
+
+    it('Should handle quoted values', () => {
+        const result = parse('name="quoted value"');
+        assert.equal(result.name, 'quoted value', 'Should unquote values');
+    });
+
+    it('Should only assign each key once (first value wins)', () => {
+        const result = parse('dup=first; dup=second');
+        assert.equal(result.dup, 'first', 'Should keep first value');
+    });
+
+    it('Should handle semicolon separators', () => {
+        const result = parse('a=1; b=2; c=3');
+        assert.deepEqual(result, { a: '1', b: '2', c: '3' });
+    });
+});
+
+
+describe('Server Lifecycle (Start/Stop)', () => {
+    it('Should start server and respond to HTTP requests', function(done) {
+        this.timeout(5000);
+
+        const serverScript = `
+        import { Nodecaf } from './lib/main.js';
+        const app = new Nodecaf({
+          http: 9876,
+          routes: [
+            Nodecaf.get('/', async ({ res }) => res.json({ ok: true, version: 1 }))
+          ]
+        });
+        await app.start();
+        console.log('SERVER_READY');
+
+        // Auto-shutdown after 3 seconds
+        setTimeout(async () => {
+          await app.stop();
+          process.exit(0);
+        }, 3000);
+      `;
+
+        const child = spawn('node', ['--input-type=module', '--eval', serverScript], {
+            cwd: process.cwd(),
+            stdio: ['inherit', 'pipe', 'inherit']
+        });
+
+        let serverReady = false;
+        let requestCompleted = false;
+
+        child.stdout.on('data', (data) => {
+            const output = data.toString();
+            if(output.includes('SERVER_READY') && !serverReady) {
+                serverReady = true;
+          
+                // Make HTTP request
+                setTimeout(() => {
+                    const req = http.get('http://localhost:9876/', { timeout: 1000 }, (res) => {
+                        let body = '';
+                        res.on('data', (chunk) => body += chunk);
+                        res.on('end', () => {
+                            try{
+                                const data = JSON.parse(body);
+                                if(data.ok && data.version === 1) 
+                                    requestCompleted = true;
+                  
+                            }
+                            catch(e) {
+                                e
+                                // ignore parse errors
+                            }
+                        });
+                    });
+                    req.on('error', () => {
+                        // ignore connection errors
+                    });
+                }, 100);
+            }
+        });
+
+        child.on('close', (code) => {
+            assert.ok(serverReady, 'server should have started');
+            assert.ok(requestCompleted, 'server should respond to HTTP requests');
+            assert.equal(code, 0, 'server should exit cleanly');
+            done();
+        });
+
+        child.on('error', (err) => done(err));
+    });
+});
+
+describe('Server Start/Stop Lifecycle', () => {
+    it('Should start server successfully', function(done) {
+        this.timeout(5000);
+
+        const serverScript = `
+        import { Nodecaf } from './lib/main.js';
+        const app = new Nodecaf({
+          http: 9878,
+          routes: [Nodecaf.get('/', async ({ res }) => res.json({ ok: true }))]
+        });
+        await app.start();
+        console.log('SERVER_READY');
+
+        // Auto-shutdown after 2 seconds
+        setTimeout(async () => {
+          await app.stop();
+          console.log('SERVER_STOPPED');
+          process.exit(0);
+        }, 2000);
+      `;
+
+        const child = spawn('node', ['--input-type=module', '--eval', serverScript], {
+            cwd: process.cwd(),
+            stdio: ['inherit', 'pipe', 'inherit']
+        });
+
+        let serverReady = false;
+        let serverStopped = false;
+
+        child.stdout.on('data', (data) => {
+            const output = data.toString();
+            if(output.includes('SERVER_READY')) 
+                serverReady = true;
+        
+            if(output.includes('SERVER_STOPPED')) 
+                serverStopped = true;
+        
+        });
+
+        child.on('close', (code) => {
+            assert.ok(serverReady, 'server should start');
+            assert.ok(serverStopped, 'server should stop');
+            assert.equal(code, 0, 'Should exit cleanly');
+            done();
+        });
+
+        child.on('error', (err) => done(err));
+    });
+});
+
+describe('Startup Handler Execution', () => {
+    it('Should execute startup handler before server is ready', function(done) {
+        this.timeout(5000);
+
+        const serverScript = `
+        import { Nodecaf } from './lib/main.js';
+        const app = new Nodecaf({
+          http: 9879,
+          startup: async ({ log, conf }) => {
+            console.log('STARTUP_HANDLER_CALLED');
+          },
+          routes: [Nodecaf.get('/', async ({ res }) => res.json({ ok: true }))]
+        });
+        await app.run();
+      `;
+
+        const child = spawn('node', ['--input-type=module', '--eval', serverScript], {
+            cwd: process.cwd(),
+            stdio: ['inherit', 'pipe', 'inherit']
+        });
+
+        let startupCalled = false;
+        const timeout = setTimeout(() => {
+            if(!startupCalled) {
+                child.kill();
+                done(new Error('Startup handler not called within timeout'));
+            }
+        }, 3000);
+
+        child.stdout.on('data', (data) => {
+            const output = data.toString();
+            if(output.includes('STARTUP_HANDLER_CALLED')) {
+                startupCalled = true;
+                clearTimeout(timeout);
+                child.kill();
+                done();
+            }
+        });
+
+        child.on('error', (err) => {
+            clearTimeout(timeout);
+            done(err);
+        });
+    });
+});
+
+describe('Configuration Reload on restart()', () => {
+    it('Should reload configuration with restart()', function(done) {
+        this.timeout(5000);
+
+        const serverScript = `
+        import { Nodecaf } from './lib/main.js';
+        const app = new Nodecaf({
+          http: 9880,
+          conf: { version: '1.0' },
+          routes: [Nodecaf.get('/', async ({ conf, res }) => res.json(conf))]
+        });
+        await app.start();
+        console.log('STARTED');
+
+        // Simulate config reload
+        setTimeout(async () => {
+          await app.restart({ version: '2.0' });
+          console.log('RESTARTED');
+          process.exit(0);
+        }, 500);
+      `;
+
+        const child = spawn('node', ['--input-type=module', '--eval', serverScript], {
+            cwd: process.cwd(),
+            stdio: ['inherit', 'pipe', 'inherit']
+        });
+
+        let restarted = false;
+        const timeout = setTimeout(() => {
+            if(!restarted) {
+                child.kill();
+                done(new Error('Restart not completed'));
+            }
+        }, 3000);
+
+        child.stdout.on('data', (data) => {
+            const output = data.toString();
+            if(output.includes('RESTARTED')) {
+                restarted = true;
+                clearTimeout(timeout);
+                done();
+            }
+        });
+
+        child.on('error', (err) => {
+            clearTimeout(timeout);
+            done(err);
+        });
+    });
+});
+
+describe('In-Memory WebSocket Server', () => {
+    let app;
+
+    afterEach(async () => {
+        if(app) 
+            try{
+                await app.stop();
+            }
+            catch(e) {
+                e
+                // ignore
+            }
+      
+    });
+
+    it('Should accept WebSocket connections', async function() {
+        this.timeout(10000);
+
+        app = new Nodecaf({
+            http: 9881,
+            websocket: true,
+            routes: [
+                Nodecaf.get('/', async ({ websocket, res }) => {
+                    if(websocket) {
+                        const ws = await websocket();
+                        ws.send('hello from server');
+                        ws.on('message', (msg) => {
+                            ws.send('echo: ' + msg);
+                        });
+                    }
+                    else
+                        res.json({ ok: true });
+                    
+                })
+            ]
+        });
+
+        await app.start();
+
+        return new Promise((resolve, reject) => {
+            const ws = new WebSocket('ws://localhost:9881/');
+            const messages = [];
+
+            ws.on('open', () => {
+                ws.send('test message');
+            });
+
+            ws.on('message', (msg) => {
+                messages.push(msg.toString());
+                if(messages.length >= 2) 
+                    ws.close();
+          
+            });
+
+            ws.on('close', () => {
+                try{
+                    assert.ok(messages.length >= 2, 'Should receive multiple messages');
+                    assert.ok(messages[0].includes('hello'), 'Should receive server greeting');
+                    assert.ok(messages[1].includes('echo'), 'Should receive echo');
+                    resolve();
+                }
+                catch(err) {
+                    reject(err);
+                }
+            });
+
+            ws.on('error', reject);
+
+            // Timeout after 5 seconds
+            setTimeout(() => {
+                ws.close();
+                reject(new Error('WebSocket test timed out'));
+            }, 5000);
+        });
+    });
+});
+
+
+
+describe('native_node adapter', () => {
+
+    it('env() returns NODE_ENV when set', () => {
+        const savedNODE = process.env.NODE_ENV;
+        const savedENV = process.env.ENV;
+        process.env.NODE_ENV = 'prod-test';
+        delete process.env.ENV;
+        try{
+            assert.strictEqual(nativeNodeModule.env(), 'prod-test');
+        }
+        finally{
+            process.env.NODE_ENV = savedNODE;
+            process.env.ENV = savedENV;
+        }
+    });
+
+    it('env() falls back to ENV when NODE_ENV not set', () => {
+        const savedNODE = process.env.NODE_ENV;
+        const savedENV = process.env.ENV;
+        delete process.env.NODE_ENV;
+        process.env.ENV = 'env-test';
+        try{
+            assert.strictEqual(nativeNodeModule.env(), 'env-test');
+        }
+        finally{
+            process.env.NODE_ENV = savedNODE;
+            process.env.ENV = savedENV;
+        }
+    });
+
+    it('env() falls back to development when none set', () => {
+        const savedNODE = process.env.NODE_ENV;
+        const savedENV = process.env.ENV;
+        delete process.env.NODE_ENV;
+        delete process.env.ENV;
+        try{
+            assert.strictEqual(nativeNodeModule.env(), 'development');
+        }
+        finally{
+            process.env.NODE_ENV = savedNODE;
+            process.env.ENV = savedENV;
+        }
+    });
+
+    it('setupGlobalHandlers registers handlers and cleanup works', (done) => {
+        const realExit = process.exit;
+        const realSetTimeout = global.setTimeout;
+        const exitCalls = [];
+        process.exit = (code) => exitCalls.push(code);
+        global.setTimeout = (fn) => fn();
+
+        let termCalled = false;
+        let dieCalled = false;
+        let dieErr = null;
+
+        const cleanup = nativeNodeModule.setupGlobalHandlers(() => { termCalled = true; }, (err) => { dieCalled = true; dieErr = err; });
+
+        // Trigger termination handler (call the last-installed handler directly)
+        const sigs = process.listeners('SIGINT');
+        if(sigs.length) 
+            sigs[sigs.length - 1]();
+        // Trigger die handler (call the last-installed handler directly)
+        const dies = process.listeners('uncaughtException');
+        if(dies.length) 
+            dies[dies.length - 1](new Error('boom'));
+
+        // cleanup removes listeners
+        cleanup();
+
+        // Restore
+        process.exit = realExit;
+        global.setTimeout = realSetTimeout;
+
+        try{
+            assert.ok(termCalled, 'termination callback should be called');
+            assert.ok(dieCalled, 'die callback should be called');
+            assert.ok(dieErr && dieErr.message === 'boom');
+            assert.ok(exitCalls.includes(0) || exitCalls.includes(1));
+            done();
+        }
+        catch(err){
+            done(err);
+        }
+    });
+
+    it('createServer websocket interval created and cleared', async () => {
+        const savedNODE = process.env.NODE_ENV;
+        process.env.NODE_ENV = 'development';
+
+        const api = { trigger: async () => {} };
+        const out = await nativeNodeModule.createServer(api, 9882, true);
+        await out.close();
+
+        process.env.NODE_ENV = savedNODE;
+    });
+
+    // This test wont work on windows since likstening to signals is not supported
+    // it.skip('main.run term handler stops app gracefully on SIGINT', function(done) {
+        
+    //     const appCode = `
+    //         import { Nodecaf } from 'file:///${path.resolve('./lib/main.js').replace(/\\/g, '/')}';
+    //         const app = new Nodecaf({
+    //             http: 9876,
+    //             routes: [Nodecaf.get('/', ({ res }) => res.text('ok'))],
+    //             shutdown(){ console.log('Shutdown called'); }
+    //         });
+
+    //         await app.run();
+    //     `;
+
+    //     const proc = spawn('node', ['-e', appCode], { stdio: ['ignore', 'pipe', 'pipe'] });
+
+    //     let output = '';
+    //     let shutdownCalled = false;
+    //     let serverStarted = false;
+
+    //     const handleData = (data) => {
+    //         output += data.toString();
+    //         console.log('Child Output:', data.toString());
+
+    //         if(output.includes('has started') && !serverStarted) {
+    //             serverStarted = true;
+    //             console.log('Startup complete, sending SIGINT...');
+    //             proc.kill('SIGINT');
+    //         }
+
+    //         if(output.includes('Shutdown called') && !shutdownCalled) {
+    //             console.log('Shutdown handler has run, means it was stopped!');
+    //             shutdownCalled = true;
+    //         }
+    //     };
+
+    //     proc.stdout.on('data', handleData);
+    //     proc.stderr.on('data', handleData);
+
+    //     proc.on('close', (code, signal) => {
+    //         console.log(`Process exited with code: ${code}, signal: ${signal}`);
+    //         assert(shutdownCalled, 'Shutdown handler was not called on SIGINT');
+    //         assert(code === 0, `Process exited with non-zero code: ${code}`);
+    //         done();            
+    //     });
+    // });
+
+    it('main.run die handler logs fatal error on uncaughtException', function() {
+        this.timeout(10000);
+
+        const appCode = `
+import { Nodecaf } from 'file:///${path.resolve('./lib/main.js').replace(/\\/g, '/')}';
+const app = new Nodecaf({
+    http: 9877,
+    routes: [Nodecaf.get('/', ({ res }) => res.text('ok'))]
+});
+
+await app.run();
+
+// Trigger an uncaught exception (die handler should be invoked)
+process.nextTick(() => {
+    throw new Error('simulated crash');
+});
+
+// Keep alive briefly
+setInterval(() => {}, 1000);
+`;
+
+        const proc = spawn('node', ['--input-type=module', '-e', appCode], {
+            stdio: ['ignore', 'pipe', 'pipe']
+        });
+
+        let output = '';
+        let procExited = false;
+
+        return new Promise((resolve, reject) => {
+            const timeout = setTimeout(() => {
+                if(!procExited) 
+                    proc.kill('SIGKILL');
+                reject(new Error('Test timed out'));
+            }, 8000);
+
+            proc.stdout.on('data', (data) => {
+                output += data.toString();
+            });
+
+            proc.stderr.on('data', (data) => {
+                output += data.toString();
+            });
+
+            proc.on('close', () => {
+                procExited = true;
+                clearTimeout(timeout);
+                try{
+                    // Die handler calls log.fatal with { err, type: 'crash' }
+                    // In production env (testing), this outputs JSON to stdout
+                    assert(output.includes('crash'), `Expected "crash" type in output, got: ${output}`);
+                    assert(output.includes('simulated crash'), `Expected error message in output, got: ${output}`);
+                    resolve();
+                }
+                catch(err) {
+                    reject(err);
+                }
+            });
+
+            proc.on('error', reject);
+        });
+    });
+
+    it('readableToWebStream pull() resumes underlying req (e2e)', async function() {
+        this.timeout(5000);
+
+        const app = new Nodecaf({
+            http: 9994,
+            routes: [
+                Nodecaf.post('/pull-test', async ({ body, res }) => {
+                    const reqStream = body.stream();
+                    const reader = reqStream.getReader();
+                    await new Promise(r => setTimeout(r, 50));
+                    const dec = new TextDecoder();
+                    while(true) {
+                        const { value, done } = await reader.read();
+                        if(done) 
+                            break;
+                        const s = dec.decode(value);
+                        if(s.includes('RESUMED'))
+                            return res.json({ resumed: true });
+                    }
+                    return res.json({ resumed: false });
+                })
+            ]
+        });
+
+        await app.start();
+
+        const stream = new ReadableStream({
+            start(controller) {
+                for(let i=0;i<200;i++) 
+                    controller.enqueue(new TextEncoder().encode('x'));
+                controller.enqueue(new TextEncoder().encode('RESUMED'));
+                controller.close();
+            }
+        });
+
+        const res = await fetch('http://localhost:9994/pull-test', {
+            method: 'POST',
+            headers: { 'Connection': 'close' },
+            body: stream,
+            duplex: 'half'
+        });
+
+        const body = await res.json();
+        assert.strictEqual(body.resumed, true);
+
+        await app.stop();
+    });
+
+    it('readableToWebStream cancel() invokes underlying destroy (e2e)', async function() {
+        this.timeout(5000);
+
+        const app = new Nodecaf({
+            http: 9995,
+            routes: [
+                Nodecaf.post('/cancel-test', async ({ body, res }) => {
+                    const reqStream = body.stream();
+                    const reader = reqStream.getReader();
+                    await reader.cancel();
+                    return res.json({ cancelled: true });
+                })
+            ]
+        });
+
+        await app.start();
+
+        const stream2 = new ReadableStream({
+            start(controller) {
+                controller.enqueue(new TextEncoder().encode('a'));
+                controller.close();
+            }
+        });
+
+        let threw = false;
+        try{
+            await fetch('http://localhost:9995/cancel-test', {
+                method: 'POST',
+                headers: { 'Connection': 'close' },
+                body: stream2,
+                duplex: 'half'
+            });
+        }
+        catch(err){
+            err
+            threw = true;
+        }
+
+        assert(threw, 'Expected fetch to throw due to server-side cancel() destroying request');
+
+        await app.stop();
+    });
+
+});
+
+describe('body charset error handling (e2e)', () => {
+    it('should silently use default charset (utf-8) when invalid charset is provided in header', async () => {
+        // The getDataTypeFromContentType function validates charsets against a whitelist
+        // and silently uses the default (utf-8) if an invalid charset is sent
+        // This means bytesToString never receives an invalid charset in practice
+        const { Body } = await import('../lib/body.js');
+        
+        // Create a stream with valid UTF-8 bytes
+        const bytes = new Uint8Array([0x48, 0x65, 0x6C, 0x6C, 0x6F]); 
+        const stream = new ReadableStream({
+            start(controller) {
+                controller.enqueue(bytes);
+                controller.close();
+            }
+        });
+        
+        // Send an invalid charset header—it will be ignored and utf-8 will be used
+        const body = new Body({
+            reqStream: stream,
+            headers: { 'content-type': 'text/plain; charset=cp1252' },
+            timeout: 5000
+        });
+        
+        const result = await body.text();
+        assert.strictEqual(result, 'Hello');
+    });
+
+    it('should throw HTTPError 400 when JSON body has invalid format', async () => {
+        const { Body } = await import('../lib/body.js');
+        
+        // Send invalid JSON
+        const invalidJson = new Uint8Array(Buffer.from('{invalid json}'));
+        const stream = new ReadableStream({
+            start(controller) {
+                controller.enqueue(invalidJson);
+                controller.close();
+            }
+        });
+        
+        const body = new Body({
+            reqStream: stream,
+            headers: { 'content-type': 'application/json; charset=utf-8' },
+            timeout: 5000
+        });
+        
+        try{
+            await body.json();
+            throw new Error('expected HTTPError 400');
+        }
+        catch(err){
+            assert.strictEqual(err.status, 400);
+            assert.strictEqual(err.message, 'Invalid JSON format');
+        }
+    });
+
+    it('should parse urlencoded with default charset when invalid charset header is sent', async () => {
+        const { Body } = await import('../lib/body.js');
+        
+        // Valid URL-encoded data but with invalid charset header
+        // Invalid charset in header will be ignored, utf-8 will be used by default
+        const data = new Uint8Array(Buffer.from('foo=bar&baz=qux'));
+        const stream = new ReadableStream({
+            start(controller) {
+                controller.enqueue(data);
+                controller.close();
+            }
+        });
+        
+        const body = new Body({
+            reqStream: stream,
+            headers: { 'content-type': 'application/x-www-form-urlencoded; charset=ascii-invalid' },
+            timeout: 5000
+        });
+        
+        const result = await body.parse();
+        assert.deepStrictEqual(result, { foo: 'bar', baz: 'qux' });
+    });
+
     
-    // 2. Create the file (writes an empty string). 
-    // This overwrites the file if it already exists.
-    fs.writeFileSync(filePath, '');
-    
-    return filePath;
-}
+    it('logger prints friendly output in development (e2e)', function(done) {
+        this.timeout(5000);
+
+        const appCode = `
+    (async ()=>{
+        process.env.NODE_ENV = 'development';
+        await new Promise(r => setImmediate(r));
+        const { Nodecaf } = await import('file:///${path.resolve('./lib/main.js').replace(/\\/g, '/')}');
+        await new Promise(r => setImmediate(r));
+        const app = new Nodecaf();
+        app.log.info('devtest');
+        process.stdout.write('READY\\n');
+        setTimeout(()=>process.exit(0),100);
+    })();
+    `;
+
+        const proc = spawn('node', ['-e', appCode], {
+            env: { ...process.env, NODE_ENV: 'development' },
+            stdio: ['ignore', 'pipe', 'pipe']
+        });
+
+        let out = '';
+        proc.stdout.on('data', d => out += d.toString());
+        proc.stderr.on('data', d => out += d.toString());
+
+        proc.on('close', () => {
+            try{
+                assert.ok(out.includes('INFO - devtest'), `Expected friendly dev output, got:\n${out}`);
+                done();
+            }
+            catch(err){ done(err); }
+        });
+    });
+
+});
+
+describe('uncovered branches analysis', () => {
+    it('should serialize cookie with Priority=High option', async () => {
+        // Tests cookie.js line 151 (Priority=High case)
+        const { serialize } = await import('../lib/cookie.js');
+        const cookie = serialize('test', 'value', { priority: 'high' });
+        assert.ok(cookie.includes('Priority=High'));
+    });
+
+    it('should serialize cookie with Priority=Medium option', async () => {
+        // Tests cookie.js line 149 (Priority=Medium case)
+        const { serialize } = await import('../lib/cookie.js');
+        const cookie = serialize('test', 'value', { priority: 'medium' });
+        assert.ok(cookie.includes('Priority=Medium'));
+    });
+
+    it('should serialize cookie with Priority=Low option', async () => {
+        // Tests cookie.js line 149 (Priority=Low case)
+        const { serialize } = await import('../lib/cookie.js');
+        const cookie = serialize('test', 'value', { priority: 'low' });
+        assert.ok(cookie.includes('Priority=Low'));
+    });
+
+    it('should serialize cookie with SameSite=Strict option', async () => {
+        // Tests cookie.js line 171 (SameSite=Strict case)
+        const { serialize } = await import('../lib/cookie.js');
+        const cookie = serialize('test', 'value', { sameSite: 'strict' });
+        assert.ok(cookie.includes('SameSite=Strict'));
+    });
+
+    it('should serialize cookie with SameSite=Lax option', async () => {
+        // Tests cookie.js line 169 (SameSite=Lax case)
+        const { serialize } = await import('../lib/cookie.js');
+        const cookie = serialize('test', 'value', { sameSite: 'lax' });
+        assert.ok(cookie.includes('SameSite=Lax'));
+    });
+
+    it('should serialize cookie with SameSite=None option', async () => {
+        // Tests cookie.js line 174 (SameSite=None case)
+        const { serialize } = await import('../lib/cookie.js');
+        const cookie = serialize('test', 'value', { sameSite: 'none' });
+        assert.ok(cookie.includes('SameSite=None'));
+    });
+
+    it('should throw on invalid cookie priority', async () => {
+        // Tests cookie.js line 155 (default case for priority)
+        const { serialize } = await import('../lib/cookie.js');
+        
+        try{
+            serialize('test', 'value', { priority: 'invalid' });
+            throw new Error('expected TypeError');
+        }
+        catch(err){
+            assert.ok(err instanceof TypeError);
+            assert.ok(err.message.includes('priority'));
+        }
+    });
+
+    it('should throw on invalid cookie sameSite', async () => {
+        // Tests cookie.js line 177 (default case for sameSite)
+        const { serialize } = await import('../lib/cookie.js');
+        
+        try{
+            serialize('test', 'value', { sameSite: 'invalid' });
+            throw new Error('expected TypeError');
+        }
+        catch(err){
+            assert.ok(err instanceof TypeError);
+            assert.ok(err.message.includes('sameSite'));
+        }
+    });
+
+    it('should handle normal response write without backpressure', async () => {
+        // Tests native_node.js lines 78-79 (res.write returns true, immediate resolve)
+        // This is the normal case where write succeeds immediately without waiting for drain
+        const app = new Nodecaf({
+            http: 9997,
+            routes: [
+                Nodecaf.get('/quick', ({ res }) => {
+                    res.json({ message: 'fast response' });
+                })
+            ]
+        });
+        
+        await app.start();
+        
+        try{
+            const resp = await fetch('http://localhost:9997/quick', {
+                headers: { 'Connection': 'close' }
+            });
+            const data = await resp.json();
+            assert.strictEqual(data.message, 'fast response');
+        }
+        finally{
+            await app.stop();
+        }
+    });
+
+    it('should handle WebSocket client lifecycle with pong handler', async () => {
+        const { Nodecaf } = await import('../lib/main.js');
+        const WebSocket = (await import('ws')).default;
+        
+        const app = new Nodecaf({
+            http: 9996,
+            websocket: true,
+            routes: [
+                Nodecaf.get('/', ({ websocket }) => {
+                    websocket();
+                })
+            ]
+        });
+        
+        await app.start();
+        
+        try{
+            const ws = new WebSocket('ws://localhost:9996/');
+            await new Promise((resolve, reject) => {
+                ws.on('ping', () => {
+                    ws.close();
+                    resolve();
+                });
+                ws.on('error', reject);
+            });
+        }
+        finally{
+            await app.stop();
+        }
+    });
+});

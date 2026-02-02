@@ -94,6 +94,9 @@ export default [
                     import: {
                         after: true,
                     },
+                    export: {
+                        after: true,
+                    },
                 },
             }],
             'line-comment-position': 'error',
