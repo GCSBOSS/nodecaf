@@ -268,52 +268,7 @@ declare module "logger" {
         #private;
     }
     export type LogLevel = "debug" | "info" | "warn" | "error" | "fatal";
-    export type LogEntry = {
-        /**
-         * Log level
-         */
-        level: LogLevel;
-        /**
-         * Log type
-         */
-        type: string;
-        /**
-         * Log message
-         */
-        msg?: string;
-        /**
-         * Log time
-         */
-        time: Date;
-        /**
-         * Application name
-         */
-        app: string;
-        /**
-         * Error class name
-         */
-        class?: string;
-        /**
-         * Error message
-         */
-        message?: string;
-        /**
-         * Filtered error stack trace
-         */
-        stack?: string[];
-        /**
-         * Filtered stack trace at log capture point
-         */
-        capture?: string[];
-        /**
-         * Unique error identifier
-         */
-        errorId?: string;
-        /**
-         * Full error stack trace (only in dev environment)
-         */
-        fullStack?: string;
-    };
+    export type LogEntry = any & ErrorProps;
     export type ErrorProps = {
         /**
          * Error class name
@@ -339,10 +294,6 @@ declare module "logger" {
          * Unique error identifier
          */
         errorId?: string;
-        /**
-         * Full error stack trace (only in dev environment)
-         */
-        fullStack?: string;
     };
     export type LoggerOptions = {
         /**
