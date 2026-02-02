@@ -42,7 +42,6 @@
     "dependencies": {
         "confort": "^0.2.1",
         "cookie-signature": "^1.2.2",
-        "golog": "^0.5.1",
         "ws": "^8.18.1"
     },
     "devDependencies": {
