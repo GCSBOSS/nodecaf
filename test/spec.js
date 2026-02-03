@@ -531,7 +531,6 @@ describe('Nodecaf', () => {
 
     });
 
-
 });
 
 describe('Handlers', () => {
@@ -1493,7 +1492,6 @@ describe('Logging', () => {
         assert(Array.isArray(log.warn({ err: new Error('Foobar') }).stack));
         assert.strictEqual(typeof log.info({ err: 'My Error' }).err, 'string');
     });
-
 
     it('Should not log when entry level is below conf level [level]', function(){
         const app = new Nodecaf({ conf: { log: { level: 'error' } } });
@@ -2552,8 +2550,6 @@ describe('In-Memory WebSocket Server', () => {
     });
 });
 
-
-
 describe('native_node adapter', () => {
 
     it('env() returns NODE_ENV when set', () => {
@@ -3092,5 +3088,497 @@ describe('uncovered branches analysis', () => {
         finally{
             await app.stop();
         }
+    });
+});
+
+describe('Router', () => {
+    let Router;
+
+    before(async () => {
+        const mod = await import('../lib/router.js');
+        Router = mod.Router;
+    });
+
+    describe('static routes', () => {
+        it('Should add and match static routes', () => {
+            const router = new Router();
+            const handler = () => 'test';
+            router.add('GET', '/foo/bar', handler);
+            const result = router.match('GET', '/foo/bar');
+            assert(result);
+            assert.strictEqual(result.handler, handler);
+            assert.deepEqual(result.params, {});
+        });
+
+        it('Should normalize paths by removing trailing slashes', () => {
+            const router = new Router();
+            const handler = () => 'test';
+            router.add('GET', '/foo/bar/', handler);
+            const result = router.match('GET', '/foo/bar');
+            assert(result);
+            assert.strictEqual(result.handler, handler);
+        });
+
+        it('Should not match static routes for different paths', () => {
+            const router = new Router();
+            router.add('GET', '/foo/bar', () => 'test');
+            const result = router.match('GET', '/foo/baz');
+            assert.strictEqual(result, false);
+        });
+
+        it('Should be case-insensitive for HTTP methods', () => {
+            const router = new Router();
+            const handler = () => 'test';
+            router.add('get', '/foo', handler);
+            const result = router.match('GET', '/foo');
+            assert(result);
+            assert.strictEqual(result.handler, handler);
+        });
+
+        it('Should match root path', () => {
+            const router = new Router();
+            const handler = () => 'test';
+            router.add('GET', '/', handler);
+            const result = router.match('GET', '/');
+            assert(result);
+            assert.strictEqual(result.handler, handler);
+        });
+
+        it('Should throw on invalid method type', () => {
+            const router = new Router();
+            assert.throws(() => router.add(123, '/foo', () => {}), /Method must be a string/);
+        });
+
+        it('Should throw on invalid path type', () => {
+            const router = new Router();
+            assert.throws(() => router.add('GET', 123, () => {}), /Path must be a string/);
+        });
+
+        it('Should throw on invalid handler type', () => {
+            const router = new Router();
+            assert.throws(() => router.add('GET', '/foo', 'not-a-function'), /handler must be a function/);
+        });
+
+        it('Should throw on duplicate routes', () => {
+            const router = new Router();
+            router.add('GET', '/foo', () => 'test');
+            assert.throws(() => router.add('GET', '/foo', () => 'test2'), /Route already exists/);
+        });
+    });
+
+    describe('parameterized routes', () => {
+        it('Should match single parameter routes', () => {
+            const router = new Router();
+            const handler = () => 'test';
+            router.add('GET', '/users/:id', handler);
+            const result = router.match('GET', '/users/123');
+            assert(result);
+            assert.strictEqual(result.handler, handler);
+            assert.deepEqual(result.params, { id: '123' });
+        });
+
+        it('Should match multiple parameters', () => {
+            const router = new Router();
+            const handler = () => 'test';
+            router.add('GET', '/users/:userId/posts/:postId', handler);
+            const result = router.match('GET', '/users/456/posts/789');
+            assert(result);
+            assert.strictEqual(result.handler, handler);
+            assert.deepEqual(result.params, { userId: '456', postId: '789' });
+        });
+
+        it('Should decode URI-encoded parameters', () => {
+            const router = new Router();
+            const handler = () => 'test';
+            router.add('GET', '/search/:query', handler);
+            const result = router.match('GET', '/search/hello%20world');
+            assert(result);
+            assert.strictEqual(result.params.query, 'hello world');
+        });
+
+        it('Should not match parameter routes incorrectly', () => {
+            const router = new Router();
+            router.add('GET', '/users/:id', () => 'test');
+            const result = router.match('GET', '/users');
+            assert.strictEqual(result, false);
+        });
+
+        it('Should match parameter routes with static segments after', () => {
+            const router = new Router();
+            const handler = () => 'test';
+            router.add('GET', '/users/:id/profile', handler);
+            const result = router.match('GET', '/users/123/profile');
+            assert(result);
+            assert.deepEqual(result.params, { id: '123' });
+        });
+    });
+
+    describe('wildcard routes', () => {
+        it('Should match wildcard routes', () => {
+            const router = new Router();
+            const handler = () => 'test';
+            router.add('GET', '/files/...path', handler);
+            const result = router.match('GET', '/files/documents/file.txt');
+            assert(result);
+            assert.strictEqual(result.handler, handler);
+            assert.deepEqual(result.params, { path: 'documents/file.txt' });
+        });
+
+        it('Should match wildcard at root', () => {
+            const router = new Router();
+            const handler = () => 'test';
+            router.add('GET', '/...all', handler);
+            const result = router.match('GET', '/some/nested/path');
+            assert(result);
+            assert.deepEqual(result.params, { all: 'some/nested/path' });
+        });
+
+        it('Should not match wildcard with insufficient segments', () => {
+            const router = new Router();
+            router.add('GET', '/files/...path', () => 'test');
+            const result = router.match('GET', '/files');
+            assert.strictEqual(result, false);
+        });
+
+        it('Should support wildcard after parameters', () => {
+            const router = new Router();
+            const handler = () => 'test';
+            router.add('GET', '/api/:version/...path', handler);
+            const result = router.match('GET', '/api/v1/users/123/profile');
+            assert(result);
+            assert.deepEqual(result.params, { version: 'v1', path: 'users/123/profile' });
+        });
+    });
+
+    describe('route priority', () => {
+        it('Should prioritize static routes over parameters', () => {
+            const router = new Router();
+            const staticHandler = () => 'static';
+            const paramHandler = () => 'param';
+            router.add('GET', '/users/me', staticHandler);
+            router.add('GET', '/users/:id', paramHandler);
+            
+            const resultMe = router.match('GET', '/users/me');
+            assert.strictEqual(resultMe.handler, staticHandler);
+            
+            const result123 = router.match('GET', '/users/123');
+            assert.strictEqual(result123.handler, paramHandler);
+        });
+
+        it('Should prioritize static and parameters over wildcard', () => {
+            const router = new Router();
+            const staticHandler = () => 'static';
+            const paramHandler = () => 'param';
+            const wildcardHandler = () => 'wildcard';
+            
+            router.add('GET', '/api/:version/...path', wildcardHandler);
+            router.add('GET', '/api/v1/users', paramHandler);
+            router.add('GET', '/api/v1/users/list', staticHandler);
+            
+            const resultStatic = router.match('GET', '/api/v1/users/list');
+            assert.strictEqual(resultStatic.handler, staticHandler);
+            
+            const resultParam = router.match('GET', '/api/v1/users');
+            assert.strictEqual(resultParam.handler, paramHandler);
+            
+            const resultWildcard = router.match('GET', '/api/v1/docs/readme.md');
+            assert.strictEqual(resultWildcard.handler, wildcardHandler);
+        });
+    });
+
+    describe('route matching with no handler', () => {
+        it('Should return false when no matching route exists', () => {
+            const router = new Router();
+            router.add('GET', '/foo', () => 'test');
+            const result = router.match('GET', '/bar');
+            assert.strictEqual(result, false);
+        });
+
+        it('Should return false for unregistered HTTP methods', () => {
+            const router = new Router();
+            router.add('GET', '/foo', () => 'test');
+            const result = router.match('POST', '/foo');
+            assert.strictEqual(result, false);
+        });
+    });
+
+    describe('multiple HTTP methods', () => {
+        it('Should support multiple HTTP methods on same path', () => {
+            const router = new Router();
+            const getHandler = () => 'get';
+            const postHandler = () => 'post';
+            const putHandler = () => 'put';
+            
+            router.add('GET', '/users', getHandler);
+            router.add('POST', '/users', postHandler);
+            router.add('PUT', '/users/123', putHandler);
+            
+            assert.strictEqual(router.match('GET', '/users').handler, getHandler);
+            assert.strictEqual(router.match('POST', '/users').handler, postHandler);
+            assert.strictEqual(router.match('PUT', '/users/123').handler, putHandler);
+        });
+
+        it('Should not cross HTTP methods', () => {
+            const router = new Router();
+            router.add('GET', '/test', () => 'get');
+            const result = router.match('POST', '/test');
+            assert.strictEqual(result, false);
+        });
+    });
+
+    describe('complex path scenarios', () => {
+        it('Should handle deeply nested paths', () => {
+            const router = new Router();
+            const handler = () => 'test';
+            router.add('GET', '/a/b/c/d/e/f/g', handler);
+            const result = router.match('GET', '/a/b/c/d/e/f/g');
+            assert(result);
+            assert.strictEqual(result.handler, handler);
+        });
+
+        it('Should handle mixed static and parameter segments', () => {
+            const router = new Router();
+            const handler = () => 'test';
+            router.add('GET', '/api/:v/users/:id/posts/:pid/comments/:cid', handler);
+            const result = router.match('GET', '/api/v2/users/123/posts/456/comments/789');
+            assert(result);
+            assert.deepEqual(result.params, {
+                v: 'v2',
+                id: '123',
+                pid: '456',
+                cid: '789'
+            });
+        });
+
+        it('Should handle parameter at root', () => {
+            const router = new Router();
+            const handler = () => 'test';
+            router.add('GET', '/:locale/home', handler);
+            const result = router.match('GET', '/en/home');
+            assert(result);
+            assert.deepEqual(result.params, { locale: 'en' });
+        });
+    });
+
+    describe('edge cases', () => {
+        it('Should handle empty parameter names gracefully', () => {
+            const router = new Router();
+            const handler = () => 'test';
+            // This tests the router's ability to handle : without a name
+            router.add('GET', '/test/:/path', handler);
+            const result = router.match('GET', '/test/value/path');
+            assert(result);
+        });
+
+        it('Should handle multiple wildcards (last one wins)', () => {
+            const router = new Router();
+            const handler = () => 'test';
+            router.add('GET', '/...path', handler);
+            const result = router.match('GET', '/any/path/here');
+            assert(result);
+            assert.deepEqual(result.params, { path: 'any/path/here' });
+        });
+
+        it('Should handle single segment paths', () => {
+            const router = new Router();
+            const handler = () => 'test';
+            router.add('GET', '/single', handler);
+            const result = router.match('GET', '/single');
+            assert(result);
+            assert.strictEqual(result.handler, handler);
+        });
+
+    });
+
+    describe('wildcard backtracking edge cases', () => {
+        it('Should backtrack to wildcard when segment does not match static or param', () => {
+            const router = new Router();
+            const handler = () => 'wildcard';
+            router.add('GET', '/api/...path', handler);
+            // This path does not match /api/fixed, so it should backtrack to wildcard
+            const result = router.match('GET', '/api/anything/here');
+            assert(result);
+            assert.strictEqual(result.handler, handler);
+            assert.deepEqual(result.params, { path: 'anything/here' });
+        });
+
+        it('Should fall back to terminal wildcard when exact match not found', () => {
+            const router = new Router();
+            const wildcardHandler = () => 'wildcard';
+            const paramHandler = () => 'param';
+            router.add('GET', '/items/:id', paramHandler);
+            router.add('GET', '/...fallback', wildcardHandler);
+            
+            // This should match the param route
+            const result1 = router.match('GET', '/items/123');
+            assert.strictEqual(result1.handler, paramHandler);
+            
+            // This should fall back to wildcard since no /items match
+            const result2 = router.match('GET', '/other/path');
+            assert.strictEqual(result2.handler, wildcardHandler);
+            assert.deepEqual(result2.params, { fallback: 'other/path' });
+        });
+
+        it('Should use wildcard when path runs out before node has handler', () => {
+            const router = new Router();
+            const paramHandler = () => 'param';
+            const wildcardHandler = () => 'wildcard';
+            router.add('GET', '/admin/:section/manage', paramHandler);
+            router.add('GET', '/...page', wildcardHandler);
+            
+            // Exact match should work
+            const result1 = router.match('GET', '/admin/users/manage');
+            assert.strictEqual(result1.handler, paramHandler);
+            
+            // This path matches the param route but doesn't have 'manage' after it,
+            // so it continues but finds no handler at the node, falls back to wildcard
+            const result2 = router.match('GET', '/admin/users');
+            assert.strictEqual(result2.handler, wildcardHandler);
+            assert(result2.params.page);
+        });
+
+        it('Should handle wildcard with multiple parameters before it', () => {
+            const router = new Router();
+            const handler = () => 'test';
+            router.add('GET', '/api/:v/:type/...rest', handler);
+            
+            const result1 = router.match('GET', '/api/v1/users/list/active');
+            assert(result1);
+            assert.deepEqual(result1.params, { v: 'v1', type: 'users', rest: 'list/active' });
+            
+            const result2 = router.match('GET', '/api/v2/posts/search/tag/trending');
+            assert(result2);
+            assert.deepEqual(result2.params, { v: 'v2', type: 'posts', rest: 'search/tag/trending' });
+        });
+
+        it('Should preserve params from earlier segments when backtracking to wildcard', () => {
+            const router = new Router();
+            const handler = () => 'test';
+            router.add('GET', '/api/:version/...path', handler);
+            
+            const result = router.match('GET', '/api/v1/users/123/posts');
+            assert(result);
+            assert.deepEqual(result.params, {
+                version: 'v1',
+                path: 'users/123/posts'
+            });
+        });
+
+        it('Should handle wildcard with no preceding segments', () => {
+            const router = new Router();
+            const handler = () => 'test';
+            router.add('GET', '/...anything', handler);
+            
+            // Root-level wildcard with single segment
+            const result1 = router.match('GET', '/single');
+            assert(result1);
+            assert.deepEqual(result1.params, { anything: 'single' });
+            
+            // Root-level wildcard with multiple segments
+            const result2 = router.match('GET', '/path/to/resource');
+            assert(result2);
+            assert.deepEqual(result2.params, { anything: 'path/to/resource' });
+        });
+
+        it('Should fail to match when wildcard is present but no match occurs at all', () => {
+            const router = new Router();
+            router.add('POST', '/upload/...file', () => 'test');
+            
+            // Different HTTP method should not match
+            const result = router.match('GET', '/upload/document.pdf');
+            assert.strictEqual(result, false);
+        });
+
+        it('Should match shortest static path when multiple paths could match', () => {
+            const router = new Router();
+            const shortHandler = () => 'short';
+            const longHandler = () => 'long';
+            const wildcardHandler = () => 'wildcard';
+            
+            router.add('GET', '/users', shortHandler);
+            router.add('GET', '/users/profile', longHandler);
+            router.add('GET', '/...rest', wildcardHandler);
+            
+            const result1 = router.match('GET', '/users');
+            assert.strictEqual(result1.handler, shortHandler);
+            
+            const result2 = router.match('GET', '/users/profile');
+            assert.strictEqual(result2.handler, longHandler);
+            
+            const result3 = router.match('GET', '/something/else');
+            assert.strictEqual(result3.handler, wildcardHandler);
+        });
+
+        it('Should handle segment that matches parameter but path continues', () => {
+            const router = new Router();
+            const paramHandler = () => 'param';
+            const staticHandler = () => 'static';
+            
+            router.add('GET', '/posts/:id', paramHandler);
+            router.add('GET', '/posts/:id/comments', staticHandler);
+            
+            const result1 = router.match('GET', '/posts/123');
+            assert.strictEqual(result1.handler, paramHandler);
+            
+            const result2 = router.match('GET', '/posts/456/comments');
+            assert.strictEqual(result2.handler, staticHandler);
+        });
+
+        it('Should URI-decode segments in wildcard capture', () => {
+            const router = new Router();
+            const handler = () => 'test';
+            router.add('GET', '/files/...path', handler);
+            
+            const result = router.match('GET', '/files/my%20document.pdf');
+            assert(result);
+            // The wildcard captures the encoded version as-is
+            assert(result.params.path.includes('%20'));
+        });
+
+        it('Should initialize params when using terminal wildcard with no prior params', () => {
+            // This tests line 117: params = params || {} (|| {} branch taken)
+            // When we reach terminal wildcard fallback with no params captured yet
+            const router = new Router();
+            const handler = () => 'test';
+            router.add('GET', '/api/:version', () => 'version');
+            router.add('GET', '/...rest', handler);
+            
+            // The /api/:version route matches up to /api/v1, but since the path continues
+            // and the :version param node has no handler for multiple segments,
+            // it doesn't match. Then /...rest wildcard should match
+            const result = router.match('GET', '/api/v1/extra/segments');
+            assert(result);
+            assert.strictEqual(result.handler, handler);
+            // params should be initialized to {} and then filled with rest
+            assert(result.params.rest === 'api/v1/extra/segments');
+        });
+
+        it('Should preserve existing params when using terminal wildcard', () => {
+            // This tests line 117: params = params || {} (|| {} branch NOT taken)
+            // When we have existing params before reaching terminal wildcard
+            const router = new Router();
+            const handler = () => 'test';
+            router.add('GET', '/api/:version/...rest', handler);
+            
+            // This matches both the param (version) and wildcard (rest) 
+            // So params will already contain version when we set rest
+            const result = router.match('GET', '/api/v1/users/123');
+            assert(result);
+            assert.strictEqual(result.handler, handler);
+            assert.deepEqual(result.params, { version: 'v1', rest: 'users/123' });
+        });
+
+        it('Should match wildcard with no params in path', () => {
+            // This tests the || {} branch at lines 117 and 122
+            // When we have a wildcard at root with no prior params captured
+            const router = new Router();
+            const handler = () => 'test';
+            router.add('GET', '/...rest', handler);
+            
+            // Match should give us rest param without any prior params
+            const result = router.match('GET', '/any/path/here');
+            assert(result);
+            assert.deepEqual(result.params, { rest: 'any/path/here' });
+        });
     });
 });

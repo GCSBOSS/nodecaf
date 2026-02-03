@@ -711,7 +711,87 @@ declare module "cors" {
         preflightContinue?: boolean;
     };
 }
+declare module "router" {
+    /**
+     * @typedef MatchResult
+     * @property {Function} handler The matched route handler
+     * @property {Object.<string, string>} [params] The captured route parameters
+     */
+    /**
+     * Router class for managing HTTP routes with static and dynamic path segments.
+     */
+    export class Router {
+        /**
+         * Matches a method and path, returning the handler and captured parameters.
+         * @param {string} method HTTP method (e.g., 'GET', 'POST')
+         * @param {string} path Request path
+         * @returns {MatchResult|false}
+         */
+        match(method: string, path: string): MatchResult | false;
+        /**
+         * Adds a new route to the router
+         * @param {string} method HTTP method (e.g., 'GET', 'POST')
+         * @param {string} path Route path (can include :param and ...wildcard)
+         * @param {Function} handler Route handler function
+         */
+        add(method: string, path: string, handler: Function): void;
+        #private;
+    }
+    export type MatchResult = {
+        /**
+         * The matched route handler
+         */
+        handler: Function;
+        /**
+         * The captured route parameters
+         */
+        params?: {
+            [x: string]: string;
+        };
+    };
+}
 declare module "api" {
+    /**
+     * @typedef RequestInfo
+     * @property {string} method
+     * @property {string} path
+     * @property {string} host
+     * @property {string} agent
+     * @property {string} type
+     * @property {string} msg
+     */
+    /**
+     * @typedef BaseInputObject
+     * @property {object} conf Configuration object
+     * @property {object} cookies Parsed cookies
+     * @property {object} headers Request headers
+     * @property {object} query Parsed query parameters
+     * @property {object} params Route parameters
+     * @property {string} method HTTP method
+     * @property {string} path HTTP path
+     * @property {string} ip Client IP address
+     * @property {import('./logger').Logger} log Logger instance
+     * @property {import('./response').Response} res HTTP response object
+     * @property {import('./body').Body} body Request body parser or data
+     * @property {() => Promise<any>} [websocket] Whether the request is a WebSocket upgrade
+     * @property {(fn: Function, ...args: any[]) => any} call Call a function with the current context
+     */
+    /**
+     * @typedef APITriggerInput
+     * @property {ReadableStream<Uint8Array>} reqStream
+     * @property {import('./native').NativeResponseHandles} resHandles
+     * @property {object} headers
+     * @property {object} query
+     * @property {object} cookies
+     * @property {string} [ip]
+     * @property {() => Promise<WebSocket>} [websocket]
+     */
+    /**
+     * @typedef { BaseInputObject & { [globalKey: string]: unknown } } RouteHandlerArgs
+     */
+    /**
+     * @typedef {(args: RouteHandlerArgs) => Promise<void>|void} RouteHandler
+     */
     /**
      * @typedef RouteSpec
      * @property {string} method HTTP method
@@ -745,16 +825,6 @@ declare module "api" {
          * @throws {TypeError} If handler is not a function
          */
         setFallbackRoute(handler: import("api").RouteHandler): void;
-        /**
-         * Adds an endpoint to the API
-         * @param {string} method HTTP method (lowercase or uppercase)
-         * @param {string} path HTTP path (with optional :params and * wildcards)
-         * @param {import('./api').RouteHandler} handler Route handler function
-         * @returns {void}
-         * @throws {TypeError} If handler is not a function or path is not a string
-         * @throws {Error} If route is already registered
-         */
-        addEndpoint(method: string, path: string, handler: import("api").RouteHandler): void;
         /**
          * Triggers a route handler
          * @param {string} method HTTP method
@@ -838,11 +908,6 @@ declare module "api" {
     };
     export type RouteHandlerArgs = BaseInputObject & {
         [globalKey: string]: unknown;
-    };
-    export type DynamicRouteSpec = {
-        regexp: RegExp;
-        handler?: RouteHandler;
-        params: string[];
     };
     export type RouteHandler = (args: RouteHandlerArgs) => Promise<void> | void;
     export type RouteSpec = {
