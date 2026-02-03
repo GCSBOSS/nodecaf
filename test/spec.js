@@ -2378,56 +2378,6 @@ describe('Server Lifecycle (Start/Stop)', () => {
     });
 });
 
-describe('Server Start/Stop Lifecycle', () => {
-    it('Should start server successfully', function(done) {
-        this.timeout(5000);
-
-        const serverScript = `
-        import { Nodecaf } from './lib/main.js';
-        const app = new Nodecaf({
-          http: 9878,
-          routes: [Nodecaf.get('/', async ({ res }) => res.json({ ok: true }))]
-        });
-        await app.start();
-        console.log('SERVER_READY');
-
-        // Auto-shutdown after 2 seconds
-        setTimeout(async () => {
-          await app.stop();
-          console.log('SERVER_STOPPED');
-          process.exit(0);
-        }, 2000);
-      `;
-
-        const child = spawn('node', ['--input-type=module', '--eval', serverScript], {
-            cwd: process.cwd(),
-            stdio: ['inherit', 'pipe', 'inherit']
-        });
-
-        let serverReady = false;
-        let serverStopped = false;
-
-        child.stdout.on('data', (data) => {
-            const output = data.toString();
-            if(output.includes('SERVER_READY')) 
-                serverReady = true;
-        
-            if(output.includes('SERVER_STOPPED')) 
-                serverStopped = true;
-        
-        });
-
-        child.on('close', (code) => {
-            assert.ok(serverReady, 'server should start');
-            assert.ok(serverStopped, 'server should stop');
-            assert.equal(code, 0, 'Should exit cleanly');
-            done();
-        });
-
-        child.on('error', (err) => done(err));
-    });
-});
-
 describe('Startup Handler Execution', () => {
     it('Should execute startup handler before server is ready', function(done) {
         this.timeout(5000);
@@ -2903,7 +2853,7 @@ setInterval(() => {}, 1000);
 });
 
 describe('body charset error handling (e2e)', () => {
-    it('should silently use default charset (utf-8) when invalid charset is provided in header', async () => {
+    it('Should silently use default charset (utf-8) when invalid charset is provided in header', async () => {
         // The getDataTypeFromContentType function validates charsets against a whitelist
         // and silently uses the default (utf-8) if an invalid charset is sent
         // This means bytesToString never receives an invalid charset in practice
@@ -2929,7 +2879,7 @@ describe('body charset error handling (e2e)', () => {
         assert.strictEqual(result, 'Hello');
     });
 
-    it('should throw HTTPError 400 when JSON body has invalid format', async () => {
+    it('Should throw HTTPError 400 when JSON body has invalid format', async () => {
         const { Body } = await import('../lib/body.js');
         
         // Send invalid JSON
@@ -2957,7 +2907,7 @@ describe('body charset error handling (e2e)', () => {
         }
     });
 
-    it('should parse urlencoded with default charset when invalid charset header is sent', async () => {
+    it('Should parse urlencoded with default charset when invalid charset header is sent', async () => {
         const { Body } = await import('../lib/body.js');
         
         // Valid URL-encoded data but with invalid charset header
@@ -3018,49 +2968,49 @@ describe('body charset error handling (e2e)', () => {
 });
 
 describe('uncovered branches analysis', () => {
-    it('should serialize cookie with Priority=High option', async () => {
+    it('Should serialize cookie with Priority=High option', async () => {
         // Tests cookie.js line 151 (Priority=High case)
         const { serialize } = await import('../lib/cookie.js');
         const cookie = serialize('test', 'value', { priority: 'high' });
         assert.ok(cookie.includes('Priority=High'));
     });
 
-    it('should serialize cookie with Priority=Medium option', async () => {
+    it('Should serialize cookie with Priority=Medium option', async () => {
         // Tests cookie.js line 149 (Priority=Medium case)
         const { serialize } = await import('../lib/cookie.js');
         const cookie = serialize('test', 'value', { priority: 'medium' });
         assert.ok(cookie.includes('Priority=Medium'));
     });
 
-    it('should serialize cookie with Priority=Low option', async () => {
+    it('Should serialize cookie with Priority=Low option', async () => {
         // Tests cookie.js line 149 (Priority=Low case)
         const { serialize } = await import('../lib/cookie.js');
         const cookie = serialize('test', 'value', { priority: 'low' });
         assert.ok(cookie.includes('Priority=Low'));
     });
 
-    it('should serialize cookie with SameSite=Strict option', async () => {
+    it('Should serialize cookie with SameSite=Strict option', async () => {
         // Tests cookie.js line 171 (SameSite=Strict case)
         const { serialize } = await import('../lib/cookie.js');
         const cookie = serialize('test', 'value', { sameSite: 'strict' });
         assert.ok(cookie.includes('SameSite=Strict'));
     });
 
-    it('should serialize cookie with SameSite=Lax option', async () => {
+    it('Should serialize cookie with SameSite=Lax option', async () => {
         // Tests cookie.js line 169 (SameSite=Lax case)
         const { serialize } = await import('../lib/cookie.js');
         const cookie = serialize('test', 'value', { sameSite: 'lax' });
         assert.ok(cookie.includes('SameSite=Lax'));
     });
 
-    it('should serialize cookie with SameSite=None option', async () => {
+    it('Should serialize cookie with SameSite=None option', async () => {
         // Tests cookie.js line 174 (SameSite=None case)
         const { serialize } = await import('../lib/cookie.js');
         const cookie = serialize('test', 'value', { sameSite: 'none' });
         assert.ok(cookie.includes('SameSite=None'));
     });
 
-    it('should throw on invalid cookie priority', async () => {
+    it('Should throw on invalid cookie priority', async () => {
         // Tests cookie.js line 155 (default case for priority)
         const { serialize } = await import('../lib/cookie.js');
         
@@ -3074,7 +3024,7 @@ describe('uncovered branches analysis', () => {
         }
     });
 
-    it('should throw on invalid cookie sameSite', async () => {
+    it('Should throw on invalid cookie sameSite', async () => {
         // Tests cookie.js line 177 (default case for sameSite)
         const { serialize } = await import('../lib/cookie.js');
         
@@ -3088,7 +3038,7 @@ describe('uncovered branches analysis', () => {
         }
     });
 
-    it('should handle normal response write without backpressure', async () => {
+    it('Should handle normal response write without backpressure', async () => {
         // Tests native_node.js lines 78-79 (res.write returns true, immediate resolve)
         // This is the normal case where write succeeds immediately without waiting for drain
         const app = new Nodecaf({
@@ -3114,7 +3064,7 @@ describe('uncovered branches analysis', () => {
         }
     });
 
-    it('should handle WebSocket client lifecycle with pong handler', async () => {
+    it('Should handle WebSocket client lifecycle with pong handler', async () => {
         const WebSocket = (await import('ws')).default;
         
         const app = new Nodecaf({

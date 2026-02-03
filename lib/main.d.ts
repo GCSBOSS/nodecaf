@@ -827,10 +827,6 @@ declare module "api" {
          */
         call: (fn: Function, ...args: any[]) => any;
     };
-    export type PertialInputObject = Partial<BaseInputObject> & {
-        reqStream: ReadableStream;
-        resHandles: import("native").NativeResponseHandles;
-    };
     export type APITriggerInput = {
         reqStream: ReadableStream<Uint8Array>;
         resHandles: import("native").NativeResponseHandles;
@@ -848,7 +844,7 @@ declare module "api" {
         handler?: RouteHandler;
         params: string[];
     };
-    export type RouteHandler = (args: BaseInputObject) => Promise<void> | void;
+    export type RouteHandler = (args: RouteHandlerArgs) => Promise<void> | void;
     export type RouteSpec = {
         /**
          * HTTP method
@@ -1076,10 +1072,6 @@ declare module "main" {
          * Shutdown handler
          */
         shutdown?: (args: GlobalHandlerArgs) => Promise<void> | void;
-        /**
-         * Custom server builder
-         */
-        server?: (app: Nodecaf) => import("node:http").Server;
         /**
          * Application name
          */
