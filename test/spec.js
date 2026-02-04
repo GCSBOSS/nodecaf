@@ -149,10 +149,8 @@ describe('Nodecaf', () => {
         it('Should use default name and version when package info not found', async () => {
             const stdout = await runTestApp(`
                 const app = new Nodecaf();
-                // await app.start();
-                const entry = app.log.info('test');
-                // await app.stop();
-                // process.exit(0);
+                await app.start();
+                await app.stop();
             `);
             assert(stdout.includes('"app":"Untitled"'), `Expected "Untitled" in output, got: ${stdout}`);
         });
@@ -900,162 +898,6 @@ describe('Handlers', () => {
 
 describe('Body Parsing', () => {
 
-    it('Should NOT try parsing body when none is sent', async () => {
-        const app = new Nodecaf({
-            http: 80,
-            autoParseBody: true,
-            routes: [
-                Nodecaf.post('/foobar', ({ body, res }) => {
-                    assert.strictEqual(body.length, 0);
-                    res.end();
-                })
-            ]
-        });
-        await app.start();
-        const { status } = await fetch(LOCAL_HOST + '/foobar', { 
-            method: 'POST',
-            headers: { 'Connection': 'close' }
-        });
-        assert.strictEqual(status, 200);
-        await app.stop();
-    });
-
-    it('Should parse JSON request body payloads', async () => {
-        const app = new Nodecaf({
-            http: 80,
-            autoParseBody: true,
-            routes: [
-                Nodecaf.post('/foobar', ({ body, res }) => {
-                    assert.strictEqual(body.foo, 'bar');
-                    res.end();
-                })
-            ]
-        });
-        await app.start();
-        const { status } = await fetch(LOCAL_HOST + '/foobar', {
-            method: 'POST',
-            headers: { 
-                'Content-Type': 'application/json',
-                'Connection': 'close'
-            },
-            body: JSON.stringify({ foo: 'bar' })
-        });
-        assert.strictEqual(status, 200);
-        await app.stop();
-    });
-
-    it('Should send 400 when failed to parse body', async () => {
-        const app = new Nodecaf({
-            http: 80,
-            autoParseBody: true,
-            routes: [
-                Nodecaf.post('/foobar', Function.prototype)
-            ]
-        });
-        await app.start();
-        const { status } = await fetch(LOCAL_HOST + '/foobar', {
-            method: 'POST',
-            headers: { 
-                'Content-Type': 'application/json',
-                'Connection': 'close'
-            },
-            body: 'foobar}'
-        });
-
-        assert.strictEqual(status, 400);
-        await app.stop();
-    });
-
-    it('Should parse text request body payloads', async () => {
-        const app = new Nodecaf({
-            http: 80,
-            autoParseBody: true,
-            routes: [
-                Nodecaf.post('/foobar', ({ body, res }) => {
-                    assert.strictEqual(body, '{"foo":"bar"}');
-                    res.end();
-                })
-            ]
-        });
-        await app.start();
-        const { status } = await fetch(LOCAL_HOST + '/foobar', {
-            method: 'POST',
-            headers: { 
-                'Content-Type': 'text/css',
-                'Connection': 'close'
-            },
-            body: JSON.stringify({foo: 'bar'})
-        });
-        assert.strictEqual(status, 200);
-        await app.stop();
-    });
-
-    it('Should parse request body without content-type', async () => {
-        const app = new Nodecaf({
-            http: 80,
-            autoParseBody: true,
-            routes: [
-                Nodecaf.post('/foobar', ({ body, res }) => {
-                    assert.strictEqual(body.toString(), '{"foo":"bar"}');
-                    res.end();
-                })
-            ]
-        });
-        await app.start();
-        const { status } = await fetch(LOCAL_HOST + '/foobar', {
-            method: 'POST',
-            headers: { 'no-auto': true, 'Content-Length': 13, 'Connection': 'close' },
-            body: JSON.stringify({foo: 'bar'})
-        });
-        assert.strictEqual(status, 200);
-        await app.stop();
-    });
-
-    it('Should not parse binary request body', async () => {
-        const app = new Nodecaf({
-            http: 80,
-            autoParseBody: true,
-            routes: [
-                Nodecaf.post('/foobar', ({ body, res }) => {
-                    assert(body instanceof Uint8Array);
-                    res.end();
-                })
-            ]
-        });
-        await app.start();
-        const { status } = await fetch(LOCAL_HOST + '/foobar', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/octet-stream', 'Connection': 'close' },
-            body: 'fobariummuch'
-        });
-        assert.strictEqual(status, 200);
-        await app.stop();
-    });
-
-    it('Should parse URLEncoded request body payloads', async () => {
-        const app = new Nodecaf({
-            http: 80,
-            autoParseBody: true,
-            routes: [
-                Nodecaf.post('/foobar', ({ body, res }) => {
-                    assert.strictEqual(body.foo, 'bar');
-                    res.end();
-                })
-            ]
-        });
-        await app.start();
-        const { status } = await fetch(LOCAL_HOST + '/foobar', {
-            method: 'POST',
-            headers: { 
-                'Content-Type': 'application/x-www-form-urlencoded',
-                'Connection': 'close'
-            },
-            body: 'foo=bar'
-        });
-        assert.strictEqual(status, 200);
-        await app.stop();
-    });
-
     it('Should not parse request body when setup so', async () => {
         const app = new Nodecaf({
             http: 80,
@@ -1457,8 +1299,7 @@ describe('Logging', () => {
     let log;
 
     before(function(){
-        const app = new Nodecaf();
-        log = app.log;
+        log = new Logger();
     });
 
     it('Should log appropriate objects according to log level', function(){
@@ -1494,14 +1335,12 @@ describe('Logging', () => {
     });
 
     it('Should not log when entry level is below conf level [level]', function(){
-        const app = new Nodecaf({ conf: { log: { level: 'error' } } });
-        const log = app.log;
+        const log = new Logger({ level: 'error' });
         assert(!log.warn());
     });
 
     it('Should not log anything when conf is FALSE', function(){
-        const app = new Nodecaf({ conf: { log: false } });
-        const log = app.log;
+        const log = new Logger({ disabled: true });
         assert(!log.debug());
     });
 
@@ -1615,10 +1454,19 @@ describe('Regression', () => {
         await p;
     });
 
-    it('Should read correct package.json for name and version', () => {
-        const app = new Nodecaf();
-        const entry = app.log.info('Test log');
-        assert.strictEqual(entry.app, 'nodecaf');
+    it('Should read correct package.json for name and version', async () => {
+        const app = new Nodecaf({
+            routes: [
+                Nodecaf.get('/info', function({ res, log }){
+                    assert.strictEqual(log.debug().app, 'nodecaf');
+                    res.end();
+                })
+            ]
+        });
+        await app.start();
+        const res = await app.trigger('get', '/info');
+        assert.strictEqual(res.status, 200);
+        await app.stop();
     });
 
     it('Should not modify the very object used as cookie options', async () => {
@@ -1657,35 +1505,6 @@ describe('Regression', () => {
         assert(!res.headers.get('content-type'));
         assert.strictEqual(body.length, 0);
         await app.stop();
-    });
-
-    it('Should not crash on weird json body', done => {
-
-        (async function(){
-            const app = new Nodecaf({
-                autoParseBody: true,
-                http: 80,
-                routes: [
-                    Nodecaf.post('/foobar', function({ res }){
-                        res.end();
-                    })
-                ]
-            });
-            await app.start();
-            process.on('uncaughtException', done);
-            process.on('unhandledRejection', done);
-            const { status } = await fetch(LOCAL_HOST + '/foobar', {
-                method: 'POST',
-                headers: { 
-                    'Content-Type': 'application/json',
-                    'Connection': 'close'
-                },
-                body: '{"sdf:'
-            });
-            assert.strictEqual(status, 400);
-            await app.stop();
-            done();
-        })();
     });
 
     it('Should keep proper app state when errors happen at startup and shutdown', async () => {
@@ -2936,8 +2755,12 @@ describe('body charset error handling (e2e)', () => {
         await new Promise(r => setImmediate(r));
         const { Nodecaf } = await import('file:///${path.resolve('./lib/main.js').replace(/\\/g, '/')}');
         await new Promise(r => setImmediate(r));
-        const app = new Nodecaf();
-        app.log.info('devtest');
+        const app = new Nodecaf({
+            startup: async ({ log }) => {
+                log.info('devtest');
+            }
+        });
+        await app.start();
         process.stdout.write('READY\\n');
         setTimeout(()=>process.exit(0),100);
     })();

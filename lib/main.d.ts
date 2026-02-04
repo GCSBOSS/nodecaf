@@ -2,9 +2,11 @@ declare module "cookie" {
     /**
      * Parses a cookie header string into an object
      * @param {string} header
-     * @return {Object}
+     * @return {Object.<string, string>}
      */
-    export function parse(header: string): any;
+    export function parse(header: string): {
+        [x: string]: string;
+    };
     /**
      * @typedef {Object} CookieOptions
      * @property {number} [maxAge]
@@ -53,8 +55,8 @@ declare module "native" {
      */
     /**
      * @typedef NativeResponseHandles
-     * @property {(statusCode: number) => any} setStatus Set the response status code
-     * @property {(header: string, value: string|string[]) => any} setHeader Set a response header
+     * @property {(statusCode: number) => void} setStatus Set the response status code
+     * @property {(header: string, value: string|string[]) => void} setHeader Set a response header
      * @property {(chunk: Uint8Array|string) => Promise<void>} write Write a chunk to the response body
      * @property {() => Promise<void>} end End the response
      */
@@ -133,11 +135,11 @@ declare module "native" {
         /**
          * Set the response status code
          */
-        setStatus: (statusCode: number) => any;
+        setStatus: (statusCode: number) => void;
         /**
          * Set a response header
          */
-        setHeader: (header: string, value: string | string[]) => any;
+        setHeader: (header: string, value: string | string[]) => void;
         /**
          * Write a chunk to the response body
          */
@@ -268,7 +270,31 @@ declare module "logger" {
         #private;
     }
     export type LogLevel = "debug" | "info" | "warn" | "error" | "fatal";
-    export type LogEntry = any & ErrorProps;
+    export type LogEntryProps = {
+        /**
+         * Log level
+         */
+        level: LogLevel;
+        /**
+         * Log type
+         */
+        type: string;
+        /**
+         * Log message
+         */
+        msg: string;
+        /**
+         * Log time
+         */
+        time: Date;
+        /**
+         * Application name
+         */
+        app: string;
+    };
+    export type LogEntry = ErrorProps & LogEntryProps & {
+        [x: string]: unknown;
+    };
     export type ErrorProps = {
         /**
          * Error class name
@@ -359,9 +385,11 @@ declare module "types" {
      * @param {Uint8Array} bytes The raw bytes to parse
      * @param {ShortType} type The data type (json, urlencoded, text, etc)
      * @param {BufferEncoding} charset The character encoding to use
-     * @returns {Object|null|Uint8Array|string|boolean|number} Parsed data (object for json/urlencoded, string for text, raw bytes otherwise)
+     * @returns {Object.<string, unknown>|null|Uint8Array|string|boolean|number} Parsed data (object for json/urlencoded, string for text, raw bytes otherwise)
      */
-    export function getDataFromBytesAndTypes(bytes: Uint8Array, type: ShortType, charset: BufferEncoding): any | null | Uint8Array | string | boolean | number;
+    export function getDataFromBytesAndTypes(bytes: Uint8Array, type: ShortType, charset: BufferEncoding): {
+        [x: string]: unknown;
+    } | null | Uint8Array | string | boolean | number;
     export type BufferEncoding = "utf8" | "utf-8" | "utf16le" | "utf-16le";
     export type ShortType = "text" | "json" | "urlencoded" | "binary";
 }
@@ -374,7 +402,7 @@ declare module "response" {
      * @typedef ResponseInfo
      * @property {number} status
      * @property {{ [header: string]: string | string[] }} headers
-     * @property {Response} body
+     * @property {Uint8Array|string|null|number|boolean|Object.<string, unknown>|ReadableStream} [body]
      */
     export class Response {
         /**
@@ -403,19 +431,19 @@ declare module "response" {
          * Converts various error types to HTTPError and sends appropriate response
          * @param {unknown} statusOrError HTTP status code or Error object
          * @param {string} [message] Error message (required if statusOrError is a number)
-         * @param  {...any} args Arguments for message formatting
+         * @param  {...unknown} args Arguments for message formatting
          * @returns {import('./error').HTTPError} The handled HTTPError instance
          */
-        error(statusOrError: unknown, message?: string, ...args: any[]): import("error").HTTPError;
+        error(statusOrError: unknown, message?: string, ...args: unknown[]): import("error").HTTPError;
         /**
          * Assert a condition, throwing an HTTPError if the condition is true
          * @param {number} status HTTP status code to return if assertion fails
          * @param {boolean} cond Condition to assert (throws if true)
          * @param {string} [message] Error message
-         * @param  {...any} args Arguments for message formatting
+         * @param  {...unknown} args Arguments for message formatting
          * @returns {void}
          */
-        assert(status: number, cond: boolean, message?: string, ...args: any[]): void;
+        assert(status: number, cond: boolean, message?: string, ...args: unknown[]): void;
         /**
          * Get a response header.
          * @param {string} k
@@ -455,10 +483,12 @@ declare module "response" {
         /**
          * Send a JSON response.
          * @this {Response}
-         * @param {any} data
+         * @param {null|string|number|boolean|Object.<string, unknown>} data
          * @returns {Response}
          */
-        json(this: Response, data: any): Response;
+        json(this: Response, data: null | string | number | boolean | {
+            [x: string]: unknown;
+        }): Response;
         /**
          * Send a text response.
          * @this {Response}
@@ -486,64 +516,64 @@ declare module "response" {
          * Throws if the condition is true
          * @param {boolean} cond Condition to assert
          * @param {string} [message] Error message
-         * @param  {...any} args Arguments for message formatting
+         * @param  {...unknown} args Arguments for message formatting
          * @returns {void}
          */
-        badRequest(cond: boolean, message?: string, ...args: any[]): void;
+        badRequest(cond: boolean, message?: string, ...args: unknown[]): void;
         /**
          * Assert a 401 Unauthorized condition
          * Throws if the condition is true
          * @param {boolean} cond Condition to assert
          * @param {string} [message] Error message
-         * @param  {...any} args Arguments for message formatting
+         * @param  {...unknown} args Arguments for message formatting
          * @returns {void}
          */
-        unauthorized(cond: boolean, message?: string, ...args: any[]): void;
+        unauthorized(cond: boolean, message?: string, ...args: unknown[]): void;
         /**
          * Assert a 403 Forbidden condition
          * Throws if the condition is true
          * @param {boolean} cond Condition to assert
          * @param {string} [message] Error message
-         * @param  {...any} args Arguments for message formatting
+         * @param  {...unknown} args Arguments for message formatting
          * @returns {void}
          */
-        forbidden(cond: boolean, message?: string, ...args: any[]): void;
+        forbidden(cond: boolean, message?: string, ...args: unknown[]): void;
         /**
          * Assert a 404 Not Found condition
          * Throws if the condition is true
          * @param {boolean} cond Condition to assert
          * @param {string} [message] Error message
-         * @param  {...any} args Arguments for message formatting
+         * @param  {...unknown} args Arguments for message formatting
          * @returns {void}
          */
-        notFound(cond: boolean, message?: string, ...args: any[]): void;
+        notFound(cond: boolean, message?: string, ...args: unknown[]): void;
         /**
          * Assert a 409 Conflict condition
          * Throws if the condition is true
          * @param {boolean} cond Condition to assert
          * @param {string} [message] Error message
-         * @param  {...any} args Arguments for message formatting
+         * @param  {...unknown} args Arguments for message formatting
          * @returns {void}
          */
-        conflict(cond: boolean, message?: string, ...args: any[]): void;
+        conflict(cond: boolean, message?: string, ...args: unknown[]): void;
         /**
          * Assert a 410 Gone condition
          * Throws if the condition is true
          * @param {boolean} cond Condition to assert
          * @param {string} [message] Error message
-         * @param  {...any} args Arguments for message formatting
+         * @param  {...unknown} args Arguments for message formatting
          * @returns {void}
          */
-        gone(cond: boolean, message?: string, ...args: any[]): void;
+        gone(cond: boolean, message?: string, ...args: unknown[]): void;
         /**
          * Assert a 415 Unsupported Media Type condition
          * Throws if the condition is true
          * @param {boolean} cond Condition to assert
          * @param {string} [message] Error message
-         * @param  {...any} args Arguments for message formatting
+         * @param  {...unknown} args Arguments for message formatting
          * @returns {void}
          */
-        badType(cond: boolean, message?: string, ...args: any[]): void;
+        badType(cond: boolean, message?: string, ...args: unknown[]): void;
         /**
          * Get the response stream for manual writing
          * After calling this, you are responsible for closing the stream.
@@ -561,7 +591,9 @@ declare module "response" {
         headers: {
             [header: string]: string | string[];
         };
-        body: Response;
+        body?: Uint8Array | string | null | number | boolean | {
+            [x: string]: unknown;
+        } | ReadableStream;
     };
     import * as cookie from "cookie";
 }
@@ -577,10 +609,10 @@ declare module "error" {
      * Builds an HTTPError instance from status and message
      * @param {number} status HTTP status code
      * @param {unknown} message Error message or data
-     * @param  {...any} args Arguments for message formatting (if message is a string)
+     * @param  {...unknown} args Arguments for message formatting (if message is a string)
      * @returns {HTTPError} HTTPError instance
      */
-    export function buildHTTPError(status: number, message: unknown, ...args: any[]): HTTPError;
+    export function buildHTTPError(status: number, message: unknown, ...args: unknown[]): HTTPError;
     /**
      * @typedef HandleErrorInput
      * @property {import('./api').RequestInfo} reqInfo Request info object
@@ -656,19 +688,25 @@ declare module "body" {
         text(): Promise<string>;
         /**
          * Parse body as JSON
-         * @returns {Promise<any>} The parsed JSON object
+         * @returns {Promise<number|null|string|boolean|Object.<string, unknown>>} The parsed JSON object
          */
-        json(): Promise<any>;
+        json(): Promise<number | null | string | boolean | {
+            [x: string]: unknown;
+        }>;
         /**
          * Parse body as URL-encoded form data
-         * @returns {Promise<Object>} The parsed form data
+         * @returns {Promise<Object.<string, string>>} The parsed form data
          */
-        urlencoded(): Promise<any>;
+        urlencoded(): Promise<{
+            [x: string]: string;
+        }>;
         /**
          * Parse body data according to content type
-         * @returns {Promise<any>} The parsed body data (object, string, or binary)
+         * @returns {Promise<number|null|string|boolean|Object.<string, unknown>|Uint8Array>} The parsed body data (object, string, or binary)
          */
-        parse(): Promise<any>;
+        parse(): Promise<number | null | string | boolean | {
+            [x: string]: unknown;
+        } | Uint8Array>;
         #private;
     }
     export type RequestBodyInput = {
@@ -773,8 +811,8 @@ declare module "api" {
      * @property {import('./logger').Logger} log Logger instance
      * @property {import('./response').Response} res HTTP response object
      * @property {import('./body').Body} body Request body parser or data
-     * @property {() => Promise<any>} [websocket] Whether the request is a WebSocket upgrade
-     * @property {(fn: Function, ...args: any[]) => any} call Call a function with the current context
+     * @property {() => Promise<WebSocket>} [websocket] Whether the request is a WebSocket upgrade
+     * @property {(fn: Function, ...args: unknown[]) => unknown} call Call a function with the current context
      */
     /**
      * @typedef APITriggerInput
@@ -807,7 +845,6 @@ declare module "api" {
      * @property {object} conf Configuration object
      * @property {import('./logger').Logger} log Logger instance
      * @property {number} reqBodyTimeout Request body parse timeout in milliseconds
-     * @property {boolean} autoParseBody Whether to auto-parse request bodies
      * @property {object} global Global context object
      */
     export class API {
@@ -891,11 +928,11 @@ declare module "api" {
         /**
          * Whether the request is a WebSocket upgrade
          */
-        websocket?: () => Promise<any>;
+        websocket?: () => Promise<WebSocket>;
         /**
          * Call a function with the current context
          */
-        call: (fn: Function, ...args: any[]) => any;
+        call: (fn: Function, ...args: unknown[]) => unknown;
     };
     export type APITriggerInput = {
         reqStream: ReadableStream<Uint8Array>;
@@ -945,10 +982,6 @@ declare module "api" {
          */
         reqBodyTimeout: number;
         /**
-         * Whether to auto-parse request bodies
-         */
-        autoParseBody: boolean;
-        /**
          * Global context object
          */
         global: object;
@@ -960,10 +993,14 @@ declare module "conf" {
     /**
      * Layer (merge) multiple configuration objects together
      * Recursively combines configuration objects, with later arguments taking precedence
-     * @param  {...(string|Object)} subjects Configuration objects or paths to configuration files
-     * @returns {Object} A new merged configuration object
+     * @param  {...Object.<string, unknown>} subjects Configuration objects or paths to configuration files
+     * @returns {Object.<string, unknown>} A new merged configuration object
      */
-    export function layerConf(...subjects: (string | any)[]): any;
+    export function layerConf(...subjects: {
+        [x: string]: unknown;
+    }[]): {
+        [x: string]: unknown;
+    };
 }
 declare module "main" {
     export class Nodecaf {
@@ -1034,11 +1071,12 @@ declare module "main" {
         /**
          * Setup or update the application configuration.
          * @this {Nodecaf}
-         * @param {...Object} objectOrPath Configuration object or path
+         * @param {...Object.<string, unknown>} confObject Configuration object or path
          * @returns {void}
          */
-        setup(this: Nodecaf, ...objectOrPath: any[]): void;
-        log: Logger;
+        setup(this: Nodecaf, ...confObject: {
+            [x: string]: unknown;
+        }[]): void;
         /**
          * Start the application.
          * @returns {Promise<AppState>} The final state
@@ -1076,10 +1114,12 @@ declare module "main" {
         /**
          * Restart the application
          * Stops the current instance, updates configuration if provided, and starts again
-         * @param {Object|string} [conf] New configuration object or file path to load
+         * @param {Object.<string, unknown>|string} [conf] New configuration object or file path to load
          * @returns {Promise<void>}
          */
-        restart(conf?: any | string): Promise<void>;
+        restart(conf?: {
+            [x: string]: unknown;
+        } | string): Promise<void>;
         /**
          * Run the application with configuration file loading
          * Loads configuration files (TOML/JSON), starts the app, and sets up signal handlers
@@ -1093,7 +1133,11 @@ declare module "main" {
         /**
          * Configuration object or path
          */
-        conf?: any | (any | string)[] | string;
+        conf?: {
+            [x: string]: unknown;
+        } | ({
+            [x: string]: unknown;
+        } | string)[] | string;
     };
     export type AppState = "starting" | "running" | "stopping" | "standby" | "stuck";
     export type GlobalHandlerArgs = {
@@ -1112,9 +1156,11 @@ declare module "main" {
         /**
          * The current app configuration.
          */
-        conf: any;
+        conf: {
+            [x: string]: unknown;
+        };
     };
-    export type GenericHandler = ((this: Nodecaf, input: GlobalHandlerArgs, ...args: any[]) => any);
+    export type GenericHandler = ((this: Nodecaf, input: GlobalHandlerArgs, ...args: unknown[]) => unknown);
     export type GlobalCall = <B extends GenericHandler>(fn: B, ...args: DropFirst<Parameters<B>>) => ReturnType<B>;
     export type AppOptions = {
         /**
@@ -1148,11 +1194,9 @@ declare module "main" {
         /**
          * Initial configuration object or path
          */
-        conf?: any;
-        /**
-         * Whether to auto-parse request bodies
-         */
-        autoParseBody?: boolean;
+        conf?: {
+            [x: string]: unknown;
+        };
         /**
          * Request body parse timeout in milliseconds
          */
