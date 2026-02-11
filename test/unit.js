@@ -404,7 +404,7 @@ describe('Body Parsing Edge Cases', () => {
                 timeout: 5000
             });
             
-            const result = await body.parse();
+            const result = await body.urlencoded();
             assert.deepStrictEqual(result, { foo: 'bar', baz: 'qux' });
         });
 
@@ -414,32 +414,33 @@ describe('Body Parsing Edge Cases', () => {
 describe('Cookies', () => {
 
     it('Should parse HTTP cookies', () => {
-        
+        // Helper to create the expected null-prototype object
+        const toNullProto = (obj) => Object.assign(Object.create(null), obj);
+
         // --- Parse Tests ---
         // 1. Happy path
-        assert.deepStrictEqual(parse('a=1; b=2'), { a: '1', b: '2' });
+        assert.deepStrictEqual(parse('a=1; b=2'), toNullProto({ a: '1', b: '2' }));
 
         // 2. Backtracking (skipping keys without values)
-        assert.deepStrictEqual(parse('secure; foo=bar'), { foo: 'bar' });
+        assert.deepStrictEqual(parse('secure; foo=bar'), toNullProto({ foo: 'bar' }));
 
         // 3. Duplicate keys (first wins)
-        assert.deepStrictEqual(parse('a=1; a=2'), { a: '1' });
+        assert.deepStrictEqual(parse('a=1; a=2'), toNullProto({ a: '1' }));
 
         // 4. Quoted values
-        assert.deepStrictEqual(parse('a="b"'), { a: 'b' });
+        assert.deepStrictEqual(parse('a="b"'), toNullProto({ a: 'b' }));
 
         // 5. Decoding
-        assert.deepStrictEqual(parse('a=b%20c'), { a: 'b c' });
+        assert.deepStrictEqual(parse('a=b%20c'), toNullProto({ a: 'b c' }));
 
         // 6. Argument validation
         assert.throws(() => parse(123), TypeError);
 
         // 7. Trailing attributes/flags 
-        // The parser encounters "secure", finds no "=", and breaks gracefully.
-        assert.deepStrictEqual(parse('a=1; secure'), { a: '1' });
+        assert.deepStrictEqual(parse('a=1; secure'), toNullProto({ a: '1' }));
         
         // Alternatively, trailing spaces or garbage text also trigger this:
-        assert.deepStrictEqual(parse('a=1;      '), { a: '1' });
+        assert.deepStrictEqual(parse('a=1;      '), toNullProto({ a: '1' }));
     });
 
     it('Should serialize HTTP cookies', () => {

@@ -1,4 +1,6 @@
 
+- prepare function for generating params object based on route to avoid hidden-classes?
+
 - helper for building MODELs?
 - err should not be spread on log entry?
 - respond with return?

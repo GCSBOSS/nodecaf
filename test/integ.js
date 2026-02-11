@@ -797,10 +797,12 @@ describe('Route Handling', () => {
         });
         const cookie = res1.headers.getSetCookie()[0].split(';')[0];
         
-        const res2 = await fetch(LOCAL_HOST + '/bar', { headers: { 
-            Connection: 'close',
-            Cookie: cookie 
-        } });
+        const res2 = await fetch(LOCAL_HOST + '/bar', { 
+            headers: { 
+                Connection: 'close',
+                Cookie: cookie 
+            } 
+        });
         const setCookies = res2.headers.getSetCookie();
         assert(setCookies[0].indexOf('Expire') > -1);
         
@@ -1139,7 +1141,7 @@ describe('Route Handling', () => {
 
 describe('Body Parsing', () => {
 
-    it('Should not parse request body when setup so', async () => {
+    it('Should not parse request body automatically', async () => {
         const app = new Estelar({ http: 80 });
 
         app.post('/foobar', ({ body, res }) => {
@@ -1166,7 +1168,7 @@ describe('Body Parsing', () => {
         const app = new Estelar({ http: 80 });
 
         app.post('/foobar', async ({ body, res }) => {
-            const b = await body.parse();
+            const b = await body.json();
             assert.strictEqual(b.foo, 'bar');
             res.end();
         });
@@ -1181,7 +1183,7 @@ describe('Body Parsing', () => {
 
         const body = await res.text();
         assert.strictEqual(res.status, 400);
-        assert.strictEqual(body, 'Invalid format');
+        assert.strictEqual(body, 'Invalid JSON format');
         await i.stop();
     });
 

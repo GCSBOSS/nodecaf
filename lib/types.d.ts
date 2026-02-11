@@ -454,10 +454,10 @@ declare module "response" {
          * Set a response header.
          * @this {Response}
          * @param {string} k
-         * @param {string|string[]} v
+         * @param {string} v
          * @returns {Response}
          */
-        set(this: Response, k: string, v: string | string[]): Response;
+        set(this: Response, k: string, v: string): Response;
         /**
          * Append a value to a response header.
          * @this {Response}
@@ -799,7 +799,8 @@ declare module "native" {
     /**
      * @typedef NativeResponseHandles
      * @property {(statusCode: number) => void} setStatus Set the response status code
-     * @property {(header: string, value: string|string[]) => void} setHeader Set a response header
+     * @property {(header: string, value: string) => void} setHeader Set a response header
+     * @property {(header: string, value: string) => void} appendHeader
      * @property {(chunk: Uint8Array|string) => Promise<void>} write Write a chunk to the response body
      * @property {() => Promise<void>} end End the response
      */
@@ -888,7 +889,8 @@ declare module "native" {
         /**
          * Set a response header
          */
-        setHeader: (header: string, value: string | string[]) => void;
+        setHeader: (header: string, value: string) => void;
+        appendHeader: (header: string, value: string) => void;
         /**
          * Write a chunk to the response body
          */
