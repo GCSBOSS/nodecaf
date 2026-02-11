@@ -309,13 +309,6 @@ declare module "body" {
         urlencoded(): Promise<{
             [x: string]: string;
         }>;
-        /**
-         * Parse body data according to content type
-         * @returns {Promise<number|null|string|boolean|Object.<string, unknown>|Uint8Array>} The parsed body data (object, string, or binary)
-         */
-        parse(): Promise<number | null | string | boolean | {
-            [x: string]: unknown;
-        } | Uint8Array>;
         #private;
     }
     export type RequestBodyInput = {
