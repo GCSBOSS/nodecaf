@@ -97,6 +97,9 @@ export default [
                     export: {
                         after: true,
                     },
+                    async: {
+                        after: true,
+                    },
                 },
             }],
             'line-comment-position': 'error',

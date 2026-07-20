@@ -6,7 +6,7 @@ import { splitExec } from 'split-exec';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const ROOT_DIR = path.resolve(__dirname.replace(/test$/, ''));
+const ROOT_DIR = path.resolve(__dirname.replace(/scripts$/, ''));
 
 function getDockerCommandConfig(nodeImageTag) {
     return {

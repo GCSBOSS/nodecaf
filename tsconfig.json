@@ -6,9 +6,7 @@
         "moduleResolution": "node",
         "declaration": true,
         "emitDeclarationOnly": true,
-        "outDir": "test",
-        "outFile": "lib/main.d.ts"
+        "outFile": "./lib/types.d.ts"
     },
-    "include": ["lib/**/*"],
-    "exclude": ["lib/main.d.ts"]
+    "include": ["./lib/*.js"]
 }
