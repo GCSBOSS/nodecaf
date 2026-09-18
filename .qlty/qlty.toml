@@ -1,0 +1,24 @@
+config_version = "0"
+
+exclude_patterns = [
+  "test/*",
+  "scripts/*",
+  "*.ts",
+  "*.mjs"
+]
+
+[smells]
+mode = "comment"
+
+[[source]]
+name = "default"
+default = true
+
+[[plugin]]
+name = "eslint"
+version = "10.0.0"
+package_file = "package.json"
+package_filters = ["eslint"]
+
+[[plugin]]
+name = "osv-scanner"

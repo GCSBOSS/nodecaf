@@ -2,4 +2,7 @@
 /.nyc_output/
 /coverage
 /builds
-/.qlty
+/.qlty/*
+!/.qlty/qlty.toml
+/experiment
+/.agentes
